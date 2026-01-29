@@ -27,7 +27,7 @@ wheels/
 venv/
 ENV/
 env/
-
+docs/
 # Pytest / Coverage
 .pytest_cache/
 htmlcov/
