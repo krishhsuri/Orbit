@@ -209,3 +209,39 @@ async def reject_application(
     await db.commit()
     
     return {"message": "Pending application rejected"}
+
+
+@router.post("/detect-ghosted")
+async def detect_ghosted_applications(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Detect and mark ghosted applications (14+ days without response)"""
+    from app.ml.detection.ghost_detector import GhostDetector
+    
+    detector = GhostDetector(db)
+    ghosted_apps = await detector.detect_and_mark_ghosted(user.id)
+    
+    return {
+        "message": f"Marked {len(ghosted_apps)} applications as ghosted",
+        "count": len(ghosted_apps),
+        "applications": ghosted_apps
+    }
+
+
+@router.get("/ghost-candidates")
+async def get_ghost_candidates(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Preview applications that would be marked as ghosted (without actually marking them)"""
+    from app.ml.detection.ghost_detector import GhostDetector
+    
+    detector = GhostDetector(db)
+    candidates = await detector.get_ghost_candidates(user.id)
+    
+    return {
+        "count": len(candidates),
+        "candidates": candidates
+    }
+

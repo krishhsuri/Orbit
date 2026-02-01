@@ -215,69 +215,48 @@ async def get_insights(
     db: AsyncSession = Depends(get_db),
     user_id: UUID = Depends(get_current_user_id),
 ):
-    """Get AI-generated insights (simulated for now)"""
+    """Get AI-generated insights using InsightsGenerator"""
+    from app.ml.insights.insights_generator import InsightsGenerator
     
-    # Get source analytics for insights
-    source_query = select(
-        Application.source,
-        func.count().label("total"),
-        func.count().filter(
-            Application.status.not_in(["applied", "ghosted"])
-        ).label("responded"),
-    ).where(
+    # Fetch all user applications
+    query = select(Application).where(
         Application.user_id == user_id,
         Application.deleted_at.is_(None),
-        Application.source.isnot(None),
-    ).group_by(Application.source)
-    
-    result = await db.execute(source_query)
-    source_data = {row.source: (row.total, row.responded) for row in result.all()}
-    
-    # Get ghosted count
-    ghosted_query = select(func.count()).where(
-        Application.user_id == user_id,
-        Application.deleted_at.is_(None),
-        Application.status == "applied",
-        Application.applied_date < date.today() - timedelta(days=14),
     )
     
-    result = await db.execute(ghosted_query)
-    ghosted_count = result.scalar() or 0
+    result = await db.execute(query)
+    applications = result.scalars().all()
+    
+    # Convert to dicts for the generator
+    app_dicts = [
+        {
+            'id': str(app.id),
+            'company_name': app.company_name,
+            'role_title': app.role_title,
+            'status': app.status,
+            'source': app.source,
+            'applied_date': app.applied_date,
+        }
+        for app in applications
+    ]
     
     # Generate insights
-    insights = []
+    generator = InsightsGenerator()
+    insights = generator.generate(app_dicts)
     
-    # Referral insight
-    if "Referral" in source_data:
-        ref_total, ref_responded = source_data["Referral"]
-        ref_rate = (ref_responded / ref_total * 100) if ref_total > 0 else 0
-        
-        # Compare to direct
-        if "Direct" in source_data:
-            dir_total, dir_responded = source_data["Direct"]
-            dir_rate = (dir_responded / dir_total * 100) if dir_total > 0 else 0
-            
-            if ref_rate > dir_rate * 1.5:
-                multiplier = round(ref_rate / dir_rate, 1) if dir_rate > 0 else 2
-                insights.append(AIInsight(
-                    type="success",
-                    title=f"Referrals are {multiplier}x more effective",
-                    description=f"Your referral applications have a {ref_rate:.0f}% response rate vs {dir_rate:.0f}% for cold applications.",
-                    confidence=0.9,
-                ))
-    
-    # Ghost warning
-    if ghosted_count > 0:
-        insights.append(AIInsight(
-            type="warning",
-            title=f"{ghosted_count} applications may be ghosted",
-            description="No response after 14+ days. Consider sending a follow-up email.",
+    # Convert to response format
+    ai_insights = [
+        AIInsight(
+            type=insight.type,
+            title=insight.title,
+            description=insight.description,
             confidence=0.85,
-        ))
-    
-
+        )
+        for insight in insights
+    ]
     
     return InsightsResponse(
-        insights=insights,
+        insights=ai_insights,
         generated_at=datetime.utcnow().isoformat(),
     )
+
