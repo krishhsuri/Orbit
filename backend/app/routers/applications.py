@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Application, Event, Tag, application_tags
+from app.models import Application, Event, Tag, Note, application_tags
 from app.schemas import (
     ApplicationCreate,
     ApplicationUpdate,
@@ -24,6 +24,9 @@ from app.schemas import (
     ApplicationFilters,
     EventCreate,
     EventResponse,
+    NoteCreate,
+    NoteUpdate,
+    NoteResponse,
     PaginationParams,
     PaginationMeta,
     PaginatedResponse,
@@ -408,3 +411,176 @@ async def create_application_event(
     await db.refresh(event)
     
     return EventResponse.model_validate(event)
+
+
+# ============== Notes Endpoints ==============
+
+@router.get("/{application_id}/notes", response_model=List[NoteResponse])
+async def list_notes(
+    application_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user_id: UUID = Depends(get_current_user_id),
+):
+    """List all notes for an application"""
+    
+    # Verify ownership
+    app_query = (
+        select(Application.id)
+        .where(Application.id == application_id)
+        .where(Application.user_id == user_id)
+        .where(Application.deleted_at.is_(None))
+    )
+    
+    result = await db.execute(app_query)
+    if not result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found",
+        )
+    
+    # Get notes
+    notes_query = (
+        select(Note)
+        .where(Note.application_id == application_id)
+        .order_by(Note.created_at.desc())
+    )
+    
+    result = await db.execute(notes_query)
+    notes = result.scalars().all()
+    
+    return [NoteResponse.model_validate(n) for n in notes]
+
+
+@router.post("/{application_id}/notes", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
+async def create_note(
+    application_id: UUID,
+    data: NoteCreate,
+    db: AsyncSession = Depends(get_db),
+    user_id: UUID = Depends(get_current_user_id),
+):
+    """Create a new note for an application"""
+    
+    # Verify ownership
+    app_query = (
+        select(Application.id)
+        .where(Application.id == application_id)
+        .where(Application.user_id == user_id)
+        .where(Application.deleted_at.is_(None))
+    )
+    
+    result = await db.execute(app_query)
+    if not result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found",
+        )
+    
+    # Create note
+    note = Note(
+        application_id=application_id,
+        content=data.content,
+    )
+    db.add(note)
+    await db.commit()
+    await db.refresh(note)
+    
+    return NoteResponse.model_validate(note)
+
+
+@router.patch("/{application_id}/notes/{note_id}", response_model=NoteResponse)
+async def update_note(
+    application_id: UUID,
+    note_id: UUID,
+    data: NoteUpdate,
+    db: AsyncSession = Depends(get_db),
+    user_id: UUID = Depends(get_current_user_id),
+):
+    """Update a note"""
+    
+    # Verify ownership via application
+    app_query = (
+        select(Application.id)
+        .where(Application.id == application_id)
+        .where(Application.user_id == user_id)
+        .where(Application.deleted_at.is_(None))
+    )
+    
+    result = await db.execute(app_query)
+    if not result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found",
+        )
+    
+    # Get note
+    note_query = (
+        select(Note)
+        .where(Note.id == note_id)
+        .where(Note.application_id == application_id)
+    )
+    
+    result = await db.execute(note_query)
+    note = result.scalar_one_or_none()
+    
+    if not note:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Note not found",
+        )
+    
+    # Update fields
+    if data.content is not None:
+        note.content = data.content
+    note.updated_at = datetime.utcnow()
+    
+    await db.commit()
+    await db.refresh(note)
+    
+    return NoteResponse.model_validate(note)
+
+
+@router.delete("/{application_id}/notes/{note_id}", response_model=SuccessResponse)
+async def delete_note(
+    application_id: UUID,
+    note_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user_id: UUID = Depends(get_current_user_id),
+):
+    """Delete a note"""
+    
+    # Verify ownership via application
+    app_query = (
+        select(Application.id)
+        .where(Application.id == application_id)
+        .where(Application.user_id == user_id)
+        .where(Application.deleted_at.is_(None))
+    )
+    
+    result = await db.execute(app_query)
+    if not result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found",
+        )
+    
+    # Get note
+    note_query = (
+        select(Note)
+        .where(Note.id == note_id)
+        .where(Note.application_id == application_id)
+    )
+    
+    result = await db.execute(note_query)
+    note = result.scalar_one_or_none()
+    
+    if not note:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Note not found",
+        )
+    
+    await db.delete(note)
+    await db.commit()
+    
+    return SuccessResponse(message="Note deleted")
+

@@ -45,6 +45,11 @@ from app.schemas.analytics import (
     InsightsResponse,
     AnalyticsFilters,
 )
+from app.schemas.note import (
+    NoteCreate,
+    NoteUpdate,
+    NoteResponse,
+)
 
 __all__ = [
     # Common
@@ -85,4 +90,8 @@ __all__ = [
     "AIInsight",
     "InsightsResponse",
     "AnalyticsFilters",
+    # Note
+    "NoteCreate",
+    "NoteUpdate",
+    "NoteResponse",
 ]

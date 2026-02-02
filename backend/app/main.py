@@ -50,6 +50,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Security headers middleware
+from app.middleware.security import SecurityHeadersMiddleware
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Error handler registration
+from app.middleware.error_handler import register_exception_handlers
+register_exception_handlers(app)
+
+
 # Include routers
 app.include_router(health.router, tags=["Health"])
 app.include_router(
