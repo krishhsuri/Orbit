@@ -3,14 +3,25 @@
 import { Header } from '@/components/layout/Header';
 import { useApplications } from '@/hooks/use-applications';
 import { 
+  Card,
+  LoadingState,
+  ErrorState,
+  CountUp,
+  StaggerContainer,
+  StaggerItem,
+  FadeSlide,
+} from '@/components/ui';
+import { 
   Briefcase, 
   PhoneCall, 
   Trophy, 
-  TrendingUp,
   Clock,
   ArrowUpRight,
-  Zap
+  Zap,
+  TrendingUp,
+  Rocket,
 } from 'lucide-react';
+import Link from 'next/link';
 import styles from './page.module.css';
 
 export default function DashboardPage() {
@@ -20,9 +31,9 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className={styles.page}>
-        <Header title="Dashboard" subtitle="Loading..." />
-        <div className={styles.loadingContainer}>
-          <div className={styles.spinner}></div>
+        <Header title="Dashboard" subtitle="Loading your overview..." />
+        <div className={styles.content}>
+          <LoadingState message="Loading dashboard..." />
         </div>
       </div>
     );
@@ -32,8 +43,11 @@ export default function DashboardPage() {
     return (
       <div className={styles.page}>
         <Header title="Dashboard" subtitle="Error" />
-        <div className={styles.errorContainer}>
-          <p>Failed to load dashboard. Please try again.</p>
+        <div className={styles.content}>
+          <ErrorState 
+            message="Failed to load dashboard. Please try again." 
+            onRetry={() => window.location.reload()}
+          />
         </div>
       </div>
     );
@@ -65,8 +79,6 @@ export default function DashboardPage() {
       role: app.role,
       time: getRelativeTime(app.updatedAt),
       type: app.status,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      status: app.status, 
     }));
 
   // Get upcoming (interviews scheduled)
@@ -82,10 +94,10 @@ export default function DashboardPage() {
     }));
 
   const statsCards = [
-    { label: 'Total Applications', value: stats.total, icon: Briefcase, change: `+${stats.thisWeek} this week` },
-    { label: 'In Progress', value: stats.active, icon: Clock, change: `${stats.active} pending response` },
-    { label: 'Interviews', value: stats.interviews, icon: PhoneCall, change: `${stats.interviews} scheduled` },
-    { label: 'Offers', value: stats.offers, icon: Trophy, change: stats.offers > 0 ? '🎉 Congrats!' : 'Keep going!' },
+    { label: 'Total Applications', value: stats.total, icon: Briefcase, color: 'blue' },
+    { label: 'In Progress', value: stats.active, icon: Clock, color: 'purple' },
+    { label: 'Interviews', value: stats.interviews, icon: PhoneCall, color: 'green' },
+    { label: 'Offers', value: stats.offers, icon: Trophy, color: 'gold' },
   ];
 
   // Calculate weekly goal progress
@@ -94,42 +106,53 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      <Header title="Dashboard" subtitle="Welcome back! Here's your job search overview." />
+      <Header 
+        title="Dashboard" 
+        subtitle="Welcome back! Here's your job search overview." 
+      />
       
       <div className={styles.content}>
         {/* Stats Grid */}
-        <section className={styles.statsGrid}>
+        <StaggerContainer className={styles.statsGrid}>
           {statsCards.map((stat, index) => (
-            <div key={index} className={styles.statCard}>
-              <div className={styles.statIcon}>
-                <stat.icon size={20} />
-              </div>
-              <div className={styles.statContent}>
-                <span className={styles.statValue}>{stat.value}</span>
-                <span className={styles.statLabel}>{stat.label}</span>
-                <span className={styles.statChange}>{stat.change}</span>
-              </div>
-            </div>
+            <StaggerItem key={index}>
+              <Card className={styles.statCard} hover>
+                <div className={`${styles.statIcon} ${styles[stat.color]}`}>
+                  <stat.icon size={20} />
+                </div>
+                <div className={styles.statContent}>
+                  <span className={styles.statValue}>
+                    <CountUp value={stat.value} />
+                  </span>
+                  <span className={styles.statLabel}>{stat.label}</span>
+                </div>
+              </Card>
+            </StaggerItem>
           ))}
-        </section>
+        </StaggerContainer>
 
         <div className={styles.mainGrid}>
           {/* Weekly Goal */}
-          <section className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>
-                <Zap size={18} />
-                Weekly Goal
-              </h2>
-            </div>
-            <div className={styles.cardContent}>
+          <FadeSlide delay={0.1}>
+            <Card className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h2 className={styles.cardTitle}>
+                  <Zap size={18} />
+                  Weekly Goal
+                </h2>
+              </div>
               <div className={styles.goalProgress}>
                 <div className={styles.goalInfo}>
-                  <span className={styles.goalCurrent}>{stats.thisWeek}</span>
+                  <span className={styles.goalCurrent}>
+                    <CountUp value={stats.thisWeek} />
+                  </span>
                   <span className={styles.goalTotal}>/ {weeklyGoal} applications</span>
                 </div>
                 <div className={styles.progressBar}>
-                  <div className={styles.progressFill} style={{ width: `${weeklyProgress}%` }} />
+                  <div 
+                    className={styles.progressFill} 
+                    style={{ width: `${weeklyProgress}%` }} 
+                  />
                 </div>
                 <span className={styles.goalMessage}>
                   {stats.thisWeek >= weeklyGoal 
@@ -137,18 +160,18 @@ export default function DashboardPage() {
                     : `🔥 ${weeklyGoal - stats.thisWeek} more to hit your goal!`}
                 </span>
               </div>
-            </div>
-          </section>
+            </Card>
+          </FadeSlide>
 
           {/* Upcoming Deadlines */}
-          <section className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>
-                <Clock size={18} />
-                Upcoming
-              </h2>
-            </div>
-            <div className={styles.cardContent}>
+          <FadeSlide delay={0.15}>
+            <Card className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h2 className={styles.cardTitle}>
+                  <Clock size={18} />
+                  Upcoming
+                </h2>
+              </div>
               {upcomingDeadlines.length > 0 ? (
                 <ul className={styles.deadlineList}>
                   {upcomingDeadlines.map((item) => (
@@ -164,23 +187,26 @@ export default function DashboardPage() {
                   ))}
                 </ul>
               ) : (
-                <p className={styles.emptyText}>No upcoming interviews or OAs</p>
+                <div className={styles.emptyCard}>
+                  <Rocket size={32} />
+                  <p>No upcoming interviews or OAs</p>
+                </div>
               )}
-            </div>
-          </section>
+            </Card>
+          </FadeSlide>
 
           {/* Recent Activity */}
-          <section className={`${styles.card} ${styles.activityCard}`}>
-            <div className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>
-                <TrendingUp size={18} />
-                Recent Activity
-              </h2>
-              <a href="/applications" className={styles.viewAll}>
-                View all <ArrowUpRight size={14} />
-              </a>
-            </div>
-            <div className={styles.cardContent}>
+          <FadeSlide delay={0.2}>
+            <Card className={`${styles.card} ${styles.activityCard}`}>
+              <div className={styles.cardHeader}>
+                <h2 className={styles.cardTitle}>
+                  <TrendingUp size={18} />
+                  Recent Activity
+                </h2>
+                <Link href="/applications" className={styles.viewAll}>
+                  View all <ArrowUpRight size={14} />
+                </Link>
+              </div>
               {recentActivity.length > 0 ? (
                 <ul className={styles.activityList}>
                   {recentActivity.map((item) => (
@@ -197,11 +223,22 @@ export default function DashboardPage() {
                   ))}
                 </ul>
               ) : (
-                <p className={styles.emptyText}>No recent activity. Add your first application!</p>
+                <div className={styles.emptyCard}>
+                  <Briefcase size={32} />
+                  <p>No recent activity. Add your first application!</p>
+                </div>
               )}
-            </div>
-          </section>
+            </Card>
+          </FadeSlide>
         </div>
+
+        {/* Quick tip */}
+        <FadeSlide delay={0.25}>
+          <div className={styles.tip}>
+            <span className={styles.tipIcon}>💡</span>
+            <span>Press <kbd>⌘</kbd> + <kbd>K</kbd> to open the command palette</span>
+          </div>
+        </FadeSlide>
       </div>
     </div>
   );

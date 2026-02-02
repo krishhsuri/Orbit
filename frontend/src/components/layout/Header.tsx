@@ -1,49 +1,56 @@
 'use client';
 
-import { Plus, Search, Command } from 'lucide-react';
+import { ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import { Search, Command } from 'lucide-react';
 import { useUIStore } from '@/stores';
 import styles from './Header.module.css';
-import { ReactNode } from 'react';
 
 interface HeaderProps {
   title: string;
   subtitle?: string;
   showAddButton?: boolean;
+  action?: ReactNode;
   children?: ReactNode;
 }
 
-export function Header({ title, subtitle, showAddButton = true, children }: HeaderProps) {
-  const { openAddModal } = useUIStore();
+export function Header({ 
+  title, 
+  subtitle, 
+  showAddButton = false,
+  action,
+  children 
+}: HeaderProps) {
+  const { openCommandPalette, openAddModal } = useUIStore();
 
   return (
-    <header className={styles.header}>
+    <motion.header 
+      className={styles.header}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+    >
       <div className={styles.titleSection}>
         <h1 className={styles.title}>{title}</h1>
         {subtitle && <span className={styles.subtitle}>{subtitle}</span>}
       </div>
 
       <div className={styles.actions}>
-        {/* Custom children (like Sync button) */}
+        {/* Custom children */}
         {children}
         
-        {/* Search */}
-        <button className={styles.searchButton}>
-          <Search size={16} />
+        {/* Search Button */}
+        <button className={styles.searchButton} onClick={openCommandPalette}>
+          <Search size={14} />
           <span>Search...</span>
           <kbd className={styles.kbd}>
-            <Command size={12} />K
+            <Command size={10} />K
           </kbd>
         </button>
 
-        {/* Add Button */}
-        {showAddButton && (
-          <button className={styles.addButton} onClick={openAddModal}>
-            <Plus size={18} />
-            <span>Add Application</span>
-          </button>
-        )}
+        {/* Custom action (like Add button) */}
+        {action}
       </div>
-    </header>
+    </motion.header>
   );
 }
-

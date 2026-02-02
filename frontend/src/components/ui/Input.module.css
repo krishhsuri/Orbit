@@ -1,0 +1,95 @@
+/* =====================================================
+   INPUT - Linear exact style
+   ===================================================== */
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  background: var(--bg-hover);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.input:hover {
+  background: var(--bg-active);
+}
+
+.input:focus {
+  outline: none;
+  background: var(--bg-active);
+  border-color: var(--accent-primary);
+}
+
+.hasLeftIcon {
+  padding-left: 32px;
+}
+
+.hasRightIcon {
+  padding-right: 32px;
+}
+
+.leftIcon,
+.rightIcon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.leftIcon {
+  left: 10px;
+}
+
+.leftIcon svg,
+.rightIcon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.rightIcon {
+  right: 10px;
+}
+
+/* ERROR STATE */
+.error .input {
+  border-color: var(--error);
+}
+
+.errorText {
+  font-size: 11px;
+  color: var(--error);
+}
+
+/* HINT */
+.hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}

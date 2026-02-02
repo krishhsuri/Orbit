@@ -1,0 +1,54 @@
+/* =====================================================
+   CARD - Linear exact style
+   ===================================================== */
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.hover:hover {
+  border-color: var(--border-default);
+}
+
+/* GLASS variant - subtle */
+.glass {
+  background: rgba(21, 21, 22, 0.8);
+  backdrop-filter: blur(8px);
+}
+
+/* PADDING */
+.padded {
+  padding: 14px;
+}
+
+/* SUBCOMPONENTS */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.content {
+  padding: 14px;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-hover);
+}

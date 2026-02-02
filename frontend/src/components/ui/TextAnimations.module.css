@@ -1,0 +1,18 @@
+/* =====================================================
+   TEXT ANIMATIONS
+   ===================================================== */
+
+.word {
+  display: inline-block;
+}
+
+.revealWord {
+  display: inline-block;
+}
+
+.gradientText {
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 100%;
+}

@@ -1,0 +1,72 @@
+/* =====================================================
+   BADGE - Linear exact style
+   ===================================================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* VARIANTS - Linear's softer colors */
+.default {
+  background: var(--bg-active);
+  color: var(--text-secondary);
+}
+
+.applied {
+  background: rgba(94, 106, 210, 0.12);
+  color: var(--status-applied);
+}
+
+.screening {
+  background: rgba(155, 125, 212, 0.12);
+  color: var(--status-screening);
+}
+
+.oa {
+  background: rgba(242, 153, 74, 0.12);
+  color: var(--status-oa);
+}
+
+.interview {
+  background: rgba(93, 206, 135, 0.12);
+  color: var(--status-interview);
+}
+
+.offer {
+  background: rgba(78, 205, 196, 0.12);
+  color: var(--status-offer);
+}
+
+.accepted {
+  background: rgba(69, 179, 107, 0.12);
+  color: var(--status-accepted);
+}
+
+.rejected {
+  background: rgba(230, 106, 106, 0.12);
+  color: var(--status-rejected);
+}
+
+.withdrawn {
+  background: rgba(107, 114, 128, 0.12);
+  color: var(--status-withdrawn);
+}
+
+.ghosted {
+  background: rgba(64, 65, 69, 0.12);
+  color: var(--status-ghosted);
+}

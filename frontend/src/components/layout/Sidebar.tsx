@@ -13,10 +13,13 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  User
+  User,
+  Command,
+  Plus,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { useAuthStore } from '@/stores';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthStore, useUIStore } from '@/stores';
 import styles from './Sidebar.module.css';
 
 interface NavItem {
@@ -24,33 +27,39 @@ interface NavItem {
   href: string;
   icon: React.ReactNode;
   badge?: number;
+  shortcut?: string;
 }
 
 const navItems: NavItem[] = [
   { 
     label: 'Dashboard', 
     href: '/', 
-    icon: <LayoutDashboard size={20} /> 
+    icon: <LayoutDashboard size={18} />,
+    shortcut: 'G D',
   },
   { 
     label: 'Applications', 
     href: '/applications', 
-    icon: <Briefcase size={20} />,
+    icon: <Briefcase size={18} />,
+    shortcut: 'G A',
   },
   { 
     label: 'Kanban', 
     href: '/kanban', 
-    icon: <Kanban size={20} /> 
+    icon: <Kanban size={18} />,
+    shortcut: 'G K',
   },
   { 
     label: 'Emails', 
     href: '/emails', 
-    icon: <Mail size={20} /> 
+    icon: <Mail size={18} />,
+    shortcut: 'G E',
   },
   { 
     label: 'Analytics', 
     href: '/analytics', 
-    icon: <BarChart3 size={20} /> 
+    icon: <BarChart3 size={18} />,
+    shortcut: 'G N',
   },
 ];
 
@@ -58,7 +67,8 @@ const bottomNavItems: NavItem[] = [
   { 
     label: 'Settings', 
     href: '/settings', 
-    icon: <Settings size={20} /> 
+    icon: <Settings size={18} />,
+    shortcut: 'G S',
   },
 ];
 
@@ -68,6 +78,7 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { user, isAuthenticated, logout } = useAuthStore();
+  const { openCommandPalette, openAddModal } = useUIStore();
 
   useEffect(() => {
     setMounted(true);
@@ -80,7 +91,6 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     try {
-      // Call backend logout
       await fetch('http://localhost:8000/auth/logout', {
         method: 'POST',
         credentials: 'include',
@@ -88,21 +98,56 @@ export function Sidebar() {
     } catch (e) {
       // Ignore errors
     }
-    
-    // Clear local state
     logout();
     router.push('/login');
   };
 
   return (
-    <aside className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}>
+    <motion.aside 
+      className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}
+      initial={{ x: -20, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Logo */}
       <div className={styles.logo}>
         <div className={styles.logoIcon}>
-          <Rocket size={24} />
+          <Rocket size={20} />
         </div>
-        {!isCollapsed && <span className={styles.logoText}>Orbit</span>}
+        <AnimatePresence>
+          {!isCollapsed && (
+            <motion.span 
+              className={styles.logoText}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.15 }}
+            >
+              Orbit
+            </motion.span>
+          )}
+        </AnimatePresence>
       </div>
+
+      {/* Quick Actions */}
+      {!isCollapsed && (
+        <div className={styles.quickActions}>
+          <button 
+            className={styles.searchButton}
+            onClick={openCommandPalette}
+          >
+            <Command size={14} />
+            <span>Search...</span>
+            <kbd>⌘K</kbd>
+          </button>
+          <button 
+            className={styles.newButton}
+            onClick={openAddModal}
+          >
+            <Plus size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Main Navigation */}
       <nav className={styles.nav}>
@@ -119,13 +164,28 @@ export function Sidebar() {
                   title={isCollapsed ? item.label : undefined}
                 >
                   <span className={styles.navIcon}>{item.icon}</span>
-                  {!isCollapsed && (
-                    <>
-                      <span className={styles.navLabel}>{item.label}</span>
-                      {item.badge !== undefined && (
-                        <span className={styles.badge}>{item.badge}</span>
-                      )}
-                    </>
+                  <AnimatePresence>
+                    {!isCollapsed && (
+                      <motion.div 
+                        className={styles.navContent}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.1 }}
+                      >
+                        <span className={styles.navLabel}>{item.label}</span>
+                        {item.shortcut && (
+                          <span className={styles.navShortcut}>{item.shortcut}</span>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  {isActive && (
+                    <motion.div 
+                      className={styles.activeIndicator}
+                      layoutId="activeIndicator"
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                    />
                   )}
                 </Link>
               </li>
@@ -167,7 +227,7 @@ export function Sidebar() {
                 />
               ) : (
                 <div className={styles.userAvatarPlaceholder}>
-                  <User size={16} />
+                  <User size={14} />
                 </div>
               )}
               {!isCollapsed && (
@@ -182,7 +242,7 @@ export function Sidebar() {
               className={styles.logoutButton}
               title="Logout"
             >
-              <LogOut size={18} />
+              <LogOut size={16} />
             </button>
           </div>
         )}
@@ -193,9 +253,9 @@ export function Sidebar() {
           onClick={() => setIsCollapsed(!isCollapsed)}
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
       </div>
-    </aside>
+    </motion.aside>
   );
 }
