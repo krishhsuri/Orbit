@@ -2,7 +2,9 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth-store';
+import { Rocket } from 'lucide-react';
 import styles from './login.module.css';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -20,28 +22,32 @@ function LoginContent() {
   }, []);
 
   useEffect(() => {
-    // Redirect if already authenticated
     if (mounted && isAuthenticated) {
       router.push('/');
     }
   }, [isAuthenticated, mounted, router]);
 
   const handleGoogleLogin = () => {
-    // Redirect to backend OAuth endpoint
     window.location.href = `${API_URL}/auth/login`;
   };
 
-  // Don't render until mounted (avoids hydration mismatch)
   if (!mounted) {
     return null;
   }
 
   return (
     <div className={styles.container}>
-      <div className={styles.card}>
+      <motion.div 
+        className={styles.card}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         {/* Logo */}
         <div className={styles.logo}>
-          <div className={styles.logoIcon}>🚀</div>
+          <div className={styles.logoIcon}>
+            <Rocket size={24} color="white" />
+          </div>
           <h1>Orbit</h1>
         </div>
         
@@ -51,11 +57,15 @@ function LoginContent() {
 
         {/* Error message */}
         {error && (
-          <div className={styles.error}>
+          <motion.div 
+            className={styles.error}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
             {error === 'no_token' && 'Authentication failed. Please try again.'}
             {error === 'auth_failed' && 'Could not verify your account. Please try again.'}
             {!['no_token', 'auth_failed'].includes(error) && 'An error occurred.'}
-          </div>
+          </motion.div>
         )}
 
         {/* Google Login Button */}
@@ -82,9 +92,9 @@ function LoginContent() {
         </button>
 
         <p className={styles.footer}>
-          By continuing, you agree to our Terms of Service
+          By continuing, you agree to our <a href="#">Terms of Service</a>
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }
