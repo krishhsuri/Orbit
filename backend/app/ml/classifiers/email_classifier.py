@@ -17,6 +17,11 @@ PATTERNS = {
         r'recieved.*application',
         r'confirmation.*application',
         r'thanks.*application',
+        r'application.*was.*sent',  # LinkedIn: "your application was sent to"
+        r'applied.*on',  # LinkedIn: "Applied on February 3"
+        r'successfully.*submitted',
+        r'successfully.*applied',
+        r'your.*application.*to',  # "your application was sent to [Company]"
     ],
     'application_rejected': [
         r'unfortunately',

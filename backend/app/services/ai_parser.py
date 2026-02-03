@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import logging
 from datetime import datetime
 
@@ -10,7 +10,30 @@ from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
+# Map LLM decisions to Application model statuses
+STATUS_MAPPING = {
+    'applied': 'applied',
+    'application_received': 'applied',
+    'rejected': 'rejected',
+    'application_rejected': 'rejected',
+    'interview': 'interview',
+    'interview_invite': 'interview',
+    'assessment': 'oa',
+    'assessment_invite': 'oa',
+    'oa': 'oa',
+    'offer': 'offer',
+    'offer_letter': 'offer',
+    'screening': 'screening',
+}
+
+
 class AIParser:
+    """
+    Two-stage AI Parser:
+    1. quick_parse - Fast local ML for initial email intake (no LLM)
+    2. process_with_llm - Deep LLM analysis for final decision
+    """
+    
     def __init__(self):
         self.quick_filter = QuickFilter()
         self.nlp = NLPAnalyzer()
@@ -18,45 +41,34 @@ class AIParser:
         settings = get_settings()
         self.llm = GroqClient(api_key=settings.groq_api_key)
 
-    async def parse_job_email(self, email_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def quick_parse(self, email_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
-        Process an email through the ML pipeline.
-        Returns parsed data or None if filtered out/irrelevant.
+        Stage 1: Fast local ML parsing for email intake.
+        Returns basic parsed data for display in emails section.
+        NO LLM calls here - this is just for quick visibility.
         """
         subject = email_data.get('subject', '')
         sender = email_data.get('from_address', '')
-        snippet = email_data.get('snippet', '')
-        body_preview = email_data.get('body_preview', '')
 
-        print(f"[PARSER] Processing: {subject[:50]}")
+        print(f"[QUICK_PARSE] Processing: {subject[:50]}")
 
-        # 1. Layer 1: Quick Filter (Fastest)
-        # Check if it's potentially job-related
+        # Layer 1: Quick Filter (blocks obvious spam)
         if not self.quick_filter.initial_filter(sender, subject):
-            print(f"[PARSER] BLOCKED by QuickFilter: {subject[:40]}")
+            print(f"[QUICK_PARSE] BLOCKED by QuickFilter: {subject[:40]}")
             return None
 
-        print(f"[PARSER] Passed QuickFilter")
-
-        # 2. Layer 2: NLP Analysis (Fast, Local)
-        # Extract entities and get relevance score
+        # Layer 2: NLP Analysis (extract entities)
         nlp_result = self.nlp.analyze_email(email_data)
-        print(f"[PARSER] NLP: relevance={nlp_result.get('relevance_score')}, company={nlp_result.get('company')}")
         
-        if nlp_result['relevance_score'] < 0.3:
-            pass  # Don't filter here, let classifier decide
-
-        # 3. Layer 3: Pattern Classification (Fast, Local)
-        # Classify email type (interview, offer, rejection, etc.)
+        # Layer 3: Pattern Classification
         classification = self.classifier.classify(email_data, nlp_result)
-        print(f"[PARSER] Classification: {classification}")
         
-        # 4. Decision Logic
-        # If we have high confidence from local models, use them
         confidence = classification.get('confidence', 0.0)
         category = classification.get('category', 'unknown')
 
-        parsed_result = {
+        print(f"[QUICK_PARSE] Result: {category} ({confidence:.0%}), company={nlp_result.get('company')}")
+
+        return {
             'company': nlp_result.get('company'),
             'role': nlp_result.get('role'),
             'status': category,
@@ -65,23 +77,61 @@ class AIParser:
             'source': 'local'
         }
 
-        # If ambiguous or high value, use LLM (Slower, Cost)
-        if confidence < 0.7 or (not parsed_result['company']):
-            print(f"[PARSER] Trying LLM extraction (confidence={confidence}, company={parsed_result['company']})")
-            try:
-                llm_result = await self.llm.extract_job_details(body_preview)
-                if llm_result:
-                    parsed_result.update(llm_result)
-                    parsed_result['source'] = 'llm'
-                    parsed_result['confidence'] = max(confidence, 0.8)
-                    print(f"[PARSER] LLM result: {llm_result}")
-            except Exception as e:
-                print(f"[PARSER] LLM failed: {e}")
-
-        # Final check: Is it actually a job application update?
-        if not parsed_result.get('company') and parsed_result.get('confidence', 0) < 0.5:
-            print(f"[PARSER] FILTERED OUT: no company and confidence={parsed_result.get('confidence')}")
-            return None
+    async def process_with_llm(self, email_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Stage 2: Deep LLM analysis to decide what to do with the email.
         
-        print(f"[PARSER] SUCCESS: company={parsed_result.get('company')}, confidence={parsed_result.get('confidence')}")
-        return parsed_result
+        Returns:
+            Dict with:
+            - action: 'add_to_tracker' | 'discard'
+            - company: extracted company name
+            - role: extracted role
+            - status: application status (applied, interview, rejected, etc.)
+            - job_url: if found
+            - reason: why this decision was made
+        """
+        subject = email_data.get('subject', '')
+        snippet = email_data.get('snippet', '')
+        body_preview = email_data.get('body_preview', snippet)
+
+        print(f"[LLM_PROCESS] Analyzing: {subject[:50]}")
+
+        try:
+            # Send to Groq for intelligent analysis
+            llm_result = await self.llm.analyze_email_for_tracking(
+                subject=subject,
+                body=body_preview
+            )
+            
+            if llm_result:
+                # Map the status to our Application model
+                raw_status = llm_result.get('status', 'applied')
+                mapped_status = STATUS_MAPPING.get(raw_status.lower(), 'applied')
+                llm_result['status'] = mapped_status
+                
+                print(f"[LLM_PROCESS] Decision: {llm_result.get('action')} - {llm_result.get('company')}")
+                return llm_result
+                
+        except Exception as e:
+            print(f"[LLM_PROCESS] Error: {e}")
+        
+        # Fallback if LLM fails
+        return {
+            'action': 'discard',
+            'reason': 'LLM analysis failed',
+            'company': None,
+            'role': None,
+            'status': 'applied'
+        }
+
+    async def batch_process_with_llm(self, emails: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Process multiple emails with LLM.
+        Returns list of results with email_id and decision.
+        """
+        results = []
+        for email_data in emails:
+            result = await self.process_with_llm(email_data)
+            result['email_id'] = email_data.get('id')
+            results.append(result)
+        return results

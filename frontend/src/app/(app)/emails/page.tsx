@@ -1,7 +1,7 @@
 'use client';
 
 import { Header } from '@/components/layout/Header';
-import { Mail, RefreshCw, Link2, Check, X, Loader2, AlertCircle } from 'lucide-react';
+import { Mail, RefreshCw, Link2, Check, X, Loader2, AlertCircle, Trash2, Sparkles } from 'lucide-react';
 import styles from './page.module.css';
 import { useGmail } from '@/hooks/use-gmail';
 import { formatDistanceToNow } from 'date-fns';
@@ -13,11 +13,23 @@ export default function EmailsPage() {
     syncEmails, 
     isSyncing, 
     confirmApplication, 
-    rejectApplication 
-  } = useGmail();
+    rejectApplication,
+    cleanupNonJobRelated,
+    isCleaning,
+    processWithAI,
+    isProcessingAI
+  } = useGmail({ autoSync: true }); // Auto-sync on page load
 
   const handleSync = () => {
     syncEmails();
+  };
+
+  const handleCleanup = () => {
+    cleanupNonJobRelated();
+  };
+
+  const handleProcessAI = () => {
+    processWithAI();
   };
 
   const handleConnect = () => {
@@ -33,14 +45,34 @@ export default function EmailsPage() {
         subtitle="Automatically detect applications from your Gmail" 
         showAddButton={false}
       >
-        <button 
-          className={styles.syncButton} 
-          onClick={handleSync}
-          disabled={isSyncing}
-        >
-          {isSyncing ? <Loader2 className={styles.spin} size={16} /> : <RefreshCw size={16} />}
-          {isSyncing ? 'Syncing...' : 'Sync Now'}
-        </button>
+        <div className={styles.headerButtons}>
+          <button 
+            className={styles.cleanupButton} 
+            onClick={handleCleanup}
+            disabled={isCleaning}
+            title="Remove non-job-related emails"
+          >
+            {isCleaning ? <Loader2 className={styles.spin} size={16} /> : <Trash2 size={16} />}
+            {isCleaning ? 'Cleaning...' : 'Cleanup'}
+          </button>
+          <button 
+            className={styles.aiButton} 
+            onClick={handleProcessAI}
+            disabled={isProcessingAI || pendingApplications.length === 0}
+            title="Let AI automatically sort emails into applications"
+          >
+            {isProcessingAI ? <Loader2 className={styles.spin} size={16} /> : <Sparkles size={16} />}
+            {isProcessingAI ? 'Processing...' : 'Process with AI'}
+          </button>
+          <button 
+            className={styles.syncButton} 
+            onClick={handleSync}
+            disabled={isSyncing}
+          >
+            {isSyncing ? <Loader2 className={styles.spin} size={16} /> : <RefreshCw size={16} />}
+            {isSyncing ? 'Syncing...' : 'Sync Now'}
+          </button>
+        </div>
       </Header>
       
       <div className={styles.content}>
