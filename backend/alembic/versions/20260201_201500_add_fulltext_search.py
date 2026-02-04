@@ -1,7 +1,7 @@
 """Add full-text search to applications
 
-Revision ID: 20260201_201500
-Revises: 20260129_182531
+Revision ID: 20260201_fulltext
+Revises: 706b6d524fa6
 Create Date: 2026-02-01 20:15:00
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '20260201_201500_add_fulltext_search'
-down_revision: Union[str, None] = '20260129_182531_create_pending_applications'
+revision: str = '20260201_fulltext'
+down_revision: Union[str, None] = '706b6d524fa6'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

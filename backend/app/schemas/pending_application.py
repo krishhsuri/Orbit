@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict
 class PendingApplicationBase(BaseModel):
     email_subject: str
     email_snippet: Optional[str] = None
+    email_from: Optional[str] = None  # Sender info (name + email)
     email_date: datetime
     
     parsed_company: Optional[str] = None

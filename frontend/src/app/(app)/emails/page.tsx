@@ -87,12 +87,19 @@ export default function EmailsPage() {
               <Mail size={48} />
             </div>
             <h2>No pending applications</h2>
-            <p>Sync your emails to find new job applications</p>
+            <p>{isSyncing ? 'Syncing your emails...' : 'All caught up! Click Sync Now to check for new emails.'}</p>
             
-            <button className={styles.connectButton} onClick={handleConnect}>
-              <img src="https://www.google.com/favicon.ico" alt="Google" width={20} height={20} />
-              Connect Gmail
-            </button>
+            {isSyncing ? (
+              <div className={styles.syncingIndicator}>
+                <Loader2 className={styles.spin} size={24} />
+                <span>Fetching emails...</span>
+              </div>
+            ) : (
+              <button className={styles.syncButton} onClick={handleSync}>
+                <RefreshCw size={16} />
+                Sync Now
+              </button>
+            )}
             
             <div className={styles.features}>
               <div className={styles.feature}>

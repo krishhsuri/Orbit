@@ -99,6 +99,7 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                     email_id=email_data['id'],
                     email_subject=email_data['subject'],
                     email_snippet=email_data['snippet'][:1000] if email_data.get('snippet') else None,
+                    email_from=email_data.get('from_address'),  # Capture sender for leads
                     email_date=datetime.now(),
                     parsed_company=parsed.get('company'),
                     parsed_role=parsed.get('role'),

@@ -10,6 +10,7 @@ import {
   Rocket,
   Kanban,
   Mail,
+  Users,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -54,6 +55,12 @@ const navItems: NavItem[] = [
     href: '/emails', 
     icon: <Mail size={18} />,
     shortcut: 'G E',
+  },
+  { 
+    label: 'Leads', 
+    href: '/leads', 
+    icon: <Users size={18} />,
+    shortcut: 'G L',
   },
   { 
     label: 'Analytics', 
