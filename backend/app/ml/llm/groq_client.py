@@ -110,3 +110,59 @@ class GroqClient:
         except Exception as e:
             logger.error(f"LLM analysis failed: {e}")
             return None
+
+    async def extract_note_from_email(self, subject: str, body: str) -> Optional[Dict[str, Any]]:
+        """
+        Extract key information from an email for populating notes.
+        
+        Returns:
+            Dict with key_dates, requirements, action_items, salary_info, summary
+        """
+        if not self.client:
+            logger.warning("Groq client not initialized")
+            return None
+
+        prompt = """You are an AI that extracts key information from job-related emails for note-taking.
+
+Extract the following information if present:
+- key_dates: Any important dates mentioned (deadlines, interview dates, etc.)
+- requirements: Any requirements or qualifications mentioned
+- action_items: Things the recipient needs to do
+- salary_info: Any compensation/salary details mentioned
+- contact_info: Recruiter name, email, or phone if mentioned
+- summary: A 1-2 sentence summary of the email
+
+Return JSON only:
+{
+  "key_dates": ["date1", "date2"] or [],
+  "requirements": ["req1", "req2"] or [],
+  "action_items": ["action1", "action2"] or [],
+  "salary_info": "salary details or null",
+  "contact_info": "contact details or null",
+  "summary": "brief summary"
+}"""
+
+        email_text = f"Subject: {subject}\n\nBody:\n{body[:2500]}"
+
+        try:
+            chat_completion = self.client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": email_text}
+                ],
+                model="llama-3.1-8b-instant",
+                temperature=0.1,
+                max_tokens=500,
+                response_format={"type": "json_object"},
+            )
+            
+            result_json = chat_completion.choices[0].message.content
+            result = json.loads(result_json)
+            
+            print(f"[GROQ] Note extracted: {result.get('summary', '')[:50]}...")
+            return result
+            
+        except Exception as e:
+            logger.error(f"LLM note extraction failed: {e}")
+            return None
+

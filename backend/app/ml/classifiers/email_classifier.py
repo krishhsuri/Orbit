@@ -22,6 +22,15 @@ PATTERNS = {
         r'successfully.*submitted',
         r'successfully.*applied',
         r'your.*application.*to',  # "your application was sent to [Company]"
+        r'you.*applied',  # "You applied to [Company]"
+        r'thank.*you.*for.*your.*interest',
+        r'we.*will.*review',
+        r'reviewing.*your.*application',
+        r'application.*under.*review',
+        r'your.*profile.*has.*been',
+        r'submitted.*your.*application',
+        r'applied.*for.*the.*position',
+        r'applied.*for.*this.*job',
     ],
     'application_rejected': [
         r'unfortunately',
@@ -33,6 +42,12 @@ PATTERNS = {
         r'pursue other',
         r'thank.*but',
         r'volume of application',
+        r'regret.*to.*inform',
+        r'after.*careful.*consideration',
+        r'not.*the.*right.*fit',
+        r'position.*has.*been.*filled',
+        r'decided.*to.*move.*forward.*with',
+        r'won\'t.*be.*proceeding',
     ],
     'interview_invite': [
         r'interview',
@@ -44,6 +59,17 @@ PATTERNS = {
         r'availability.*call',
         r'time.*chat',
         r'discuss.*role',
+        r'would.*like.*to.*speak',
+        r'set.*up.*a.*call',
+        r'schedule.*a.*time',
+        r'book.*a.*slot',
+        r'calendly',
+        r'zoom.*meeting',
+        r'teams.*meeting',
+        r'google.*meet',
+        r'recruiter.*call',
+        r'hiring.*manager',
+        r'meet.*with.*you',
     ],
     'assessment_invite': [
         r'online.*assessment',
@@ -54,6 +80,14 @@ PATTERNS = {
         r'complete.*test',
         r'take.*test',
         r'home.*assignment',
+        r'take-home',
+        r'codility',
+        r'leetcode',
+        r'skills.*assessment',
+        r'technical.*test',
+        r'programming.*test',
+        r'oa.*link',
+        r'assessment.*link',
     ],
     'offer_letter': [
         r'offer.*letter',
@@ -61,8 +95,26 @@ PATTERNS = {
         r'extend.*offer',
         r'congratulations.*offer',
         r'offer.*employment',
+        r'job.*offer',
+        r'compensation.*package',
+        r'salary.*offer',
+        r'start.*date',
+        r'onboarding',
+        r'welcome.*to.*the.*team',
     ],
 }
+
+# Patterns that indicate email contains a list of multiple candidates
+# If these match, we need to verify the user's email is mentioned
+MULTI_CANDIDATE_PATTERNS = [
+    r'list\s+of.*(?:accepted|selected|shortlisted)',
+    r'following\s+(?:candidates|students|applicants)',
+    r'here\s+are\s+(?:the\s+)?(?:selected|accepted|shortlisted)',
+    r'(?:selected|accepted|shortlisted)\s+(?:candidates|students|applicants)\s*:',
+    r'congratulations\s+to\s+(?:the\s+following|all)',
+    r'students\s+(?:selected|accepted)\s+for',
+    r'candidates\s+moving\s+(?:forward|to\s+the\s+next)',
+]
 
 
 
@@ -72,13 +124,14 @@ class EmailClassifier:
     Classifies emails using regex patterns with high precision.
     """
     
-    def classify(self, email: dict, nlp_result: dict) -> Dict[str, Any]:
+    def classify(self, email: dict, nlp_result: dict, user_email: str = None) -> Dict[str, Any]:
         """
         Classify email into category based on patterns and NLP signals.
         
         Args:
             email: Raw email dict
             nlp_result: Result from Layer 2 NLP analyzer
+            user_email: Optional user's email to verify multi-candidate emails
             
         Returns:
             Dict with category and confidence
@@ -102,6 +155,26 @@ class EmailClassifier:
                     if nlp_result.get('detected_type') == category:
                         confidence = min(0.99, confidence + 0.1)
                     
+                    # IMPORTANT: For interview invites, check if this is a multi-candidate email
+                    # If it lists multiple candidates, verify user's email is mentioned
+                    if category == 'interview_invite' and user_email:
+                        is_multi_candidate = any(
+                            re.search(p, text, re.IGNORECASE) 
+                            for p in MULTI_CANDIDATE_PATTERNS
+                        )
+                        if is_multi_candidate:
+                            # Check if user's email or name is in the email
+                            user_name = user_email.split('@')[0].lower()
+                            user_in_email = (
+                                user_email.lower() in text or 
+                                user_name in text
+                            )
+                            if not user_in_email:
+                                # User is NOT in the list - this is not for them
+                                result['category'] = 'not_for_user'
+                                result['confidence'] = 0.85
+                                return result
+                    
                     result['category'] = category
                     result['confidence'] = confidence
                     return result
@@ -123,3 +196,4 @@ class EmailClassifier:
         result['category'] = 'not_job_related'
         result['confidence'] = 0.9
         return result
+

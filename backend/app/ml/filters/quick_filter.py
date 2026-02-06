@@ -70,7 +70,14 @@ class QuickFilter:
             'position', 'role', 'opportunity', 'candidate',
             'assessment', 'coding', 'next steps', 'thank you for',
             'regarding your', 'following up', 'recruiter',
-            'hiring', 'job', 'career',
+            'hiring', 'job', 'career', 'resume', 'cv',
+            'shortlisted', 'profile', 'vacancy', 'opening',
+            'talent', 'screening', 'onboarding', 'background check',
+            'hackerrank', 'codesignal', 'codility', 'leetcode',
+            'technical', 'phone screen', 'video call', 'zoom',
+            'calendly', 'schedule', 'availability', 'meet',
+            'congratulations', 'unfortunately', 'regret',
+            'selected', 'moving forward', 'proceed',
         ]
         for signal in job_signals:
             if signal in subject_lower:

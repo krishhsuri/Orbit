@@ -41,11 +41,15 @@ class AIParser:
         settings = get_settings()
         self.llm = GroqClient(api_key=settings.groq_api_key)
 
-    async def quick_parse(self, email_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def quick_parse(self, email_data: Dict[str, Any], user_email: str = None) -> Optional[Dict[str, Any]]:
         """
         Stage 1: Fast local ML parsing for email intake.
         Returns basic parsed data for display in emails section.
         NO LLM calls here - this is just for quick visibility.
+        
+        Args:
+            email_data: Email dict with subject, from_address, body_preview, etc.
+            user_email: Optional user's email for multi-candidate email verification
         """
         subject = email_data.get('subject', '')
         sender = email_data.get('from_address', '')
@@ -60,8 +64,8 @@ class AIParser:
         # Layer 2: NLP Analysis (extract entities)
         nlp_result = self.nlp.analyze_email(email_data)
         
-        # Layer 3: Pattern Classification
-        classification = self.classifier.classify(email_data, nlp_result)
+        # Layer 3: Pattern Classification (pass user_email for multi-candidate detection)
+        classification = self.classifier.classify(email_data, nlp_result, user_email=user_email)
         
         confidence = classification.get('confidence', 0.0)
         category = classification.get('category', 'unknown')

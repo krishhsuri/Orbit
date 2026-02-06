@@ -10,7 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status, BackgroundTasks
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -90,6 +90,7 @@ async def login():
 async def callback(
     code: Optional[str] = None,
     error: Optional[str] = None,
+    background_tasks: BackgroundTasks = None,
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -196,6 +197,12 @@ async def callback(
             
     await db.commit()
     await db.refresh(user)
+    
+    # Auto-trigger email sync on login if Gmail is enabled
+    if user.gmail_sync_enabled and background_tasks:
+        from app.routers.gmail import sync_emails_task
+        background_tasks.add_task(sync_emails_task, user.id, None)
+        logger.info(f"Auto-triggered email sync for user {user.email}")
     
     # Create JWT tokens
     token_pair = create_token_pair(user.id, user.email)
