@@ -107,13 +107,38 @@ PATTERNS = {
 # Patterns that indicate email contains a list of multiple candidates
 # If these match, we need to verify the user's email is mentioned
 MULTI_CANDIDATE_PATTERNS = [
-    r'list\s+of.*(?:accepted|selected|shortlisted)',
-    r'following\s+(?:candidates|students|applicants)',
+    # Selection/Acceptance patterns
+    r'list\s+of.*(?:accepted|selected|shortlisted|eligible|volunteer)',
+    r'following\s+(?:candidates|students|applicants|aspirants)',
     r'here\s+are\s+(?:the\s+)?(?:selected|accepted|shortlisted)',
-    r'(?:selected|accepted|shortlisted)\s+(?:candidates|students|applicants)\s*:',
+    r'(?:selected|accepted|shortlisted|eligible)\s+(?:candidates|students|applicants)\s*:',
     r'congratulations\s+to\s+(?:the\s+following|all)',
     r'students\s+(?:selected|accepted)\s+for',
     r'candidates\s+moving\s+(?:forward|to\s+the\s+next)',
+    # Rejection/Not selected patterns (for mass rejection emails)
+    r'regret\s+to\s+inform\s+(?:the\s+)?following',
+    r'(?:not\s+selected|rejected)\s+(?:candidates|students|applicants)\s*:',
+    r'unfortunately.*(?:following|listed)\s+(?:candidates|students)',
+    r'will\s+not\s+be\s+(?:proceeding|moving)\s+with\s*:',
+    r'(?:candidates|applicants)\s+(?:not|who\s+were\s+not)\s+selected',
+    # Generic list patterns
+    r'attached\s+(?:is|are)\s+the\s+(?:list|names)',
+    r'please\s+see\s+(?:the\s+)?(?:list|names)\s+(?:of|below)',
+    r'(?:cc|bcc|copied)\s+(?:to|on)\s+(?:this|the)\s+(?:email|message)',
+]
+
+# Patterns specifically for college/placement style emails with candidate tables
+# These are VERY likely to be "list of selected students" type emails
+CANDIDATE_LIST_EMAIL_PATTERNS = [
+    r'list\s+of\s+(?:volunteered|eligible|shortlisted)\s+(?:aspirants|students|candidates)',
+    r'(?:find|see)\s+(?:below|attached)\s+the\s+names',
+    r'(?:enrollment|roll\s*no|s\.?\s*no)\s+.*(?:name|email)',  # Table headers
+    r'eligible\s+volunteer\s+students',
+    r'kind\s+attention\s+to\s+(?:the\s+)?aspirants',
+    r'hiring\s+for\s+(?:summer\s+)?internship.*batch',
+    r'registration\s+link.*(?:students|candidates)',
+    r'complete.*registration.*(?:recruitment|placement)',
+    r'message\s+clipped',  # Gmail clips long emails - likely a big list
 ]
 
 
@@ -144,6 +169,34 @@ class EmailClassifier:
             'confidence': 0.0
         }
         
+        # EARLY CHECK: Detect "candidate list" emails (like Fidelity selection lists)
+        # These emails list selected/eligible students - user must be IN the list
+        if user_email:
+            is_candidate_list_email = any(
+                re.search(p, text, re.IGNORECASE) 
+                for p in CANDIDATE_LIST_EMAIL_PATTERNS
+            )
+            
+            if is_candidate_list_email:
+                # Check if user's email or username is anywhere in the email
+                user_name = user_email.split('@')[0].lower()
+                # Also check for common name variations (remove numbers, dots)
+                user_name_clean = re.sub(r'[0-9._]+', '', user_name)
+                
+                user_in_email = (
+                    user_email.lower() in text or 
+                    user_name in text or
+                    (len(user_name_clean) >= 4 and user_name_clean in text)  # Min 4 chars to avoid false matches
+                )
+                
+                if not user_in_email:
+                    # This is a candidate list email and user is NOT in the visible portion
+                    # Gmail clips long emails, so if not found in visible part, likely not selected
+                    result['category'] = 'not_for_user'
+                    result['confidence'] = 0.90
+                    result['reason'] = 'candidate_list_email_user_not_found'
+                    return result
+        
         # 1. Check strong patterns first (high precision)
         for category, patterns in PATTERNS.items():
             for pattern in patterns:
@@ -155,9 +208,10 @@ class EmailClassifier:
                     if nlp_result.get('detected_type') == category:
                         confidence = min(0.99, confidence + 0.1)
                     
-                    # IMPORTANT: For interview invites, check if this is a multi-candidate email
+                    # IMPORTANT: For ALL job-related categories, check if this is a multi-candidate email
                     # If it lists multiple candidates, verify user's email is mentioned
-                    if category == 'interview_invite' and user_email:
+                    # This prevents false positives like seeing rejection emails where user wasn't in the list
+                    if user_email and category in ('interview_invite', 'application_rejected', 'application_received', 'assessment_invite', 'offer_letter'):
                         is_multi_candidate = any(
                             re.search(p, text, re.IGNORECASE) 
                             for p in MULTI_CANDIDATE_PATTERNS

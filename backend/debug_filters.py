@@ -50,6 +50,24 @@ TEST_EMAILS = [
         'snippet': 'Thank you for your interest in TechStartup.',
         'body_preview': 'Thank you for your interest. Unfortunately, we have decided to pursue other candidates.'
     },
+    # TEST: Multi-candidate selection list email (Fidelity-style false positive scenario)
+    {
+        'id': 'test6_fidelity',
+        'from_address': 'careers@fidelity.com',
+        'from_name': 'Fidelity Careers',
+        'subject': 'Fidelity International-Hiring For Summer Internship From Batch 2027',
+        'snippet': 'Please find below the names of eligible volunteer students for this drive.',
+        'body_preview': '''Kind attention to the aspirants of Fidelity International-Hiring For Summer Internship From Batch 2027:
+Please find below the names of eligible volunteer students for this drive.
+The company has shared the registration link with the students.
+It is mandatory to complete this registration to participate in the Fidelity International recruitment process.
+List of Volunteered Aspirants:
+S. No.	Enrollment	First Name	Last Name	Email Address
+1	23102002	Dhawal	Shukla	dhawalmannu@gmail.com
+2	23102003	Tanishq	Vijay	tanishq311vijay@gmail.com
+3	23102009	Aayush	Bansal	aayushbansal749@gmail.com
+[Message clipped] View entire message'''
+    },
 ]
 
 def test_pipeline():
@@ -61,7 +79,7 @@ def test_pipeline():
     nlp_analyzer = NLPAnalyzer()
     email_classifier = EmailClassifier()
     
-    NON_JOB_STATUSES = {'not_job_related', 'general_hr', 'unknown'}
+    NON_JOB_STATUSES = {'not_job_related', 'not_for_user'}  # Match gmail.py
     
     for i, email in enumerate(TEST_EMAILS, 1):
         print(f"\n{'='*70}")
@@ -92,8 +110,10 @@ def test_pipeline():
         print(f"   - sender_signals: {nlp_result.get('sender_signals', {})}")
         
         # Layer 3: Email Classifier
-        classification = email_classifier.classify(email, nlp_result)
-        print(f"\n[Layer 3] Email Classifier:")
+        # Pass user_email to test multi-candidate detection
+        test_user_email = "testuser@gmail.com"  # User NOT in the Fidelity rejection list
+        classification = email_classifier.classify(email, nlp_result, user_email=test_user_email)
+        print(f"\n[Layer 3] Email Classifier (user_email={test_user_email}):")
         print(f"   - category: {classification.get('category', 'unknown')}")
         print(f"   - confidence: {classification.get('confidence', 0):.2f}")
         
