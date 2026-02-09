@@ -54,9 +54,30 @@ app.add_middleware(
 from app.middleware.security import SecurityHeadersMiddleware
 app.add_middleware(SecurityHeadersMiddleware)
 
+# Request timeout middleware (30 seconds)
+from app.middleware.timeout import TimeoutMiddleware
+app.add_middleware(TimeoutMiddleware, timeout_seconds=30)
+
+# Rate limiting middleware
+from app.middleware.rate_limit import setup_rate_limiting
+setup_rate_limiting(app)
+
 # Error handler registration
 from app.middleware.error_handler import register_exception_handlers
 register_exception_handlers(app)
+
+# Sentry error tracking (production only)
+if not settings.debug and settings.sentry_dsn:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        sentry_sdk.init(
+            dsn=settings.sentry_dsn,
+            integrations=[FastApiIntegration()],
+            traces_sample_rate=0.1,
+        )
+    except ImportError:
+        pass  # sentry-sdk not installed
 
 
 # Include routers
@@ -86,6 +107,14 @@ app.include_router(
     prefix="/api/v1/gmail",
     tags=["Gmail Integration"],
 )
+
+# Dev-only routes (only in debug mode)
+if settings.debug:
+    app.include_router(
+        auth.dev_router,
+        prefix="/auth",
+        tags=["Dev Auth"],
+    )
 
 
 @app.get("/")

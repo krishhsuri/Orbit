@@ -303,12 +303,49 @@ async def get_me(user: User = Depends(get_current_user)):
     )
 
 
-# Development-only: login without Google (for testing)
+@router.delete("/me")
+async def delete_account(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Delete user account and all associated data (GDPR compliance).
+    Performs soft delete by setting deleted_at timestamp.
+    """
+    from app.models import PendingApplication, Application
+    from sqlalchemy import update
+    
+    # Soft delete user
+    user.deleted_at = datetime.utcnow()
+    
+    # Mark pending applications as deleted
+    await db.execute(
+        update(PendingApplication)
+        .where(PendingApplication.user_id == user.id)
+        .values(status="deleted")
+    )
+    
+    # Soft delete applications
+    await db.execute(
+        update(Application)
+        .where(Application.user_id == user.id)
+        .values(deleted_at=datetime.utcnow())
+    )
+    
+    await db.commit()
+    logger.info(f"Account deleted for user {user.id}")
+    return {"message": "Account scheduled for deletion"}
+
+
+# Development-only router (conditionally included in main.py)
+dev_router = APIRouter()
+
+
 class DevLoginRequest(BaseModel):
     email: str
 
 
-@router.post("/dev-login", response_model=AuthResponse)
+@dev_router.post("/dev-login", response_model=AuthResponse)
 async def dev_login(
     data: DevLoginRequest,
     db: AsyncSession = Depends(get_db),
@@ -316,14 +353,8 @@ async def dev_login(
     """
     Development-only login endpoint.
     Logs in or creates user by email without OAuth.
-    Only available in debug mode.
+    This router is only included when DEBUG=true.
     """
-    if not settings.debug:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Not found",
-        )
-    
     # Find or create user
     result = await db.execute(
         select(User).where(User.email == data.email)

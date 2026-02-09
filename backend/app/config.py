@@ -3,8 +3,10 @@ Orbit Backend Configuration
 Uses pydantic-settings for type-safe configuration management
 """
 
+import os
 from functools import lru_cache
 from typing import List
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -37,7 +39,12 @@ class Settings(BaseSettings):
     # Google OAuth
     google_client_id: str = ""
     google_client_secret: str = ""
-    google_redirect_uri: str = "http://localhost:8000/auth/callback"
+    google_redirect_uri: str = Field(
+        default_factory=lambda: os.getenv(
+            "GOOGLE_REDIRECT_URI",
+            "http://localhost:8000/auth/callback"
+        )
+    )
     
     @property
     def google_scopes(self) -> List[str]:
@@ -49,8 +56,18 @@ class Settings(BaseSettings):
         ]
         
     # AI & Encryption
-    groq_api_key: str = ""
-    encryption_key: str = "" # 32-byte base64 string
+    groq_api_key: str = Field(default="", description="Groq API key for LLM")
+    encryption_key: str = Field(default="", description="32-byte base64 Fernet key")
+    
+    @field_validator('encryption_key')
+    @classmethod
+    def validate_encryption_key(cls, v):
+        if v and len(v) < 32:
+            raise ValueError("Encryption key must be at least 32 characters")
+        return v
+
+    # Monitoring
+    sentry_dsn: str = ""
 
     # CORS
     allowed_origins: str = "http://localhost:3000"

@@ -125,9 +125,11 @@ class FilterBuilder:
         if column is None:
             # Handle special fields like search_vector
             if condition.field == "search_vector" and condition.operator == FilterOperator.FTS:
-                # PostgreSQL full-text search
+                # Use native SQLAlchemy operator for safer parameterized query
                 search_query = func.plainto_tsquery('english', condition.value)
-                return query.where(text(f"search_vector @@ plainto_tsquery('english', :q)").bindparams(q=condition.value))
+                search_col = getattr(self.model, 'search_vector', None)
+                if search_col is not None:
+                    return query.where(search_col.op('@@')(search_query))
             return query
         
         match condition.operator:

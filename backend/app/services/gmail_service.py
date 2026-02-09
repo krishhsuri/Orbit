@@ -56,6 +56,15 @@ class GmailService:
             # Refresh if expired
             if not creds.valid:
                 creds.refresh(Request())
+                # Persist new refresh token if changed and db available
+                if creds.refresh_token and self.db:
+                    try:
+                        encrypted = self.encryption.encrypt_token(creds.refresh_token)
+                        self.user.gmail_refresh_token_encrypted = encrypted
+                        self.db.commit()
+                        logger.info(f"Refreshed Gmail token for user {self.user.id}")
+                    except Exception as e:
+                        logger.warning(f"Failed to persist refreshed token: {e}")
                 
             return creds
             

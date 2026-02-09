@@ -104,7 +104,7 @@ class GroqClient:
             result_json = chat_completion.choices[0].message.content
             result = json.loads(result_json)
             
-            print(f"[GROQ] Decision: {result.get('action')} for {result.get('company')}")
+            logger.info(f"[GROQ] Decision: {result.get('action')}")
             return result
             
         except Exception as e:
@@ -159,7 +159,7 @@ Return JSON only:
             result_json = chat_completion.choices[0].message.content
             result = json.loads(result_json)
             
-            print(f"[GROQ] Note extracted: {result.get('summary', '')[:50]}...")
+            logger.debug("[GROQ] Note extracted successfully")
             return result
             
         except Exception as e:

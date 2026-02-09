@@ -27,7 +27,7 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
     """
     from app.database import async_session_maker
     
-    print(f"[SYNC] Starting sync for user {user_id}")
+    logger.info(f"[SYNC] Starting sync for user {user_id}")
     
     async with async_session_maker() as db:
         try:
@@ -35,13 +35,13 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
             result = await db.execute(select(User).where(User.id == user_id))
             user = result.scalar_one_or_none()
             if not user:
-                print(f"[SYNC] ERROR: User {user_id} not found")
+                logger.error(f"[SYNC] User {user_id} not found")
                 return
             if not user.gmail_sync_enabled:
-                print(f"[SYNC] ERROR: Gmail sync not enabled for user {user.email}")
+                logger.error(f"[SYNC] Gmail sync not enabled for user {user.email}")
                 return
 
-            print(f"[SYNC] Gmail sync enabled for user {user.email}")
+            logger.info(f"[SYNC] Gmail sync enabled for user {user.email}")
             
             service = GmailService(user, db=None) 
             
@@ -51,15 +51,15 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
             
             emails = await asyncio.to_thread(service.fetch_recent_emails, max_results=100)
             
-            print(f"[SYNC] Fetched {len(emails)} emails from Gmail")
+            logger.info(f"[SYNC] Fetched {len(emails)} emails from Gmail")
             
             if not emails:
-                print("[SYNC] No emails returned from Gmail API")
+                logger.warning("[SYNC] No emails returned from Gmail API")
                 return
 
             # Print first 5 email subjects for debugging
             for i, email in enumerate(emails[:5]):
-                print(f"[SYNC] Email {i+1}: {email.get('subject', 'NO SUBJECT')[:60]}")
+                logger.debug(f"[SYNC] Email {i+1}: {email.get('subject', 'NO SUBJECT')[:60]}")
 
             # 2. Process with AI Parser (Quick local ML, no LLM)
             parser = AIParser()
@@ -92,7 +92,7 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                 # Auto-cleanup: Skip non-job-related emails entirely
                 status = parsed.get('status', 'unknown')
                 if status in NON_JOB_STATUSES:
-                    print(f"[SYNC] FILTERED: {email_data.get('subject', '')[:40]} (status: {status})")
+                    logger.debug(f"[SYNC] FILTERED: {email_data.get('subject', '')[:40]} (status: {status})")
                     filtered_out += 1
                     continue
                 
@@ -104,7 +104,7 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                     parsed_email_date = datetime.now()
                 
                 # This is a job-related email - add to pending queue
-                print(f"[SYNC] JOB FOUND: {parsed.get('company')} - {status}")
+                logger.info(f"[SYNC] JOB FOUND: {parsed.get('company')} - {status}")
                 pending = PendingApplication(
                     user_id=user.id,
                     email_id=email_data['id'],
@@ -122,17 +122,17 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                 db.add(pending)
                 job_related_count += 1
             
-            print(f"[SYNC] Summary: {job_related_count} job-related, {skipped_existing} skipped, {filtered_out} filtered out")
+            logger.info(f"[SYNC] Summary: {job_related_count} job-related, {skipped_existing} skipped, {filtered_out} filtered out")
             
             if job_related_count > 0:
                 user.gmail_last_sync_at = datetime.now()
                 await db.commit()
-                print(f"[SYNC] Committed: {job_related_count} job-related emails")
+                logger.info(f"[SYNC] Committed: {job_related_count} job-related emails")
             else:
-                print("[SYNC] No job-related emails found")
+                logger.info("[SYNC] No job-related emails found")
                 
         except Exception as e:
-            print(f"[SYNC] ERROR: {e}")
+            logger.error(f"[SYNC] Error: {e}")
             import traceback
             traceback.print_exc()
             await db.rollback()
@@ -242,17 +242,17 @@ async def process_with_ai(
                 pending.status = "confirmed"
                 added_count += 1
                 processed_ids.append(str(pending.id))
-                print(f"[AI] Added: {new_app.company_name} - {new_app.status}")
+                logger.info(f"[AI] Added: {new_app.company_name} - {new_app.status}")
                 
             elif llm_result and llm_result.get('action') == 'discard':
                 # Mark as rejected (discarded by AI)
                 pending.status = "rejected"
                 discarded_count += 1
                 processed_ids.append(str(pending.id))
-                print(f"[AI] Discarded: {pending.email_subject[:40]} - {llm_result.get('reason')}")
+                logger.debug(f"[AI] Discarded: {pending.email_subject[:40]}")
                 
         except Exception as e:
-            print(f"[AI] Error processing {pending.id}: {e}")
+            logger.error(f"[AI] Error processing {pending.id}: {e}")
             continue
     
     await db.commit()
