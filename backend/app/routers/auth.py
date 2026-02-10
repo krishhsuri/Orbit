@@ -198,10 +198,10 @@ async def callback(
     await db.commit()
     await db.refresh(user)
     
-    # Auto-trigger email sync on login if Gmail is enabled
-    if user.gmail_sync_enabled and background_tasks:
-        from app.routers.gmail import sync_emails_task
-        background_tasks.add_task(sync_emails_task, user.id, None)
+    # Auto-trigger email sync on login if Gmail is enabled (via Celery)
+    if user.gmail_sync_enabled:
+        from app.tasks.email_sync import sync_emails
+        sync_emails.delay(str(user.id))
         logger.info(f"Auto-triggered email sync for user {user.email}")
     
     # Create JWT tokens

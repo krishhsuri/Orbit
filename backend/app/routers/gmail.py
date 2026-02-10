@@ -139,17 +139,16 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
 
 @router.post("/sync")
 async def trigger_sync(
-    background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Trigger manual email sync"""
+    """Trigger manual email sync via Celery (non-blocking)"""
     if not user.gmail_sync_enabled:
         raise HTTPException(status_code=400, detail="Gmail sync is not enabled")
         
-    # Add background task
-    # We pass user.id and rely on the task to instantiate its own session
-    background_tasks.add_task(sync_emails_task, user.id, None)
+    # Use Celery for true async processing (doesn't block the request)
+    from app.tasks.email_sync import sync_emails
+    sync_emails.delay(str(user.id))
     
     return {"status": "request_accepted", "message": "Email sync started in background"}
 
@@ -194,74 +193,28 @@ async def process_with_ai(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Process all pending emails with Groq LLM.
+    Process all pending emails with Groq LLM via Celery (non-blocking).
     LLM decides whether to add to applications or discard.
     """
-    # Get all pending applications
+    # Check if there are pending applications
     query = select(PendingApplication).where(
         PendingApplication.user_id == user.id,
         PendingApplication.status == "pending"
     )
     result = await db.execute(query)
-    pending_apps = result.scalars().all()
+    pending_count = len(result.scalars().all())
     
-    if not pending_apps:
-        return {"message": "No pending applications to process", "added": 0, "discarded": 0}
+    if pending_count == 0:
+        return {"message": "No pending applications to process", "queued": 0}
     
-    parser = AIParser()
-    added_count = 0
-    discarded_count = 0
-    processed_ids = []
-    
-    for pending in pending_apps:
-        try:
-            # Prepare email data for LLM
-            email_data = {
-                'subject': pending.email_subject,
-                'snippet': pending.email_snippet or '',
-                'body_preview': pending.email_snippet or ''
-            }
-            
-            # Send to Groq for analysis
-            llm_result = await parser.process_with_llm(email_data)
-            
-            if llm_result and llm_result.get('action') == 'add_to_tracker':
-                # Create Application
-                new_app = Application(
-                    user_id=user.id,
-                    company_name=llm_result.get('company') or pending.parsed_company or "Unknown Company",
-                    role_title=llm_result.get('role') or pending.parsed_role or "Unknown Role",
-                    job_url=pending.parsed_job_url,
-                    status=llm_result.get('status', 'applied'),
-                    applied_date=pending.email_date.date() if pending.email_date else date.today(),
-                    source="gmail_ai"
-                )
-                db.add(new_app)
-                
-                # Mark as confirmed
-                pending.status = "confirmed"
-                added_count += 1
-                processed_ids.append(str(pending.id))
-                logger.info(f"[AI] Added: {new_app.company_name} - {new_app.status}")
-                
-            elif llm_result and llm_result.get('action') == 'discard':
-                # Mark as rejected (discarded by AI)
-                pending.status = "rejected"
-                discarded_count += 1
-                processed_ids.append(str(pending.id))
-                logger.debug(f"[AI] Discarded: {pending.email_subject[:40]}")
-                
-        except Exception as e:
-            logger.error(f"[AI] Error processing {pending.id}: {e}")
-            continue
-    
-    await db.commit()
+    # Queue AI processing via Celery (non-blocking)
+    from app.tasks.email_sync import process_ai_emails
+    process_ai_emails.delay(str(user.id))
     
     return {
-        "message": f"Processed {len(processed_ids)} emails with AI",
-        "added": added_count,
-        "discarded": discarded_count,
-        "processed_ids": processed_ids
+        "message": f"AI processing started for {pending_count} emails",
+        "queued": pending_count,
+        "status": "processing"
     }
 
 
