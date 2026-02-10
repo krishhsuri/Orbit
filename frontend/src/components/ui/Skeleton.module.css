@@ -1,0 +1,207 @@
+/* =====================================================
+   SKELETON - Shimmer loading placeholder
+   ===================================================== */
+
+.skeleton {
+  background: var(--bg-active);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.04) 50%,
+      transparent 100%);
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Variants */
+.text {
+  height: 14px;
+  border-radius: 4px;
+}
+
+.title {
+  height: 20px;
+  width: 60%;
+  border-radius: 4px;
+}
+
+.circle {
+  border-radius: 50%;
+}
+
+.rect {
+  border-radius: var(--radius-md);
+}
+
+/* ─────────────────────────────────────────────────
+   DASHBOARD SKELETON
+   ───────────────────────────────────────────────── */
+
+.dashboardSkeleton {
+  padding: 24px 20px;
+}
+
+.statsGridSkeleton {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCardSkeleton {
+  display: flex;
+  gap: 14px;
+  padding: 18px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.statIconSkeleton {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.statContentSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.mainGridSkeleton {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.cardSkeleton {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.cardHeaderSkeleton {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cardBodySkeleton {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ─────────────────────────────────────────────────
+   APPLICATION LIST SKELETON
+   ───────────────────────────────────────────────── */
+
+.appListSkeleton {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.appToolbarSkeleton {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.appRowSkeleton {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  margin-bottom: 4px;
+}
+
+.appRowContentSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+/* ─────────────────────────────────────────────────
+   KANBAN SKELETON
+   ───────────────────────────────────────────────── */
+
+.kanbanSkeleton {
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+}
+
+.kanbanColumnSkeleton {
+  min-width: 260px;
+  flex: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.kanbanColumnHeaderSkeleton {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.kanbanColumnBodySkeleton {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kanbanCardSkeleton {
+  padding: 14px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .statsGridSkeleton {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .statsGridSkeleton {
+    grid-template-columns: 1fr;
+  }
+
+  .mainGridSkeleton {
+    grid-template-columns: 1fr;
+  }
+}

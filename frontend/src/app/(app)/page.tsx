@@ -10,6 +10,7 @@ import {
   StaggerContainer,
   StaggerItem,
   FadeSlide,
+  DashboardSkeleton,
 } from '@/components/ui';
 import { 
   Briefcase, 
@@ -32,12 +33,11 @@ export default function DashboardPage() {
     return (
       <div className={styles.page}>
         <Header title="Dashboard" subtitle="Loading your overview..." />
-        <div className={styles.content}>
-          <LoadingState message="Loading dashboard..." />
-        </div>
+        <DashboardSkeleton />
       </div>
     );
   }
+
 
   if (error) {
     return (

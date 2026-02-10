@@ -1,6 +1,7 @@
 'use client';
 
 import { Header } from '@/components/layout/Header';
+import { DashboardSkeleton } from '@/components/ui';
 import { 
   useAnalyticsSummary,
   useAnalyticsFunnel,
@@ -16,7 +17,55 @@ import {
   Lightbulb,
   AlertCircle
 } from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 import styles from './page.module.css';
+
+// Chart color palette matching Orbit design system
+const CHART_COLORS = {
+  applied: '#5E6AD2',
+  screening: '#9B7DD4',
+  oa: '#F2994A',
+  interview: '#5DCE87',
+  offer: '#4ECDC4',
+  accepted: '#45B36B',
+  rejected: '#E66A6A',
+  withdrawn: '#6B7280',
+  ghosted: '#404145',
+};
+
+const PIE_COLORS = [
+  '#5E6AD2', '#9B7DD4', '#F2994A', '#5DCE87', 
+  '#4ECDC4', '#45B36B', '#E66A6A', '#6B7280', '#404145'
+];
+
+// Custom tooltip component
+function CustomTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className={styles.tooltip}>
+      <p className={styles.tooltipLabel}>{label}</p>
+      {payload.map((entry: any, i: number) => (
+        <p key={i} className={styles.tooltipValue} style={{ color: entry.color }}>
+          {entry.name}: <strong>{entry.value}</strong>
+        </p>
+      ))}
+    </div>
+  );
+}
 
 export default function AnalyticsPage() {
   const { data: summary, isLoading: isLoadingSummary } = useAnalyticsSummary();
@@ -30,26 +79,38 @@ export default function AnalyticsPage() {
     return (
       <div className={styles.page}>
         <Header title="Analytics" subtitle="Loading analytics..." showAddButton={false} />
-        <div className={styles.loadingContainer}>
-          <div className={styles.spinner}></div>
-        </div>
+        <DashboardSkeleton />
       </div>
     );
   }
 
-  // Use defaults if data is missing or empty
   const funnel = funnelData?.stages || [];
   const sources = sourceData?.sources || [];
   const insights = insightsData?.insights || [];
   const stats = summary || { total: 0, active: 0, interviews: 0, offers: 0, this_week: 0 };
 
-  // Calculate derived stats
+  // Derived stats
   const conversionRate = stats.total > 0 ? (stats.offers / stats.total) * 100 : 0;
-  
-  // Calculate global response rate from sources data
-  const totalResponded = sources.reduce((acc, curr) => acc + curr.responded, 0);
-  const totalTrackedSource = sources.reduce((acc, curr) => acc + curr.total, 0);
+  const totalResponded = sources.reduce((acc: number, curr: any) => acc + curr.responded, 0);
+  const totalTrackedSource = sources.reduce((acc: number, curr: any) => acc + curr.total, 0);
   const responseRate = totalTrackedSource > 0 ? (totalResponded / totalTrackedSource) * 100 : 0;
+
+  // Prepare pie chart data from funnel
+  const pieData = funnel
+    .filter((s: any) => s.count > 0)
+    .map((s: any) => ({
+      name: s.status,
+      value: s.count,
+      color: CHART_COLORS[s.status as keyof typeof CHART_COLORS] || '#5E6AD2',
+    }));
+
+  // Prepare bar chart data from sources
+  const barData = sources.map((s: any) => ({
+    name: s.source.length > 12 ? s.source.slice(0, 12) + '…' : s.source,
+    applied: s.total,
+    responded: s.responded,
+    rate: s.response_rate,
+  }));
 
   return (
     <div className={styles.page}>
@@ -82,26 +143,48 @@ export default function AnalyticsPage() {
         </div>
 
         <div className={styles.grid}>
-          {/* Conversion Funnel */}
+          {/* Status Distribution — Pie Chart */}
           <section className={styles.card}>
-            <h2 className={styles.cardTitle}>Conversion Funnel</h2>
-            {funnel.length > 0 ? (
-              <div className={styles.funnel}>
-                {funnel.map((stage) => (
-                  <div key={stage.status} className={styles.funnelStage}>
-                    <div className={styles.funnelInfo}>
-                      <span className={styles.stageName}>{stage.status}</span>
-                      <span className={styles.stageCount}>{stage.count}</span>
-                    </div>
-                    <div className={styles.funnelBar}>
-                      <div 
-                        className={styles.funnelFill}
-                        style={{ width: `${stage.percentage}%` }}
-                      />
-                    </div>
-                    <span className={styles.stagePercentage}>{stage.percentage}%</span>
-                  </div>
-                ))}
+            <h2 className={styles.cardTitle}>Status Distribution</h2>
+            {pieData.length > 0 ? (
+              <div className={styles.chartContainer}>
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={65}
+                      outerRadius={100}
+                      paddingAngle={3}
+                      dataKey="value"
+                      animationBegin={0}
+                      animationDuration={800}
+                    >
+                      {pieData.map((entry: any, index: number) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.color} 
+                          stroke="transparent"
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend 
+                      verticalAlign="bottom"
+                      iconType="circle"
+                      iconSize={8}
+                      formatter={(value: string) => (
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{value}</span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                {/* Center label */}
+                <div className={styles.pieCenter}>
+                  <span className={styles.pieCenterValue}>{stats.total}</span>
+                  <span className={styles.pieCenterLabel}>Total</span>
+                </div>
               </div>
             ) : (
               <div className={styles.emptyState}>
@@ -110,28 +193,115 @@ export default function AnalyticsPage() {
             )}
           </section>
 
-          {/* Response by Source */}
+          {/* Conversion Funnel — Horizontal Bar Chart */}
+          <section className={styles.card}>
+            <h2 className={styles.cardTitle}>Conversion Funnel</h2>
+            {funnel.length > 0 ? (
+              <div className={styles.chartContainer}>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart
+                    data={funnel.map((s: any) => ({
+                      name: s.status,
+                      count: s.count,
+                      fill: CHART_COLORS[s.status as keyof typeof CHART_COLORS] || '#5E6AD2',
+                    }))}
+                    layout="vertical"
+                    margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid 
+                      strokeDasharray="3 3" 
+                      stroke="rgba(255,255,255,0.04)" 
+                      horizontal={false}
+                    />
+                    <XAxis 
+                      type="number" 
+                      tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                      axisLine={{ stroke: 'var(--border-subtle)' }}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      width={80}
+                      tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar 
+                      dataKey="count" 
+                      radius={[0, 4, 4, 0]}
+                      animationBegin={0}
+                      animationDuration={800}
+                    >
+                      {funnel.map((s: any, i: number) => (
+                        <Cell 
+                          key={i} 
+                          fill={CHART_COLORS[s.status as keyof typeof CHART_COLORS] || '#5E6AD2'} 
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className={styles.emptyState}>
+                <p>No data available yet</p>
+              </div>
+            )}
+          </section>
+
+          {/* Response by Source — Bar Chart */}
           <section className={styles.card}>
             <h2 className={styles.cardTitle}>Response Rate by Source</h2>
             {sources.length > 0 ? (
-              <div className={styles.sourceTable}>
-                <div className={styles.tableHeader}>
-                  <span>Source</span>
-                  <span>Applied</span>
-                  <span>Response</span>
-                  <span>Rate</span>
-                </div>
-                {sources.map((source) => (
-                  <div key={source.source} className={styles.tableRow}>
-                    <span className={styles.sourceName}>{source.source}</span>
-                    <span>{source.total}</span>
-                    <span>{source.responded}</span>
-                    <span className={`${styles.rate} ${source.response_rate >= 50 ? styles.good : styles.poor}`}>
-                      {source.response_rate >= 50 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                      {source.response_rate}%
-                    </span>
-                  </div>
-                ))}
+              <div className={styles.chartContainer}>
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart 
+                    data={barData}
+                    margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid 
+                      strokeDasharray="3 3" 
+                      stroke="rgba(255,255,255,0.04)" 
+                      vertical={false}
+                    />
+                    <XAxis 
+                      dataKey="name"
+                      tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                      axisLine={{ stroke: 'var(--border-subtle)' }}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend 
+                      verticalAlign="top"
+                      iconType="circle"
+                      iconSize={8}
+                      formatter={(value: string) => (
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{value}</span>
+                      )}
+                    />
+                    <Bar 
+                      dataKey="applied" 
+                      name="Applied" 
+                      fill="#5E6AD2" 
+                      radius={[4, 4, 0, 0]}
+                      animationDuration={800}
+                    />
+                    <Bar 
+                      dataKey="responded" 
+                      name="Responded" 
+                      fill="#5DCE87" 
+                      radius={[4, 4, 0, 0]}
+                      animationDuration={800}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             ) : (
               <div className={styles.emptyState}>
@@ -148,7 +318,7 @@ export default function AnalyticsPage() {
             </h2>
             {insights.length > 0 ? (
               <div className={styles.insights}>
-                {insights.map((insight, index) => (
+                {insights.map((insight: any, index: number) => (
                   <div key={index} className={`${styles.insight} ${styles[insight.type] || styles.info}`}>
                     <h3>{insight.title}</h3>
                     <p>{insight.description}</p>

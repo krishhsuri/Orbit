@@ -6,4 +6,5 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 export { Modal } from './Modal';
 export { EmptyState, LoadingState, ErrorState } from './EmptyState';
 export { CountUp, TextReveal, GradientText, FadeSlide, StaggerContainer, StaggerItem } from './TextAnimations';
+export { Skeleton, DashboardSkeleton, ApplicationsSkeleton, KanbanSkeleton, EmailsSkeleton } from './Skeleton';
 

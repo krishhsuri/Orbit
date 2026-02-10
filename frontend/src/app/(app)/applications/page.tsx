@@ -16,6 +16,7 @@ import {
   EmptyState,
   StaggerContainer,
   StaggerItem,
+  ApplicationsSkeleton,
 } from '@/components/ui';
 import type { ApplicationStatus } from '@/stores';
 import { 
@@ -108,9 +109,7 @@ export default function ApplicationsPage() {
     return (
       <div className={styles.page}>
         <Header title="Applications" subtitle="Loading..." />
-        <div className={styles.content}>
-          <LoadingState message="Loading applications..." />
-        </div>
+        <ApplicationsSkeleton />
       </div>
     );
   }
