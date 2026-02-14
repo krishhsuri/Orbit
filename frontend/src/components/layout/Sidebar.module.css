@@ -1,11 +1,11 @@
 /* =====================================================
-   SIDEBAR - Refined with accent indicator
+   SIDEBAR — Linear Midnight Aesthetic
    ===================================================== */
 
 .sidebar {
   width: var(--sidebar-width);
   height: 100vh;
-  background: var(--bg-surface);
+  background: var(--bg-base);
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
@@ -20,52 +20,43 @@
   width: var(--sidebar-collapsed);
 }
 
-/* ─────────────────────────────────────────────────
-   LOGO
-   ───────────────────────────────────────────────── */
+/* ─── LOGO ─────────────────────────────────────── */
 
 .logo {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
-  height: var(--header-height);
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 16px;
+  height: 56px;
+  flex-shrink: 0;
 }
 
 .logoIcon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: var(--accent-primary);
-  border-radius: 8px;
-  color: white;
+  color: var(--text-primary);
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(94, 106, 210, 0.25);
 }
 
 .logoIcon svg {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
 }
 
 .logoText {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.03em;
 }
 
-/* ─────────────────────────────────────────────────
-   QUICK ACTIONS
-   ───────────────────────────────────────────────── */
+/* ─── QUICK ACTIONS ────────────────────────────── */
 
 .quickActions {
   display: flex;
   gap: 6px;
-  padding: 10px 12px 6px;
+  padding: 4px 12px 8px;
 }
 
 .searchButton {
@@ -73,20 +64,21 @@
   align-items: center;
   gap: 6px;
   flex: 1;
-  padding: 7px 10px;
-  background: var(--bg-hover);
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  color: var(--text-muted);
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  color: var(--text-disabled);
   font-size: 12px;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 150ms ease;
+  font-family: var(--font-sans);
 }
 
 .searchButton:hover {
-  background: var(--bg-active);
+  background: var(--bg-hover);
   color: var(--text-secondary);
-  border-color: var(--border-subtle);
+  border-color: var(--text-disabled);
 }
 
 .searchButton kbd {
@@ -108,17 +100,17 @@
   justify-content: center;
   width: 30px;
   height: 30px;
-  background: linear-gradient(180deg, var(--accent-hover), var(--accent-primary));
+  background: white;
   border: none;
-  border-radius: var(--radius-md);
-  color: white;
+  border-radius: 4px;
+  color: black;
   cursor: pointer;
   transition: all 120ms ease;
-  box-shadow: 0 1px 3px rgba(94, 106, 210, 0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .newButton:hover {
-  box-shadow: 0 2px 8px rgba(94, 106, 210, 0.4);
+  background: #e5e5e5;
 }
 
 .newButton:active {
@@ -130,13 +122,11 @@
   height: 14px;
 }
 
-/* ─────────────────────────────────────────────────
-   NAVIGATION
-   ───────────────────────────────────────────────── */
+/* ─── NAVIGATION ───────────────────────────────── */
 
 .nav {
   flex: 1;
-  padding: 8px 6px;
+  padding: 8px 8px;
   overflow-y: auto;
 }
 
@@ -144,21 +134,22 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .navItem {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 10px;
-  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  border-radius: 4px;
   color: var(--text-secondary);
   text-decoration: none;
-  transition: all var(--transition-fast);
+  transition: all 120ms ease;
   position: relative;
   font-size: 13px;
   font-weight: 500;
+  border: 1px solid transparent;
 }
 
 .navItem:hover {
@@ -167,20 +158,15 @@
 }
 
 .navItem.active {
-  background: rgba(94, 106, 210, 0.08);
+  background: var(--bg-hover);
   color: var(--text-primary);
+  border-color: var(--border-subtle);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* Active left accent bar */
+/* Active left accent bar - removed, using border instead */
 .navItem.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 2px;
-  background: var(--accent-primary);
-  border-radius: 1px;
+  display: none;
 }
 
 .activeIndicator {
@@ -194,12 +180,16 @@
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  opacity: 0.6;
+  color: var(--text-disabled);
+  transition: color 120ms ease;
 }
 
-.navItem:hover .navIcon,
+.navItem:hover .navIcon {
+  color: var(--text-secondary);
+}
+
 .navItem.active .navIcon {
-  opacity: 1;
+  color: var(--text-primary);
 }
 
 .navContent {
@@ -218,9 +208,10 @@
   font-size: 10px;
   color: var(--text-disabled);
   font-weight: 500;
+  font-family: var(--font-mono, monospace);
   letter-spacing: 0.02em;
   opacity: 0;
-  transition: opacity var(--transition-fast);
+  transition: opacity 150ms ease;
 }
 
 .navItem:hover .navShortcut {
@@ -229,22 +220,16 @@
 
 .badge {
   margin-left: auto;
-  background: var(--accent-primary);
-  color: white;
   font-size: 10px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 10px;
-  min-width: 18px;
-  text-align: center;
+  font-weight: 500;
+  color: var(--text-disabled);
+  font-family: var(--font-mono, monospace);
 }
 
-/* ─────────────────────────────────────────────────
-   BOTTOM NAV
-   ───────────────────────────────────────────────── */
+/* ─── BOTTOM NAV ───────────────────────────────── */
 
 .bottomNav {
-  padding: 6px;
+  padding: 8px;
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -257,10 +242,10 @@
   margin-top: 6px;
   background: transparent;
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  color: var(--text-muted);
+  border-radius: 4px;
+  color: var(--text-disabled);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 150ms ease;
 }
 
 .collapseButton:hover {
@@ -273,19 +258,20 @@
   height: 12px;
 }
 
-/* ─────────────────────────────────────────────────
-   USER SECTION
-   ───────────────────────────────────────────────── */
+/* ─── USER SECTION ─────────────────────────────── */
 
 .userSection {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 10px;
+  padding: 8px;
   margin-bottom: 6px;
+  border-radius: 4px;
+  transition: background 120ms ease;
+}
+
+.userSection:hover {
   background: var(--bg-hover);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
 }
 
 .userInfo {
@@ -294,22 +280,32 @@
   gap: 8px;
   flex: 1;
   min-width: 0;
+  cursor: pointer;
 }
 
 .userAvatar {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
+  filter: grayscale(100%);
+  opacity: 0.6;
+  transition: all 200ms ease;
+}
+
+.userSection:hover .userAvatar {
+  filter: grayscale(0%);
+  opacity: 1;
 }
 
 .userAvatarPlaceholder {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--accent-primary);
-  color: white;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -329,38 +325,44 @@
 
 .userName {
   font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-weight: 500;
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 120ms ease;
+}
+
+.userSection:hover .userName {
+  color: var(--text-primary);
 }
 
 .userEmail {
-  font-size: 11px;
-  color: var(--text-muted);
+  font-size: 10px;
+  color: var(--text-disabled);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: var(--font-mono, monospace);
 }
 
 .logoutButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
+  padding: 4px;
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
+  border-radius: 4px;
+  color: var(--text-disabled);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 150ms ease;
   flex-shrink: 0;
 }
 
 .logoutButton:hover {
-  background: rgba(230, 106, 106, 0.1);
-  color: var(--error);
+  color: var(--text-primary);
+  background: var(--bg-hover);
 }
 
 .logoutButton svg {
@@ -368,13 +370,11 @@
   height: 14px;
 }
 
-/* ─────────────────────────────────────────────────
-   COLLAPSED STATE
-   ───────────────────────────────────────────────── */
+/* ─── COLLAPSED STATE ──────────────────────────── */
 
 .collapsed .logo {
   justify-content: center;
-  padding: 12px 6px;
+  padding: 0 6px;
 }
 
 .collapsed .quickActions {

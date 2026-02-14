@@ -1,276 +1,341 @@
 /* =====================================================
-   DASHBOARD PAGE - Premium polish
+   DASHBOARD — Linear Midnight with Stats + Activity
    ===================================================== */
 
 .page {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-.content {
-  flex: 1;
-  padding: 24px 20px;
-}
-
-/* Stats Grid */
-.statsGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.statCard {
-  display: flex;
-  gap: 14px;
-  padding: 18px 16px;
-  position: relative;
+  height: 100%;
   overflow: hidden;
+  background: var(--bg-base);
 }
 
-.statCard::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: currentColor;
-  opacity: 0.4;
-}
+/* ─── HEADER ───────────────────────────────────── */
 
-.statIcon {
+.header {
+  height: 56px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--bg-active);
-  border-radius: var(--radius-md);
-  color: var(--text-muted);
+  justify-content: space-between;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
-.statIcon svg {
-  width: 20px;
-  height: 20px;
-}
-
-.statIcon.blue {
-  color: var(--status-applied);
-  background: rgba(94, 106, 210, 0.12);
-}
-
-.statIcon.purple {
-  color: var(--status-screening);
-  background: rgba(155, 125, 212, 0.12);
-}
-
-.statIcon.green {
-  color: var(--status-interview);
-  background: rgba(93, 206, 135, 0.12);
-}
-
-.statIcon.gold {
-  color: var(--warning);
-  background: rgba(242, 153, 74, 0.12);
-}
-
-.statContent {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.statValue {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1;
-  letter-spacing: -0.04em;
-}
-
-.statLabel {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-/* Main Grid */
-.mainGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1fr;
-  gap: 16px;
-}
-
-.activityCard {
-  grid-column: 1 / -1;
-}
-
-/* Cards */
-.card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
-}
-
-.cardHeader {
+.headerLeft {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.cardTitle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
-}
-
-.cardTitle svg {
-  width: 16px;
-  height: 16px;
-  opacity: 0.5;
-}
-
-.viewAll {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: color var(--transition-fast);
-}
-
-.viewAll:hover {
-  color: var(--accent-primary);
-}
-
-.viewAll svg {
-  width: 12px;
-  height: 12px;
-}
-
-/* Weekly Goal */
-.goalProgress {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
   gap: 12px;
 }
 
-.goalInfo {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+.pageTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
 }
 
-.goalCurrent {
-  font-size: 36px;
-  font-weight: 700;
+.headerSep {
+  color: var(--text-disabled);
+  font-size: 14px;
+  font-weight: 300;
+}
+
+.headerMeta {
+  font-size: 11px;
+  color: var(--text-disabled);
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.05em;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.searchWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-disabled);
+}
+
+.searchInput {
+  height: 32px;
+  width: 200px;
+  padding: 0 12px 0 32px;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-primary);
+  outline: none;
+  transition: all 150ms ease;
+  font-family: var(--font-sans);
+}
+
+.searchInput:hover {
+  border-color: var(--border-subtle);
+}
+
+.searchInput:focus {
+  border-color: var(--text-disabled);
+  background: var(--bg-surface);
+}
+
+.searchInput::placeholder {
+  color: var(--text-disabled);
+}
+
+.newButton {
+  height: 32px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  color: black;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 150ms ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-sans);
+}
+
+.newButton:hover {
+  background: #e5e5e5;
+}
+
+/* ─── SCROLL AREA ──────────────────────────────── */
+
+.scrollArea {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+}
+
+.contentGrid {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* ─── STAT CARDS ───────────────────────────────── */
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.statCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 200ms ease;
+}
+
+.statCard:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.statTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.statLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono, monospace);
+  margin: 0;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 500;
   color: var(--text-primary);
   letter-spacing: -0.03em;
+  margin: 8px 0 0;
+  line-height: 1;
 }
 
-.goalTotal {
-  font-size: 14px;
+.statUnit {
+  font-size: 18px;
   color: var(--text-muted);
+  font-weight: 400;
+  margin-left: 2px;
 }
 
-.progressBar {
-  height: 6px;
-  background: var(--bg-active);
-  border-radius: 3px;
+.statBadgeGreen {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-mono, monospace);
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+.statBadgeBlue {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-mono, monospace);
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+.statBadgeNeutral {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.miniChart {
+  height: 32px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  margin-top: 24px;
+  opacity: 0.3;
+  transition: opacity 200ms ease;
+}
+
+.statCard:hover .miniChart {
+  opacity: 0.6;
+}
+
+.miniBar {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 1px;
+  transition: height 300ms ease;
+  min-height: 2px;
+}
+
+/* ─── MAIN LAYOUT ──────────────────────────────── */
+
+.mainLayout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ─── PANEL (Shared) ───────────────────────────── */
+
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
   overflow: hidden;
 }
 
-.progressFill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent-primary), var(--accent-hover));
-  border-radius: 3px;
-  transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.goalMessage {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-/* Deadline List */
-.deadlineList {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-}
-
-.deadlineItem {
+.panelHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--border-subtle);
-  transition: background var(--transition-fast);
 }
 
-.deadlineItem:last-child {
-  border-bottom: none;
-}
-
-.deadlineItem:hover {
-  background: var(--bg-hover);
-}
-
-.deadlineInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.deadlineCompany {
+.panelTitle {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
+  margin: 0;
 }
 
-.deadlineTask {
-  font-size: 12px;
+.panelAction {
+  font-size: 11px;
   color: var(--text-muted);
+  text-decoration: none;
+  font-family: var(--font-mono, monospace);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 150ms ease;
 }
 
-.deadlineDate {
-  font-size: 12px;
-  color: var(--text-secondary);
+.panelAction:hover {
+  color: var(--text-primary);
 }
 
-.deadlineDate.urgent {
-  color: var(--error);
-  font-weight: 600;
+.panelFilterBtn {
+  background: none;
+  border: none;
+  color: var(--text-disabled);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  transition: color 150ms ease;
 }
 
-/* Activity List */
+.panelFilterBtn:hover {
+  color: var(--text-primary);
+}
+
+/* ─── ACTIVITY LIST ────────────────────────────── */
+
 .activityList {
-  list-style: none;
   display: flex;
   flex-direction: column;
 }
 
 .activityItem {
   display: flex;
-  align-items: center;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 14px 20px;
+  align-items: center;
   border-bottom: 1px solid var(--border-subtle);
-  transition: background var(--transition-fast);
+  text-decoration: none;
+  transition: background 80ms ease;
+  cursor: pointer;
 }
 
 .activityItem:last-child {
@@ -281,142 +346,360 @@
   background: var(--bg-hover);
 }
 
-.activityDot {
-  width: 8px;
-  height: 8px;
+.activityIcon {
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-}
-
-.activityDot.applied {
-  background: var(--status-applied);
-}
-
-.activityDot.interview {
-  background: var(--status-interview);
-}
-
-.activityDot.screening {
-  background: var(--status-screening);
-}
-
-.activityDot.oa {
-  background: var(--status-oa);
-}
-
-.activityDot.offer {
-  background: var(--status-offer);
-}
-
-.activityDot.rejected {
-  background: var(--status-rejected);
-}
-
-.activityDot.ghosted {
-  background: var(--status-ghosted);
+  color: var(--text-primary);
 }
 
 .activityContent {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
   min-width: 0;
 }
 
-.activityAction {
+.activityText {
   font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.activityAction strong {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.activityRole {
-  font-size: 12px;
   color: var(--text-muted);
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activityHighlight {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.activityMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono, monospace);
+  margin: 0;
+}
+
+.activityDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .activityTime {
-  font-size: 12px;
-  color: var(--text-muted);
-  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-disabled);
+  font-family: var(--font-mono, monospace);
+  flex-shrink: 0;
 }
 
-/* Empty Card */
-.emptyCard {
+/* ─── WEEKLY CHART ─────────────────────────────── */
+
+.chartLegend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono, monospace);
+}
+
+.legendDotWhite {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: white;
+}
+
+.legendDotGray {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-disabled);
+}
+
+.chartArea {
+  height: 192px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px;
+}
+
+.chartColumn {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 32px;
-  color: var(--text-muted);
-  text-align: center;
+  height: 100%;
 }
 
-.emptyCard svg {
-  width: 28px;
-  height: 28px;
-  opacity: 0.4;
+.chartBarGroup {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 3px;
 }
 
-.emptyCard p {
+.chartBarBack {
+  width: 100%;
+  background: var(--bg-hover);
+  border-radius: 2px;
+  transition: all 200ms ease;
+  min-height: 2px;
+}
+
+.chartColumn:hover .chartBarBack {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.chartBarFront {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 2px;
+  transition: all 200ms ease;
+  min-height: 2px;
+}
+
+.chartColumn:hover .chartBarFront {
+  background: white;
+}
+
+.chartLabel {
+  font-size: 10px;
+  color: var(--text-disabled);
+  font-family: var(--font-mono, monospace);
+  margin-top: 12px;
+}
+
+/* ─── DEADLINE CARDS ───────────────────────────── */
+
+.deadlineList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.deadlineCard {
+  position: relative;
+  display: block;
+  padding: 14px 14px 14px 18px;
+  background: rgba(11, 12, 14, 0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 200ms ease;
+  overflow: hidden;
+}
+
+.deadlineCard:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.deadlineAccent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+}
+
+.deadlineTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.deadlineTag {
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+.deadlineMore {
+  opacity: 0;
+  background: none;
+  border: none;
+  color: var(--text-disabled);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  transition: opacity 150ms ease, color 150ms ease;
+}
+
+.deadlineCard:hover .deadlineMore {
+  opacity: 1;
+}
+
+.deadlineMore:hover {
+  color: var(--text-primary);
+}
+
+.deadlineName {
   font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 2px;
 }
 
-/* Tip bar */
-.tip {
+.deadlineTask {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.deadlineProgress {
+  margin-top: 12px;
+}
+
+.deadlineProgressBar {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.deadlineProgressFill {
+  height: 100%;
+  border-radius: 99px;
+}
+
+/* ─── MINI CALENDAR ────────────────────────────── */
+
+.calendarWidget {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.calHeader {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-  padding: 12px 16px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  color: var(--text-muted);
+  justify-content: space-between;
+  margin-bottom: 14px;
 }
 
-.tipIcon {
-  font-size: 16px;
+.calMonth {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
-.tip kbd {
-  display: inline-flex;
+.calNav {
+  display: flex;
+  gap: 4px;
+}
+
+.calNavBtn {
+  background: none;
+  border: none;
+  color: var(--text-disabled);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  transition: color 100ms ease;
+}
+
+.calNavBtn:hover {
+  color: var(--text-primary);
+}
+
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px 0;
+  text-align: center;
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+}
+
+.calLabel {
+  color: var(--text-disabled);
+  padding-bottom: 4px;
+}
+
+.calBlank {
+  opacity: 0.15;
+}
+
+.calDay {
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  background: var(--bg-active);
-  border: 1px solid var(--border-subtle);
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-secondary);
+  width: 18px;
+  height: 18px;
+  margin: 0 auto;
+  border-radius: 2px;
+  transition: color 100ms ease;
 }
 
-/* Responsive */
-@media (max-width: 1200px) {
-  .statsGrid {
-    grid-template-columns: repeat(2, 1fr);
+.calDay:hover {
+  color: var(--text-primary);
+}
+
+.calToday {
+  background: white;
+  color: black !important;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+/* ─── EMPTY / LOADING ──────────────────────────── */
+
+.loadingState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
   }
 }
 
-@media (max-width: 768px) {
-  .statsGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .mainGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .content {
-    padding: 16px;
-  }
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--text-disabled);
+  font-size: 12px;
 }

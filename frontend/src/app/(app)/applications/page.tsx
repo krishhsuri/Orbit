@@ -1,82 +1,71 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Header } from '@/components/layout/Header';
 import { useUIStore } from '@/stores';
 import { useApplications, useUpdateApplicationStatus, useDeleteApplication } from '@/hooks/use-applications';
-import { useListNavigation } from '@/hooks';
-import { 
-  Card,
-  LoadingState,
-  ErrorState,
-  StatusBadge,
-  Button,
-  EmptyState,
-  StaggerContainer,
-  StaggerItem,
-  ApplicationsSkeleton,
-} from '@/components/ui';
 import type { ApplicationStatus } from '@/stores';
-import { 
-  Search, 
-  Filter,  
-  ExternalLink,
-  Star,
-  Calendar,
-  Building2,
-  Trash2,
-  ChevronDown,
+import {
+  Search,
+  Filter,
   Plus,
+  MoreHorizontal,
   Briefcase,
-  MapPin,
+  ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import styles from './page.module.css';
 
-// Status configuration
 const statusConfig: Record<ApplicationStatus, { label: string; color: string }> = {
-  applied: { label: 'Applied', color: 'var(--status-applied)' },
-  screening: { label: 'Screening', color: 'var(--status-screening)' },
+  applied: { label: 'APPLIED', color: 'var(--status-applied)' },
+  screening: { label: 'SCREENING', color: 'var(--status-screening)' },
   oa: { label: 'OA', color: 'var(--status-oa)' },
-  interview: { label: 'Interview', color: 'var(--status-interview)' },
-  offer: { label: 'Offer', color: 'var(--status-offer)' },
-  accepted: { label: 'Accepted', color: 'var(--status-accepted)' },
-  rejected: { label: 'Rejected', color: 'var(--status-rejected)' },
-  withdrawn: { label: 'Withdrawn', color: 'var(--status-withdrawn)' },
-  ghosted: { label: 'Ghosted', color: 'var(--status-ghosted)' },
+  interview: { label: 'INTERVIEWING', color: 'var(--status-interview)' },
+  offer: { label: 'OFFER', color: 'var(--status-offer)' },
+  accepted: { label: 'ACCEPTED', color: 'var(--status-accepted)' },
+  rejected: { label: 'REJECTED', color: 'var(--status-rejected)' },
+  withdrawn: { label: 'WITHDRAWN', color: 'var(--status-withdrawn)' },
+  ghosted: { label: 'GHOSTED', color: 'var(--status-ghosted)' },
 };
 
 const allStatuses: ApplicationStatus[] = [
   'applied', 'screening', 'oa', 'interview', 'offer', 'accepted', 'rejected', 'withdrawn', 'ghosted'
 ];
 
-function formatDate(dateString: string): string {
+function formatDateMono(dateString: string): string {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: '2-digit',
+    year: 'numeric'
+  }).toUpperCase().replace(',', ',');
 }
 
-function getDaysAgo(dateString: string): string {
+function getTimeAgo(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
-  const diffTime = Math.abs(now.getTime() - date.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  return `${diffDays}d ago`;
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  const diffWeeks = Math.floor(diffDays / 7);
+
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return `${diffWeeks}w ago`;
 }
+
+type TabFilter = 'all' | 'active' | 'archived';
 
 export default function ApplicationsPage() {
   const { openAddModal } = useUIStore();
-  
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<ApplicationStatus | ''>('');
+  const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-  // Fetch data
   const { data, isLoading, error } = useApplications({
-    status: selectedStatus || undefined,
     search: searchQuery || undefined,
   });
 
@@ -85,13 +74,15 @@ export default function ApplicationsPage() {
 
   const applications = data?.applications || [];
 
-  // Keyboard navigation
-  const { selectedIndex } = useListNavigation({
-    items: applications,
-    onSelect: (app) => {
-      window.location.href = `/applications/${app.id}`;
-    },
-    enabled: !openDropdown,
+  // Filter by tab
+  const filteredApps = applications.filter((app) => {
+    if (activeTab === 'active') {
+      return !['rejected', 'withdrawn', 'ghosted'].includes(app.status);
+    }
+    if (activeTab === 'archived') {
+      return ['rejected', 'withdrawn', 'ghosted'].includes(app.status);
+    }
+    return true;
   });
 
   const handleStatusChange = (id: string, newStatus: ApplicationStatus) => {
@@ -99,268 +90,184 @@ export default function ApplicationsPage() {
     setOpenDropdown(null);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this application?')) {
-      deleteApplication(id);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className={styles.page}>
-        <Header title="Applications" subtitle="Loading..." />
-        <ApplicationsSkeleton />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.page}>
-        <Header title="Applications" subtitle="Error" />
-        <div className={styles.content}>
-          <ErrorState 
-            message="Failed to load applications. Please try again." 
-            onRetry={() => window.location.reload()}
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.page}>
-      <Header 
-        title="Applications" 
-        subtitle={`${data?.meta.total || 0} total applications`}
-        action={
-          <Button onClick={openAddModal} leftIcon={<Plus size={16} />}>
-            Add Application
-          </Button>
-        }
-      />
-      
-      <div className={styles.content}>
-        {/* Toolbar */}
-        <motion.div 
-          className={styles.toolbar}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-        >
+      {/* Header Bar */}
+      <header className={styles.header}>
+        <div className={styles.headerLeft}>
+          <h1 className={styles.pageTitle}>Applications</h1>
+          <span className={styles.headerSep}>/</span>
+          <span className={styles.headerMeta}>ALL_VIEWS</span>
+        </div>
+        <div className={styles.headerRight}>
           <div className={styles.searchWrapper}>
-            <Search size={16} className={styles.searchIcon} />
+            <Search size={14} className={styles.searchIcon} />
             <input
               type="text"
-              placeholder="Search companies, roles..."
+              placeholder="Filter by company, role..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={styles.searchInput}
             />
-            {searchQuery && (
-              <button 
-                className={styles.clearSearch}
-                onClick={() => setSearchQuery('')}
-              >
-                ×
+            <kbd className={styles.searchKbd}>/</kbd>
+          </div>
+          <div className={styles.headerDivider} />
+          <button className={styles.displayButton}>
+            <Filter size={14} />
+            Display
+          </button>
+          <button className={styles.newButton} onClick={openAddModal}>
+            <Plus size={14} />
+            New
+          </button>
+        </div>
+      </header>
+
+      {/* Tabs */}
+      <div className={styles.tabBar}>
+        <div className={styles.tabs}>
+          {(['all', 'active', 'archived'] as TabFilter[]).map((tab) => (
+            <button
+              key={tab}
+              className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ''}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab === 'all' ? 'All Applications' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+        <span className={styles.recordCount}>{filteredApps.length} records</span>
+      </div>
+
+      {/* Table Header */}
+      <div className={styles.tableHeader}>
+        <div className={styles.colCompany}>
+          <input type="checkbox" className={styles.checkbox} />
+          <span>Company & Role</span>
+        </div>
+        <div className={styles.colStatus}>Status</div>
+        <div className={styles.colDate}>Date Applied</div>
+        <div className={styles.colUpdate}>Last Update</div>
+        <div className={styles.colActions}>Actions</div>
+      </div>
+
+      {/* Table Body */}
+      <div className={styles.tableBody}>
+        {isLoading ? (
+          <div className={styles.loadingState}>
+            <Loader2 size={24} className={styles.spin} />
+            <span>Loading applications...</span>
+          </div>
+        ) : error ? (
+          <div className={styles.emptyState}>
+            <p>Failed to load applications. Please refresh.</p>
+          </div>
+        ) : filteredApps.length === 0 ? (
+          <div className={styles.emptyState}>
+            <Briefcase size={40} className={styles.emptyIcon} />
+            <h3>No applications found</h3>
+            <p>
+              {!searchQuery && activeTab === 'all'
+                ? 'Start tracking your job search by adding your first application.'
+                : 'Try adjusting your search or filters.'}
+            </p>
+            {!searchQuery && activeTab === 'all' && (
+              <button className={styles.newButton} onClick={openAddModal}>
+                <Plus size={14} />
+                Add Application
               </button>
             )}
           </div>
-          
-          <div className={styles.filters}>
-            <div className={styles.statusFilters}>
-              <button 
-                className={`${styles.statusChip} ${!selectedStatus ? styles.active : ''}`}
-                onClick={() => setSelectedStatus('')}
-              >
-                All
-              </button>
-              {['applied', 'interview', 'offer', 'rejected'].map((status) => (
-                <button
-                  key={status}
-                  className={`${styles.statusChip} ${selectedStatus === status ? styles.active : ''}`}
-                  onClick={() => setSelectedStatus(status as ApplicationStatus)}
-                  style={{ '--chip-color': statusConfig[status as ApplicationStatus].color } as React.CSSProperties}
-                >
-                  <span className={styles.chipDot} />
-                  {statusConfig[status as ApplicationStatus].label}
-                </button>
-              ))}
-            </div>
-            
-            <button className={styles.moreFiltersButton}>
-              <Filter size={14} />
-              More
-            </button>
-          </div>
-        </motion.div>
+        ) : (
+          filteredApps.map((app) => (
+            <Link
+              key={app.id}
+              href={`/applications/${app.id}`}
+              className={styles.tableRow}
+            >
+              <div className={styles.colCompany}>
+                <input
+                  type="checkbox"
+                  className={styles.checkbox}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <div className={styles.companyCell}>
+                  <div className={styles.avatar}>
+                    {(app.company || '?')[0].toUpperCase()}
+                  </div>
+                  <div className={styles.companyInfo}>
+                    <span className={styles.companyName}>{app.company}</span>
+                    <span className={styles.roleName}>{app.role}</span>
+                  </div>
+                </div>
+              </div>
 
-        {/* Stats bar */}
-        <div className={styles.statsBar}>
-          <div className={styles.statPill}>
-            <span className={styles.statValue}>{applications.filter(a => a.status === 'interview').length}</span>
-            <span className={styles.statLabel}>Interviews</span>
-          </div>
-          <div className={styles.statPill}>
-            <span className={styles.statValue}>{applications.filter(a => a.status === 'offer').length}</span>
-            <span className={styles.statLabel}>Offers</span>
-          </div>
-          <div className={styles.statPill}>
-            <span className={styles.statValue}>
-              {applications.length > 0 
-                ? Math.round((applications.filter(a => ['interview', 'offer', 'accepted'].includes(a.status)).length / applications.length) * 100)
-                : 0}%
-            </span>
-            <span className={styles.statLabel}>Response Rate</span>
-          </div>
-        </div>
+              <div className={styles.colStatus} onClick={(e) => e.preventDefault()}>
+                <div className={styles.statusWrapper}>
+                  <button
+                    className={styles.statusBadge}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setOpenDropdown(openDropdown === app.id ? null : app.id);
+                    }}
+                  >
+                    {statusConfig[app.status]?.label || app.status.toUpperCase()}
+                  </button>
 
-        {/* Applications List */}
-        <StaggerContainer className={styles.list}>
-          <AnimatePresence mode="popLayout">
-            {applications.map((app, index) => (
-              <StaggerItem key={app.id}>
-                <motion.div 
-                  className={`${styles.applicationCard} ${index === selectedIndex ? styles.selected : ''}`}
-                  layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  {/* Company Logo */}
-                  <div className={styles.companyLogo}>
-                    <Building2 size={18} />
-                  </div>
-                  
-                  {/* Info - Clickable */}
-                  <Link href={`/applications/${app.id}`} className={styles.cardInfo}>
-                    <div className={styles.cardHeader}>
-                      <h3 className={styles.companyName}>{app.company}</h3>
-                      <div className={styles.priorityStars}>
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star 
-                            key={i} 
-                            size={10} 
-                            className={i < app.priority ? styles.starFilled : styles.starEmpty}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <p className={styles.roleTitle}>{app.role}</p>
-                    <div className={styles.cardMeta}>
-                      <span className={styles.metaItem}>
-                        <Calendar size={11} />
-                        {formatDate(app.appliedDate)}
-                      </span>
-                      {app.location && (
-                        <span className={styles.metaItem}>
-                          <MapPin size={11} />
-                          {app.location}
-                        </span>
-                      )}
-                      <span className={styles.metaDaysAgo}>{getDaysAgo(app.appliedDate)}</span>
-                    </div>
-                  </Link>
-                  
-                  {/* Tags */}
-                  <div className={styles.tags}>
-                    {app.tags.slice(0, 2).map((tag) => (
-                      <span key={tag} className={styles.tag}>{tag}</span>
-                    ))}
-                    {app.tags.length > 2 && (
-                      <span className={styles.tagMore}>+{app.tags.length - 2}</span>
-                    )}
-                  </div>
-                  
-                  {/* Status Dropdown */}
-                  <div className={styles.statusWrapper}>
-                    <button 
-                      className={styles.statusBadge}
-                      style={{ '--status-color': statusConfig[app.status]?.color } as React.CSSProperties}
-                      onClick={() => setOpenDropdown(openDropdown === app.id ? null : app.id)}
-                    >
-                      <span className={styles.statusDot} />
-                      {statusConfig[app.status]?.label}
-                      <ChevronDown size={12} className={styles.statusChevron} />
-                    </button>
-                    
-                    <AnimatePresence>
-                      {openDropdown === app.id && (
-                        <motion.div 
-                          className={styles.statusDropdown}
-                          initial={{ opacity: 0, y: -5, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -5, scale: 0.95 }}
-                          transition={{ duration: 0.1 }}
-                        >
-                          {allStatuses.map((status) => (
-                            <button
-                              key={status}
-                              className={`${styles.statusOption} ${status === app.status ? styles.active : ''}`}
-                              onClick={() => handleStatusChange(app.id, status)}
-                            >
-                              <span 
-                                className={styles.optionDot}
-                                style={{ backgroundColor: statusConfig[status].color }}
-                              />
-                              {statusConfig[status].label}
-                            </button>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  
-                  {/* Actions */}
-                  <div className={styles.cardActions}>
-                    {app.url && (
-                      <a 
-                        href={app.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className={styles.actionButton}
-                        title="Open job posting"
+                  <AnimatePresence>
+                    {openDropdown === app.id && (
+                      <motion.div
+                        className={styles.statusDropdown}
+                        initial={{ opacity: 0, y: -5, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -5, scale: 0.95 }}
+                        transition={{ duration: 0.1 }}
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <ExternalLink size={14} />
-                      </a>
+                        {allStatuses.map((status) => (
+                          <button
+                            key={status}
+                            className={`${styles.statusOption} ${status === app.status ? styles.activeOption : ''}`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleStatusChange(app.id, status);
+                            }}
+                          >
+                            <span
+                              className={styles.optionDot}
+                              style={{ backgroundColor: statusConfig[status].color }}
+                            />
+                            {statusConfig[status].label}
+                          </button>
+                        ))}
+                      </motion.div>
                     )}
-                    <button 
-                      className={`${styles.actionButton} ${styles.deleteButton}`}
-                      title="Delete"
-                      onClick={() => handleDelete(app.id)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </motion.div>
-              </StaggerItem>
-            ))}
-          </AnimatePresence>
-        </StaggerContainer>
+                  </AnimatePresence>
+                </div>
+              </div>
 
-        {/* Empty State */}
-        {applications.length === 0 && (
-          <EmptyState
-            icon={<Briefcase size={48} />}
-            title="No applications found"
-            description={
-              !searchQuery && !selectedStatus 
-                ? "Start tracking your job search by adding your first application."
-                : "Try adjusting your search or filters."
-            }
-            action={!searchQuery && !selectedStatus ? {
-              label: 'Add Application',
-              onClick: openAddModal,
-            } : undefined}
-          />
-        )}
+              <div className={styles.colDate}>
+                {formatDateMono(app.appliedDate)}
+              </div>
 
-        {/* Keyboard hint */}
-        {applications.length > 0 && (
-          <div className={styles.keyboardHint}>
-            <kbd>j</kbd><kbd>k</kbd> to navigate • <kbd>Enter</kbd> to open
-          </div>
+              <div className={styles.colUpdate}>
+                {getTimeAgo(app.updatedAt || app.appliedDate)}
+              </div>
+
+              <div className={styles.colActions}>
+                <button
+                  className={styles.moreButton}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  <MoreHorizontal size={16} />
+                </button>
+              </div>
+            </Link>
+          ))
         )}
       </div>
     </div>

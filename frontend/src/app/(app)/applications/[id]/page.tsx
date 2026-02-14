@@ -3,11 +3,11 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useApplication, useUpdateApplication, useUpdateApplicationStatus, useDeleteApplication } from '@/hooks/use-applications';
 import type { ApplicationStatus } from '@/stores';
-import { 
-  ArrowLeft, 
-  ExternalLink, 
-  Edit3, 
-  Trash2, 
+import {
+  ArrowLeft,
+  ExternalLink,
+  Edit3,
+  Trash2,
   Calendar,
   MapPin,
   DollarSign,
@@ -17,7 +17,12 @@ import {
   Building2,
   ChevronDown,
   Save,
-  X
+  X,
+  Check,
+  Mail,
+  FileText,
+  Send,
+  Loader2,
 } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -40,11 +45,18 @@ const allStatuses: ApplicationStatus[] = [
 ];
 
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', { 
-    month: 'long', 
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
     day: 'numeric',
-    year: 'numeric'
+    year: 'numeric',
   });
+}
+
+function formatDateShort(dateString: string): string {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  }).toUpperCase();
 }
 
 function formatCurrency(amount: number): string {
@@ -64,7 +76,7 @@ export default function ApplicationDetailPage() {
   const { mutate: updateApplication } = useUpdateApplication();
   const { mutate: updateStatus } = useUpdateApplicationStatus();
   const { mutate: deleteApplication } = useDeleteApplication();
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -78,7 +90,7 @@ export default function ApplicationDetailPage() {
   if (isLoading) {
     return (
       <div className={styles.loadingContainer}>
-        <div className={styles.spinner}></div>
+        <Loader2 className={styles.spin} size={20} />
         <p>Loading application...</p>
       </div>
     );
@@ -100,7 +112,7 @@ export default function ApplicationDetailPage() {
   const handleDelete = () => {
     if (confirm(`Delete application for ${application.company}?`)) {
       deleteApplication(application.id, {
-        onSuccess: () => router.push('/applications')
+        onSuccess: () => router.push('/applications'),
       });
     }
   };
@@ -130,7 +142,7 @@ export default function ApplicationDetailPage() {
         url: editForm.url || undefined,
         location: editForm.location || undefined,
         notes: editForm.notes || undefined,
-      }
+      },
     });
     setIsEditing(false);
   };
@@ -141,259 +153,307 @@ export default function ApplicationDetailPage() {
 
   return (
     <div className={styles.page}>
-      {/* Header */}
+      {/* ── Header ──────────────────────────── */}
       <header className={styles.header}>
-        <Link href="/applications" className={styles.backButton}>
-          <ArrowLeft size={18} />
-          <span>Applications</span>
-        </Link>
+        <div className={styles.headerLeft}>
+          <Link href="/applications" className={styles.backButton}>
+            <ArrowLeft size={14} />
+            Back
+          </Link>
+          <span className={styles.headerSep}>/</span>
+          <div className={styles.headerCompany}>
+            <div className={styles.headerIcon}>
+              {application.company.charAt(0)}
+            </div>
+            <h1 className={styles.headerTitle}>
+              {application.company} - {application.role}
+            </h1>
+          </div>
+          <span className={styles.headerTag}>
+            APP-{application.id.slice(-4).toUpperCase()}
+          </span>
+        </div>
 
         <div className={styles.headerActions}>
           {isEditing ? (
             <>
-              <button className={styles.cancelButton} onClick={cancelEditing}>
-                <X size={16} />
-                Cancel
+              <button className={styles.cancelBtn} onClick={cancelEditing}>
+                <X size={14} /> Cancel
               </button>
-              <button className={styles.saveButton} onClick={saveEdits}>
-                <Save size={16} />
-                Save Changes
+              <button className={styles.saveBtn} onClick={saveEdits}>
+                <Save size={14} /> Save Changes
               </button>
             </>
           ) : (
             <>
-              <button className={styles.editButton} onClick={startEditing}>
-                <Edit3 size={16} />
-                Edit
+              <button className={styles.editBtn} onClick={startEditing}>
+                <Edit3 size={14} /> Edit
               </button>
-              <button className={styles.deleteButton} onClick={handleDelete}>
-                <Trash2 size={16} />
-                Delete
+              <button className={styles.deleteBtn} onClick={handleDelete}>
+                <Trash2 size={14} /> Delete
               </button>
             </>
           )}
         </div>
       </header>
 
-      <div className={styles.content}>
-        {/* Main Info Card */}
-        <div className={styles.mainCard}>
-          <div className={styles.companyHeader}>
-            <div className={styles.companyLogo}>
-              <Building2 size={32} />
-            </div>
-            
-            <div className={styles.companyInfo}>
-              {isEditing ? (
-                <>
-                  <input
-                    type="text"
-                    value={editForm.company}
-                    onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
-                    className={styles.editInput}
-                    placeholder="Company name"
-                  />
-                  <input
-                    type="text"
-                    value={editForm.role}
-                    onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                    className={styles.editInputSmall}
-                    placeholder="Role title"
-                  />
-                </>
-              ) : (
-                <>
-                  <h1 className={styles.companyName}>{application.company}</h1>
-                  <p className={styles.roleTitle}>{application.role}</p>
-                </>
-              )}
-            </div>
-
-            {/* Status Badge */}
-            <div className={styles.statusWrapper}>
-              <button 
-                className={styles.statusBadge}
-                style={{ '--status-color': statusConfig[application.status]?.color } as React.CSSProperties}
-                onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-              >
-                {statusConfig[application.status]?.label}
-                <ChevronDown size={14} />
-              </button>
-              
-              {showStatusDropdown && (
-                <div className={styles.statusDropdown}>
-                  {allStatuses.map((status) => (
-                    <button
-                      key={status}
-                      className={`${styles.statusOption} ${status === application.status ? styles.active : ''}`}
-                      onClick={() => handleStatusChange(status)}
-                    >
-                      <span 
-                        className={styles.statusDot}
-                        style={{ backgroundColor: statusConfig[status].color }}
-                      />
-                      {statusConfig[status].label}
-                    </button>
-                  ))}
+      {/* ── Scrollable Content ──────────────── */}
+      <div className={styles.scrollArea}>
+        <div className={styles.layoutGrid}>
+          {/* ── Left Column ─────────────────── */}
+          <div className={styles.leftColumn}>
+            {/* Info Card */}
+            <div className={styles.infoCard}>
+              <div className={styles.infoHeader}>
+                <div className={styles.infoHeaderLeft}>
+                  <div className={styles.companyLogo}>
+                    <Building2 size={24} />
+                  </div>
+                  <div>
+                    {isEditing ? (
+                      <>
+                        <input
+                          type="text"
+                          value={editForm.role}
+                          onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                          className={styles.editInput}
+                          placeholder="Role title"
+                        />
+                        <input
+                          type="text"
+                          value={editForm.company}
+                          onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+                          className={styles.editInputSmall}
+                          placeholder="Company name"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <h2 className={styles.infoRole}>{application.role}</h2>
+                        <p className={styles.infoCompanyMeta}>
+                          {application.company}
+                          {application.location && ` • ${application.location}`}
+                          {' • Full-time'}
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Priority */}
-          <div className={styles.priority}>
-            <span className={styles.priorityLabel}>Priority:</span>
-            <div className={styles.priorityStars}>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star 
-                  key={i} 
-                  size={16} 
-                  className={i < application.priority ? styles.starFilled : styles.starEmpty}
-                />
-              ))}
-            </div>
-          </div>
+                {/* Status Badge */}
+                <div className={styles.statusWrapper}>
+                  <button
+                    className={styles.statusBadge}
+                    onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                  >
+                    {statusConfig[application.status]?.label.toUpperCase()}
+                    <ChevronDown size={12} />
+                  </button>
 
-          {/* Details Grid */}
-          <div className={styles.detailsGrid}>
-            <div className={styles.detailItem}>
-              <Calendar size={16} />
-              <div>
-                <span className={styles.detailLabel}>Applied</span>
-                <span className={styles.detailValue}>{formatDate(application.appliedDate)}</span>
-              </div>
-            </div>
-
-            <div className={styles.detailItem}>
-              <Clock size={16} />
-              <div>
-                <span className={styles.detailLabel}>Source</span>
-                <span className={styles.detailValue}>{application.source}</span>
-              </div>
-            </div>
-
-            {(application.location || isEditing) && (
-              <div className={styles.detailItem}>
-                <MapPin size={16} />
-                <div>
-                  <span className={styles.detailLabel}>Location</span>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editForm.location}
-                      onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
-                      className={styles.editInputInline}
-                      placeholder="Add location"
-                    />
-                  ) : (
-                    <span className={styles.detailValue}>{application.location}</span>
+                  {showStatusDropdown && (
+                    <div className={styles.statusDropdown}>
+                      {allStatuses.map((status) => (
+                        <button
+                          key={status}
+                          className={`${styles.statusOption} ${status === application.status ? styles.active : ''}`}
+                          onClick={() => handleStatusChange(status)}
+                        >
+                          <span
+                            className={styles.statusDot}
+                            style={{ backgroundColor: statusConfig[status].color }}
+                          />
+                          {statusConfig[status].label}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
-            )}
 
-            {(application.salaryMin || application.salaryMax) && (
-              <div className={styles.detailItem}>
-                <DollarSign size={16} />
-                <div>
-                  <span className={styles.detailLabel}>Salary</span>
-                  <span className={styles.detailValue}>
-                    {application.salaryMin && application.salaryMax
-                      ? `${formatCurrency(application.salaryMin)} - ${formatCurrency(application.salaryMax)}`
-                      : formatCurrency(application.salaryMin || application.salaryMax || 0)}
-                    /mo
-                  </span>
+              {/* Metadata Grid */}
+              <div className={styles.metaGrid}>
+                {(application.salaryMin || application.salaryMax) && (
+                  <div className={styles.metaItem}>
+                    <p className={styles.metaLabel}>Salary Range</p>
+                    <p className={styles.metaValue}>
+                      {application.salaryMin && application.salaryMax
+                        ? `${formatCurrency(application.salaryMin)} - ${formatCurrency(application.salaryMax)}`
+                        : formatCurrency(application.salaryMin || application.salaryMax || 0)}
+                    </p>
+                  </div>
+                )}
+                <div className={styles.metaItem}>
+                  <p className={styles.metaLabel}>Applied Date</p>
+                  <p className={styles.metaValue}>{formatDate(application.appliedDate)}</p>
+                </div>
+                <div className={styles.metaItem}>
+                  <p className={styles.metaLabel}>Source</p>
+                  <p className={styles.metaValue}>{application.source}</p>
+                </div>
+                {application.location && (
+                  <div className={styles.metaItem}>
+                    <p className={styles.metaLabel}>Location</p>
+                    <p className={styles.metaValue}>{application.location}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* URL */}
+              {application.url && !isEditing && (
+                <div className={styles.urlRow}>
+                  <a
+                    href={application.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.urlLink}
+                  >
+                    <ExternalLink size={12} />
+                    View Job Posting
+                  </a>
+                </div>
+              )}
+              {isEditing && (
+                <div className={styles.urlRow}>
+                  <input
+                    type="text"
+                    value={editForm.url}
+                    onChange={(e) => setEditForm({ ...editForm, url: e.target.value })}
+                    className={styles.editInputFull}
+                    placeholder="Job posting URL"
+                  />
+                </div>
+              )}
+
+              {/* Tags */}
+              {application.tags && application.tags.length > 0 && (
+                <div className={styles.tagRow}>
+                  {application.tags.map((tag) => (
+                    <span key={tag} className={styles.tag}>{tag}</span>
+                  ))}
+                </div>
+              )}
+
+              {/* Priority */}
+              <div className={styles.priorityRow}>
+                <span className={styles.metaLabel}>Priority</span>
+                <div className={styles.priorityStars}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      size={14}
+                      className={i < application.priority ? styles.starFilled : styles.starEmpty}
+                    />
+                  ))}
                 </div>
               </div>
-            )}
+            </div>
+
+            {/* Timeline */}
+            <div className={styles.timelineSection}>
+              <div className={styles.timelineSectionHeader}>
+                <h3 className={styles.sectionTitle}>Application Timeline</h3>
+              </div>
+              <div className={styles.timeline}>
+                {/* Current status event */}
+                {application.status !== 'applied' && (
+                  <div className={styles.timelineItem}>
+                    <span className={styles.timelineNode}>
+                      <Check size={14} />
+                    </span>
+                    <div className={styles.timelineCard}>
+                      <div className={styles.timelineCardHeader}>
+                        <p className={styles.timelineCardTitle}>
+                          Status: {statusConfig[application.status].label}
+                        </p>
+                        <span className={styles.timelineCardDate}>
+                          {formatDateShort(application.updatedAt)}
+                        </span>
+                      </div>
+                      <p className={styles.timelineCardDesc}>
+                        Application moved to {statusConfig[application.status].label.toLowerCase()} stage.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Application submitted */}
+                <div className={`${styles.timelineItem} ${styles.timelineItemLast}`}>
+                  <span className={styles.timelineNodeMuted}>
+                    <Mail size={14} />
+                  </span>
+                  <div className={styles.timelineSimple}>
+                    <p className={styles.timelineSimpleText}>
+                      Application submitted via {application.source}
+                    </p>
+                    <span className={styles.timelineSimpleDate}>
+                      {formatDateShort(application.appliedDate)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Tags */}
-          {application.tags.length > 0 && (
-            <div className={styles.tags}>
-              <Tag size={16} />
-              <div className={styles.tagList}>
-                {application.tags.map((tag) => (
-                  <span key={tag} className={styles.tag}>{tag}</span>
-                ))}
+          {/* ── Right Column ────────────────── */}
+          <div className={styles.rightColumn}>
+            {/* Notes */}
+            <div className={styles.sidePanel}>
+              <div className={styles.sidePanelHeader}>
+                <h3 className={styles.sidePanelTitle}>Notes</h3>
+                <span className={styles.sidePanelTag}>PRIVATE</span>
               </div>
-            </div>
-          )}
-
-          {/* URL */}
-          {(application.url || isEditing) && (
-            <div className={styles.urlSection}>
               {isEditing ? (
-                <input
-                  type="text"
-                  value={editForm.url}
-                  onChange={(e) => setEditForm({ ...editForm, url: e.target.value })}
-                  className={styles.editInputFull}
-                  placeholder="Job posting URL"
+                <textarea
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                  className={styles.notesTextarea}
+                  placeholder="Jot down quick thoughts..."
+                  rows={5}
                 />
               ) : (
-                <a 
-                  href={application.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className={styles.urlLink}
-                >
-                  <ExternalLink size={14} />
-                  View Job Posting
-                </a>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Notes Section */}
-        <div className={styles.notesCard}>
-          <h2>Notes</h2>
-          {isEditing ? (
-            <textarea
-              value={editForm.notes}
-              onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-              className={styles.notesTextarea}
-              placeholder="Add notes about this application..."
-              rows={6}
-            />
-          ) : (
-            <div className={styles.notesContent}>
-              {application.notes || (
-                <span className={styles.emptyNotes}>
-                  No notes yet. Click Edit to add notes.
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Timeline Section */}
-        <div className={styles.timelineCard}>
-          <h2>Timeline</h2>
-          <div className={styles.timeline}>
-            <div className={styles.timelineItem}>
-              <div className={styles.timelineDot} style={{ backgroundColor: 'var(--status-applied)' }} />
-              <div className={styles.timelineContent}>
-                <span className={styles.timelineTitle}>Application Created</span>
-                <span className={styles.timelineDate}>{formatDate(application.createdAt)}</span>
-              </div>
-            </div>
-            
-            {application.status !== 'applied' && (
-              <div className={styles.timelineItem}>
-                <div 
-                  className={styles.timelineDot} 
-                  style={{ backgroundColor: statusConfig[application.status].color }} 
-                />
-                <div className={styles.timelineContent}>
-                  <span className={styles.timelineTitle}>
-                    Status changed to {statusConfig[application.status].label}
-                  </span>
-                  <span className={styles.timelineDate}>{formatDate(application.updatedAt)}</span>
+                <div className={styles.notesContent}>
+                  {application.notes || (
+                    <span className={styles.emptyNotes}>
+                      No notes yet. Click Edit to add notes.
+                    </span>
+                  )}
                 </div>
+              )}
+            </div>
+
+            {/* Quick Info */}
+            <div className={styles.sidePanel}>
+              <h3 className={styles.sidePanelTitle}>Quick Info</h3>
+              <div className={styles.quickInfoList}>
+                <div className={styles.quickInfoItem}>
+                  <Calendar size={14} />
+                  <span>Applied {formatDate(application.appliedDate)}</span>
+                </div>
+                <div className={styles.quickInfoItem}>
+                  <Clock size={14} />
+                  <span>Last updated {formatDate(application.updatedAt)}</span>
+                </div>
+                {application.location && (
+                  <div className={styles.quickInfoItem}>
+                    <MapPin size={14} />
+                    <span>{application.location}</span>
+                  </div>
+                )}
+                {application.url && (
+                  <div className={styles.quickInfoItem}>
+                    <ExternalLink size={14} />
+                    <a
+                      href={application.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.quickInfoLink}
+                    >
+                      Job posting
+                    </a>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

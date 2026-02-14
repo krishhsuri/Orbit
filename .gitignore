@@ -28,6 +28,7 @@ venv/
 ENV/
 env/
 docs/
+stitch/
 # Pytest / Coverage
 .pytest_cache/
 htmlcov/

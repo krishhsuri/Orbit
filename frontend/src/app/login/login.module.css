@@ -1,178 +1,117 @@
 /* =====================================================
-   LOGIN PAGE - Split-screen layout
-   Left: branding + animation | Right: login form
+   LOGIN PAGE — Midnight Split Screen
    ===================================================== */
 
 .container {
   min-height: 100vh;
   display: flex;
   background: var(--bg-base);
+  font-family: var(--font-sans);
+  overflow: hidden;
 }
 
 .loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
-  font-size: 13px;
+  width: 100%;
   color: var(--text-muted);
 }
 
 /* ─────────────────────────────────────────────────
-   LEFT PANEL — Branding + Animation
+   LEFT PANEL — Branding
    ───────────────────────────────────────────────── */
 
 .leftPanel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  display: none;
+  width: 50%;
   position: relative;
-  padding: 48px 40px;
-  overflow: hidden;
   background: var(--bg-surface);
   border-right: 1px solid var(--border-subtle);
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
-/* Static dot-grid pattern */
+@media (min-width: 1024px) {
+  .leftPanel {
+    display: flex;
+  }
+}
+
 .patternGrid {
   position: absolute;
   inset: 0;
-  opacity: 0.4;
   background-image:
-    radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-  background-size: 24px 24px;
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
   pointer-events: none;
 }
 
-/* Over-pattern gradient fade */
-.leftPanel::after {
-  content: '';
+.radialGlow {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 50%, transparent 30%, var(--bg-surface) 100%);
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.05), transparent 70%);
+  opacity: 0.4;
   pointer-events: none;
 }
 
 .brandContent {
   position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 420px;
-  text-align: center;
-}
-
-.brandLogo {
-  margin-bottom: 40px;
+  z-index: 10;
+  padding: 48px;
+  max-width: 480px;
 }
 
 .brandIcon {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  background: var(--accent-primary);
-  border-radius: 14px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
+  margin-bottom: 32px;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.03);
 }
 
-/* Testimonial Quote */
-.testimonial {
-  margin-bottom: 24px;
-}
-
-.testimonial p {
-  font-size: 20px;
+.brandTitle {
+  font-size: 36px;
   font-weight: 500;
-  color: var(--text-primary);
-  line-height: 1.5;
-  letter-spacing: -0.01em;
+  color: white;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin: 0 0 16px 0;
 }
 
-.testimonialAuthor {
+.brandSubtitle {
+  font-size: 18px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.features {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.featureItem {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 48px;
-}
-
-.authorAvatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--accent-muted);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 14px;
-  font-weight: 600;
-}
-
-.authorInfo {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.authorName {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.authorRole {
-  font-size: 12px;
   color: var(--text-muted);
 }
 
-/* Animation placeholder */
-.animationSlot {
-  width: 100%;
-  min-height: 120px;
-  /* Empty by default — user will add their animation here */
-}
-
-/* Bottom stats row */
-.brandStats {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  margin-top: auto;
-  padding-top: 40px;
-}
-
-.brandStat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.brandStatValue {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.02em;
-}
-
-.brandStatLabel {
-  font-size: 11px;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-.brandStatDivider {
-  width: 1px;
-  height: 32px;
-  background: var(--border-default);
+.featureIcon {
+  color: rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
 }
 
 /* ─────────────────────────────────────────────────
@@ -180,108 +119,111 @@
    ───────────────────────────────────────────────── */
 
 .rightPanel {
-  width: 480px;
-  min-width: 420px;
+  width: 100%;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  padding: 48px 56px;
+  align-items: center;
+  padding: 32px;
   background: var(--bg-base);
+}
+
+@media (min-width: 1024px) {
+  .rightPanel {
+    width: 50%;
+  }
 }
 
 .formContainer {
   width: 100%;
-  max-width: 340px;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-/* Form Header */
-.formHeader {
-  margin-bottom: 32px;
+/* Mobile logo — only visible on small screens */
+.mobileLogo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  margin-bottom: 8px;
+}
+
+@media (min-width: 1024px) {
+  .mobileLogo {
+    display: none;
+  }
 }
 
 .formHeader h1 {
   font-size: 24px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.03em;
-  margin-bottom: 8px;
+  font-weight: 500;
+  color: white;
+  letter-spacing: -0.025em;
+  margin: 0 0 8px 0;
 }
 
 .formHeader p {
   font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0;
 }
 
 /* Error */
 .error {
+  padding: 10px 14px;
   background: rgba(230, 106, 106, 0.1);
   border: 1px solid rgba(230, 106, 106, 0.2);
-  color: var(--error);
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
-  margin-bottom: 20px;
+  border-radius: 8px;
+  color: var(--error, #e66a6a);
   font-size: 13px;
 }
 
 /* Google Button */
 .googleButton {
-  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  height: 48px;
-  padding: 0 20px;
-  background: #FFFFFF;
-  color: #1F1F1F;
+  gap: 12px;
+  width: 100%;
+  height: 40px;
+  padding: 0 16px;
+  background: white;
+  color: #000;
   border: none;
-  border-radius: var(--radius-lg);
-  font-size: 15px;
+  border-radius: 6px;
+  font-size: 14px;
   font-weight: 500;
+  font-family: var(--font-sans);
   cursor: pointer;
-  transition: all 150ms ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: background 150ms ease;
 }
 
 .googleButton:hover {
-  background: #F8F9FA;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  transform: translateY(-1px);
-}
-
-.googleButton:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  background: #e8e8e8;
 }
 
 .googleIcon {
   width: 20px;
   height: 20px;
-}
-
-.buttonArrow {
-  margin-left: auto;
-  opacity: 0.4;
-  transition: opacity 150ms ease, transform 150ms ease;
-}
-
-.googleButton:hover .buttonArrow {
-  opacity: 0.7;
-  transform: translateX(2px);
+  flex-shrink: 0;
 }
 
 /* Divider */
 .divider {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 24px 0;
+  gap: 8px;
 }
 
-.divider::before,
-.divider::after {
-  content: '';
+.dividerLine {
   flex: 1;
   height: 1px;
   background: var(--border-subtle);
@@ -289,66 +231,152 @@
 
 .divider span {
   font-size: 11px;
-  color: var(--text-disabled);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
   white-space: nowrap;
 }
 
-/* Features checklist */
-.features {
+/* Form */
+.form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 28px;
+  gap: 16px;
 }
 
-.featureItem {
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  background: #1A1B1E;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  font-family: var(--font-sans);
+  transition: border-color 150ms ease;
+  outline: none;
+}
+
+.input::placeholder {
+  color: rgba(138, 143, 152, 0.5);
+}
+
+.input:focus {
+  border-color: white;
+  box-shadow: 0 0 0 1px white;
+}
+
+.formOptions {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--text-secondary);
+  justify-content: space-between;
 }
 
-.featureCheck {
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 12px;
-  color: var(--success);
-  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+  background: #1A1B1E;
+  appearance: none;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.checkbox input[type="checkbox"]:checked {
+  background: white;
+  border-color: white;
+}
+
+.forgotLink {
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.forgotLink:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.signInButton {
+  width: 100%;
+  height: 40px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.signInButton:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Signup Text */
+.signupText {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.signupLink {
+  font-weight: 500;
+  color: white;
+  text-decoration: none;
+  margin-left: 4px;
+  transition: color 150ms ease;
+}
+
+.signupLink:hover {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* Footer */
 .footer {
-  font-size: 11px;
-  color: var(--text-disabled);
-  line-height: 1.6;
+  padding-top: 32px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+  text-align: center;
 }
 
-.footer a {
+.footer p {
+  font-size: 10px;
   color: var(--text-muted);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.footer a:hover {
-  color: var(--accent-primary);
-}
-
-/* ─────────────────────────────────────────────────
-   RESPONSIVE — Mobile
-   ───────────────────────────────────────────────── */
-
-@media (max-width: 900px) {
-  .container {
-    flex-direction: column;
-  }
-
-  .leftPanel {
-    display: none;
-  }
-
-  .rightPanel {
-    width: 100%;
-    min-width: unset;
-    min-height: 100vh;
-    padding: 32px 24px;
-  }
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  letter-spacing: 0.05em;
+  margin: 0;
 }

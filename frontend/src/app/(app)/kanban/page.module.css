@@ -1,352 +1,701 @@
 /* =====================================================
-   KANBAN PAGE - Drag & Drop support
+   KANBAN PAGE — Midnight Board + Sidebar
    ===================================================== */
 
 .page {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-base);
 }
 
-.content {
-  flex: 1;
-  padding: 24px 20px;
-  overflow-x: auto;
-}
+/* ─── HEADER ───────────────────────────────────── */
 
-/* AI Hint */
-.aiHint {
+.header {
+  height: 56px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  background: linear-gradient(135deg,
-      rgba(94, 106, 210, 0.08),
-      rgba(93, 206, 135, 0.08));
-  border: 1px solid rgba(94, 106, 210, 0.2);
-  border-radius: var(--radius-lg);
-  margin-bottom: 20px;
-}
-
-.aiHint svg {
-  color: var(--accent-primary);
+  justify-content: space-between;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
-.aiHint span {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.aiHint strong {
-  color: var(--text-primary);
-}
-
-/* Kanban Board */
-.board {
+.headerLeft {
   display: flex;
-  gap: 16px;
-  min-height: calc(100vh - 280px);
+  align-items: center;
+  gap: 12px;
 }
 
-/* Column */
-.column {
-  flex: 1;
-  min-width: 260px;
-  max-width: 320px;
+.pageTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.headerSep {
+  color: var(--border-subtle);
+  font-size: 18px;
+  font-weight: 300;
+}
+
+.headerMeta {
+  font-size: 11px;
+  color: var(--text-disabled);
+  font-family: var(--font-mono, monospace);
+  letter-spacing: -0.02em;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.searchWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-disabled);
+}
+
+.searchInput {
+  height: 28px;
+  width: 180px;
+  padding: 0 12px 0 30px;
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  border-radius: 4px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 150ms ease;
 }
 
-/* Drop zone highlight when dragging over */
-.columnOver {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 1px var(--accent-primary), 0 4px 16px rgba(94, 106, 210, 0.15);
+.searchInput::placeholder {
+  color: var(--text-disabled);
+}
+
+.searchInput:focus {
+  border-color: var(--text-muted);
+}
+
+.newButton {
+  height: 28px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  color: black;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-sans);
+}
+
+.newButton:hover {
+  background: #e5e5e5;
+}
+
+/* ─── STATS ROW ────────────────────────────────── */
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.statCard {
+  padding: 20px 24px;
+  border-right: 1px solid var(--border-subtle);
+  transition: background 150ms ease;
+}
+
+.statCard:last-child {
+  border-right: none;
+}
+
+.statCard:hover {
+  background: var(--bg-surface);
+}
+
+.statTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.statLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono, monospace);
+}
+
+.statBadge {
+  font-size: 10px;
+  color: var(--text-disabled);
+  font-family: var(--font-mono, monospace);
+}
+
+.statPulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: white;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.statMeta {
+  font-size: 10px;
+  color: var(--text-disabled);
+  font-family: var(--font-mono, monospace);
+}
+
+.statValue {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
+}
+
+.statUnit {
+  font-size: 16px;
+  color: var(--text-disabled);
+  font-weight: 400;
+}
+
+/* ─── MAIN LAYOUT ──────────────────────────────── */
+
+.mainLayout {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.boardArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ─── BOARD ────────────────────────────────────── */
+
+.board {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ─── COLUMN ───────────────────────────────────── */
+
+.column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 200px;
+  padding: 20px 12px 0;
+  border-right: 1px solid var(--border-subtle);
+  transition: background 200ms ease;
+}
+
+.column:last-child {
+  border-right: none;
+}
+
+.column.columnOver {
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .columnHeader {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 0 4px;
 }
 
 .columnTitle {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .columnDot {
-  width: 8px;
-  height: 8px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
 }
 
 .columnCount {
-  margin-left: auto;
-  padding: 2px 8px;
-  background: var(--bg-base);
-  border-radius: 12px;
-  font-size: 11px;
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-.columnDescription {
-  font-size: 11px;
-  color: var(--text-muted);
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-disabled);
 }
 
 .columnContent {
   flex: 1;
-  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   overflow-y: auto;
-  min-height: 80px;
+  padding-bottom: 16px;
 }
 
-/* ─────────────────────────────────────────────────
-   KANBAN CARD — Draggable
-   ───────────────────────────────────────────────── */
+.emptyColumn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border-subtle);
+  border-radius: 4px;
+  padding: 32px;
+  opacity: 0.3;
+}
+
+.emptyColumn span {
+  font-size: 11px;
+  color: var(--text-disabled);
+}
+
+/* ─── KANBAN CARD ──────────────────────────────── */
 
 .kanbanCard {
   padding: 12px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
-  position: relative;
-  cursor: default;
+  background: #1C1C1E;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: grab;
+  transition: all 150ms ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .kanbanCard:hover {
-  border-color: var(--border-default);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border-color: rgba(95, 99, 107, 0.3);
 }
 
-/* While being dragged (original position) */
 .kanbanCard.dragging {
-  opacity: 0.4;
-  border-style: dashed;
-}
-
-/* Drag handle */
-.dragHandle {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border-radius: 4px;
-  color: var(--text-disabled);
-  cursor: grab;
-  opacity: 0;
-  transition: opacity 150ms ease, color 150ms ease;
-}
-
-.kanbanCard:hover .dragHandle {
-  opacity: 1;
-}
-
-.dragHandle:hover {
-  color: var(--text-muted);
-  background: var(--bg-active);
-}
-
-.dragHandle:active {
   cursor: grabbing;
 }
 
-/* Overlay card (ghost following cursor) */
-.overlayCard {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--accent-primary);
-  border-color: var(--accent-primary);
-  transform: rotate(2deg) scale(1.02);
+.kanbanCard.overlayCard {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: scale(1.03) rotate(1deg);
   cursor: grabbing;
-  pointer-events: none;
 }
 
-.overlayCard .dragHandle {
-  opacity: 1;
-  color: var(--accent-primary);
-}
-
-/* ─────────────────────────────────────────────────
-   CARD CONTENT
-   ───────────────────────────────────────────────── */
-
-.cardHeader {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.cardLogo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: var(--bg-base);
-  border-radius: var(--radius-md);
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.cardInfo {
-  flex: 1;
-  min-width: 0;
-  text-decoration: none;
-}
-
-.cardInfo h4 {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: color 150ms ease;
-}
-
-.cardInfo:hover h4 {
-  color: var(--accent-primary);
-}
-
-.cardInfo p {
-  font-size: 11px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Card Footer */
-.cardFooter {
+.cardTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 6px;
 }
 
-.cardDate {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-/* Card Tags */
-.cardTags {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-
-.tag {
-  padding: 2px 8px;
-  background: var(--bg-base);
-  border-radius: 10px;
+.cardCompany {
   font-size: 10px;
+  font-family: var(--font-mono, monospace);
   color: var(--text-muted);
 }
 
-/* Empty Column */
-.emptyColumn {
-  flex: 1;
+.cardTopRight {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 32px;
-  border: 2px dashed var(--border-subtle);
-  border-radius: var(--radius-md);
-  margin: 4px;
+  gap: 6px;
 }
 
-.emptyColumn span {
-  font-size: 12px;
+.cardTime {
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
   color: var(--text-disabled);
 }
 
-/* Collapsed Section */
-.collapsedSection {
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.collapsedSection h3 {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
-}
-
-.collapsedGrid {
+.cardMore {
+  color: var(--text-disabled);
+  opacity: 0;
+  cursor: grab;
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  transition: opacity 100ms ease;
+}
+
+.kanbanCard:hover .cardMore {
+  opacity: 1;
+}
+
+.cardTitle {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-decoration: none;
+  margin-bottom: 4px;
+}
+
+.cardTitle:hover {
+  color: white;
+}
+
+.cardTags {
+  display: flex;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.tag {
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 9px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono, monospace);
+  text-transform: uppercase;
+}
+
+/* ─── COLLAPSED STATUSES ───────────────────────── */
+
+.collapsedSection {
+  display: flex;
+  gap: 16px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
 
 .collapsedItem {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  gap: 6px;
 }
 
 .collapsedDot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
 }
 
 .collapsedLabel {
-  font-size: 13px;
+  font-size: 11px;
   color: var(--text-secondary);
 }
 
 .collapsedCount {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-disabled);
+}
+
+/* ─── RIGHT SIDEBAR ────────────────────────────── */
+
+.sidebar {
+  width: 280px;
+  border-left: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.sidebarSection {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.sidebarSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sidebarSectionHeader h3 {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.sidebarFilterBtn {
+  background: none;
+  border: none;
+  color: var(--text-disabled);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  transition: color 150ms ease;
+}
+
+.sidebarFilterBtn:hover {
   color: var(--text-primary);
 }
 
-/* Error */
-.errorContainer {
+/* ─── DEADLINES ────────────────────────────────── */
+
+.deadlineList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.noDeadlines {
+  font-size: 12px;
+  color: var(--text-disabled);
+  margin: 0;
+}
+
+.deadlineItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px;
+  transition: background 100ms ease;
+}
+
+.deadlineItem:hover {
+  background: var(--bg-hover);
+}
+
+.deadlineDateBox {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.deadlineMonth {
+  font-size: 8px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.deadlineDay {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.deadlineInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.deadlineName {
+  font-size: 12px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deadlineBar {
+  height: 2px;
+  width: 48px;
+  background: var(--bg-hover);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.deadlineBarFill {
+  height: 100%;
+  background: white;
+  border-radius: 99px;
+}
+
+.deadlineDays {
+  font-size: 9px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-disabled);
+}
+
+/* ─── CALENDAR ─────────────────────────────────── */
+
+.calendarSection {
+  padding: 24px;
+  flex: 1;
+}
+
+.calHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.calMonth {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-family: var(--font-mono, monospace);
+}
+
+.calNav {
+  display: flex;
+  gap: 4px;
+}
+
+.calNavBtn {
+  background: none;
+  border: none;
+  color: var(--text-disabled);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  transition: color 100ms ease;
+}
+
+.calNavBtn:hover {
+  color: var(--text-primary);
+}
+
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px 0;
+  text-align: center;
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+}
+
+.calLabel {
+  color: var(--text-disabled);
+  padding-bottom: 4px;
+}
+
+.calBlank {
+  opacity: 0.1;
+}
+
+.calDay {
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 100ms ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px;
-  color: var(--text-muted);
-  font-size: 14px;
+  width: 16px;
+  height: 16px;
+  margin: 0 auto;
+  border-radius: 2px;
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
-  .board {
-    overflow-x: auto;
-    padding-bottom: 16px;
+.calDay:hover {
+  color: var(--text-primary);
+}
+
+.calToday {
+  background: white;
+  color: black !important;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+/* ─── WEEKLY FOCUS ─────────────────────────────── */
+
+.weeklyLabel {
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-disabled);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.weeklyBars {
+  height: 64px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.weeklyBar {
+  flex: 1;
+  background: var(--bg-hover);
+  border-radius: 1px;
+  transition: all 200ms ease;
+}
+
+.weeklyBar:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.weeklyBarActive {
+  background: white;
+}
+
+/* ─── LOADING STATE ────────────────────────────── */
+
+.loadingState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
   }
 
-  .column {
-    min-width: 240px;
-    flex-shrink: 0;
+  to {
+    transform: rotate(360deg);
   }
 }

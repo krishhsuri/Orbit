@@ -4,7 +4,6 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth-store';
-import { Rocket, ArrowRight } from 'lucide-react';
 import styles from './login.module.css';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -37,74 +36,102 @@ function LoginContent() {
 
   return (
     <div className={styles.container}>
-      {/* Left Panel — Animation / Branding */}
+      {/* Left Panel — Branding */}
       <div className={styles.leftPanel}>
-        {/* Static pattern background */}
         <div className={styles.patternGrid} />
-        
-        {/* Branding content */}
+        <div className={styles.radialGlow} />
+
         <div className={styles.brandContent}>
           <motion.div
-            className={styles.brandLogo}
+            className={styles.brandIcon}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-           
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+              <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+              <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+              <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+            </svg>
           </motion.div>
 
-          <motion.blockquote
-            className={styles.testimonial}
+          <motion.h2
+            className={styles.brandTitle}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            Launch your career into orbit.
+          </motion.h2>
+
+          <motion.p
+            className={styles.brandSubtitle}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
           >
-           
-          </motion.blockquote>
+            Track applications, manage interviews, and organize your job search in one high-performance workspace designed for students.
+          </motion.p>
 
           <motion.div
-            className={styles.testimonialAuthor}
-            initial={{ opacity: 0, y: 10 }}
+            className={styles.features}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
           >
-            
+            <div className={styles.featureItem}>
+              <svg className={styles.featureIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+              <span>Kanban-style tracking</span>
+            </div>
+            <div className={styles.featureItem}>
+              <svg className={styles.featureIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+              <span>Interview scheduling</span>
+            </div>
+            <div className={styles.featureItem}>
+              <svg className={styles.featureIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+              <span>Automated insights</span>
+            </div>
           </motion.div>
-
-          {/* Animation placeholder — replace with your custom animation */}
-          <div id="login-animation" className={styles.animationSlot}>
-            {/* Drop your Lottie / video / canvas animation here */}
-          </div>
         </div>
-
-        {/* Bottom stats */}
-        <motion.div
-          className={styles.brandStats}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-         
-        </motion.div>
       </div>
 
       {/* Right Panel — Login Form */}
       <div className={styles.rightPanel}>
-        <motion.div 
+        <motion.div
           className={styles.formContainer}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
         >
+          {/* Mobile logo */}
+          <div className={styles.mobileLogo}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+              <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+              <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" />
+              <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" />
+            </svg>
+          </div>
+
           {/* Header */}
           <div className={styles.formHeader}>
-            <h1>Sign in to Orbit</h1>
-            <p>Track your applications, crush your interviews, get hired.</p>
+            <h1>Welcome back</h1>
+            <p>Enter your details to access your dashboard.</p>
           </div>
 
           {/* Error message */}
           {error && (
-            <motion.div 
+            <motion.div
               className={styles.error}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -136,14 +163,54 @@ function LoginContent() {
               />
             </svg>
             Continue with Google
-            <ArrowRight size={16} className={styles.buttonArrow} />
           </button>
 
           {/* Divider */}
           <div className={styles.divider}>
-            <span>Secure authentication via Google</span>
+            <div className={styles.dividerLine} />
+            <span>Or continue with email</span>
+            <div className={styles.dividerLine} />
           </div>
 
+          {/* Email/Password Form (visual only) */}
+          <form className={styles.form} onSubmit={(e) => { e.preventDefault(); handleGoogleLogin(); }}>
+            <div className={styles.fieldGroup}>
+              <label htmlFor="email" className={styles.label}>Email</label>
+              <input
+                id="email"
+                type="email"
+                className={styles.input}
+                placeholder="alex@university.edu"
+              />
+            </div>
+            <div className={styles.fieldGroup}>
+              <label htmlFor="password" className={styles.label}>Password</label>
+              <input
+                id="password"
+                type="password"
+                className={styles.input}
+              />
+            </div>
+            <div className={styles.formOptions}>
+              <label className={styles.checkbox}>
+                <input type="checkbox" />
+                <span>Remember me</span>
+              </label>
+              <a href="#" className={styles.forgotLink}>Forgot password?</a>
+            </div>
+            <button type="submit" className={styles.signInButton}>
+              Sign in
+            </button>
+          </form>
+
+          <p className={styles.signupText}>
+            Don&apos;t have an account?{' '}
+            <a href="#" className={styles.signupLink}>Sign up for free</a>
+          </p>
+
+          <div className={styles.footer}>
+            <p>SECURED BY ORBIT • V2.4.0</p>
+          </div>
         </motion.div>
       </div>
     </div>

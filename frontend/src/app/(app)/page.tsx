@@ -1,249 +1,27 @@
 'use client';
 
-import { Header } from '@/components/layout/Header';
 import { useApplications } from '@/hooks/use-applications';
-import { 
-  Card,
-  LoadingState,
-  ErrorState,
-  CountUp,
-  StaggerContainer,
-  StaggerItem,
-  FadeSlide,
-  DashboardSkeleton,
-} from '@/components/ui';
-import { 
-  Briefcase, 
-  PhoneCall, 
-  Trophy, 
+import {
+  Briefcase,
+  PhoneCall,
+  Trophy,
   Clock,
-  ArrowUpRight,
-  Zap,
-  TrendingUp,
-  Rocket,
+  Send,
+  Calendar,
+  FileText,
+  MoreHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Loader2,
+  Plus,
+  Search,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useMemo } from 'react';
 import styles from './page.module.css';
 
-export default function DashboardPage() {
-  const { data, isLoading, error } = useApplications();
-  const applications = data?.applications || [];
-
-  if (isLoading) {
-    return (
-      <div className={styles.page}>
-        <Header title="Dashboard" subtitle="Loading your overview..." />
-        <DashboardSkeleton />
-      </div>
-    );
-  }
-
-
-  if (error) {
-    return (
-      <div className={styles.page}>
-        <Header title="Dashboard" subtitle="Error" />
-        <div className={styles.content}>
-          <ErrorState 
-            message="Failed to load dashboard. Please try again." 
-            onRetry={() => window.location.reload()}
-          />
-        </div>
-      </div>
-    );
-  }
-  
-  // Calculate Stats
-  const now = new Date();
-  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-  const stats = {
-    total: applications.length,
-    active: applications.filter(a => ['applied', 'screening', 'oa', 'interview'].includes(a.status)).length,
-    interviews: applications.filter(a => a.status === 'interview').length,
-    offers: applications.filter(a => ['offer', 'accepted'].includes(a.status)).length,
-    thisWeek: applications.filter(a => new Date(a.appliedDate) >= weekAgo).length,
-  };
-
-  // Get recent activity (last 5 updated)
-  const recentActivity = [...applications]
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 4)
-    .map(app => ({
-      id: app.id,
-      action: app.status === 'applied' ? 'Applied to' : 
-              app.status === 'interview' ? 'Interview with' :
-              app.status === 'offer' ? 'Received offer from' :
-              'Updated',
-      company: app.company,
-      role: app.role,
-      time: getRelativeTime(app.updatedAt),
-      type: app.status,
-    }));
-
-  // Get upcoming (interviews scheduled)
-  const upcomingDeadlines = applications
-    .filter(a => a.status === 'interview' || a.status === 'oa')
-    .slice(0, 3)
-    .map(app => ({
-      id: app.id,
-      company: app.company,
-      task: app.status === 'interview' ? 'Interview' : 'Online Assessment',
-      date: 'Scheduled',
-      urgent: app.status === 'interview',
-    }));
-
-  const statsCards = [
-    { label: 'Total Applications', value: stats.total, icon: Briefcase, color: 'blue' },
-    { label: 'In Progress', value: stats.active, icon: Clock, color: 'purple' },
-    { label: 'Interviews', value: stats.interviews, icon: PhoneCall, color: 'green' },
-    { label: 'Offers', value: stats.offers, icon: Trophy, color: 'gold' },
-  ];
-
-  // Calculate weekly goal progress
-  const weeklyGoal = 10;
-  const weeklyProgress = Math.min((stats.thisWeek / weeklyGoal) * 100, 100);
-
-  return (
-    <div className={styles.page}>
-      <Header 
-        title="Dashboard" 
-        subtitle="Welcome back! Here's your job search overview." 
-      />
-      
-      <div className={styles.content}>
-        {/* Stats Grid */}
-        <StaggerContainer className={styles.statsGrid}>
-          {statsCards.map((stat, index) => (
-            <StaggerItem key={index}>
-              <Card className={styles.statCard} hover>
-                <div className={`${styles.statIcon} ${styles[stat.color]}`}>
-                  <stat.icon size={20} />
-                </div>
-                <div className={styles.statContent}>
-                  <span className={styles.statValue}>
-                    <CountUp value={stat.value} />
-                  </span>
-                  <span className={styles.statLabel}>{stat.label}</span>
-                </div>
-              </Card>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
-
-        <div className={styles.mainGrid}>
-          {/* Weekly Goal */}
-          <FadeSlide delay={0.1}>
-            <Card className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>
-                  <Zap size={18} />
-                  Weekly Goal
-                </h2>
-              </div>
-              <div className={styles.goalProgress}>
-                <div className={styles.goalInfo}>
-                  <span className={styles.goalCurrent}>
-                    <CountUp value={stats.thisWeek} />
-                  </span>
-                  <span className={styles.goalTotal}>/ {weeklyGoal} applications</span>
-                </div>
-                <div className={styles.progressBar}>
-                  <div 
-                    className={styles.progressFill} 
-                    style={{ width: `${weeklyProgress}%` }} 
-                  />
-                </div>
-                <span className={styles.goalMessage}>
-                  {stats.thisWeek >= weeklyGoal 
-                    ? '🎉 Goal reached! Great work!'
-                    : `🔥 ${weeklyGoal - stats.thisWeek} more to hit your goal!`}
-                </span>
-              </div>
-            </Card>
-          </FadeSlide>
-
-          {/* Upcoming Deadlines */}
-          <FadeSlide delay={0.15}>
-            <Card className={styles.card}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>
-                  <Clock size={18} />
-                  Upcoming
-                </h2>
-              </div>
-              {upcomingDeadlines.length > 0 ? (
-                <ul className={styles.deadlineList}>
-                  {upcomingDeadlines.map((item) => (
-                    <li key={item.id} className={styles.deadlineItem}>
-                      <div className={styles.deadlineInfo}>
-                        <span className={styles.deadlineCompany}>{item.company}</span>
-                        <span className={styles.deadlineTask}>{item.task}</span>
-                      </div>
-                      <span className={`${styles.deadlineDate} ${item.urgent ? styles.urgent : ''}`}>
-                        {item.date}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className={styles.emptyCard}>
-                  <Rocket size={32} />
-                  <p>No upcoming interviews or OAs</p>
-                </div>
-              )}
-            </Card>
-          </FadeSlide>
-
-          {/* Recent Activity */}
-          <FadeSlide delay={0.2}>
-            <Card className={`${styles.card} ${styles.activityCard}`}>
-              <div className={styles.cardHeader}>
-                <h2 className={styles.cardTitle}>
-                  <TrendingUp size={18} />
-                  Recent Activity
-                </h2>
-                <Link href="/applications" className={styles.viewAll}>
-                  View all <ArrowUpRight size={14} />
-                </Link>
-              </div>
-              {recentActivity.length > 0 ? (
-                <ul className={styles.activityList}>
-                  {recentActivity.map((item) => (
-                    <li key={item.id} className={styles.activityItem}>
-                      <div className={`${styles.activityDot} ${styles[item.type] || ''}`} />
-                      <div className={styles.activityContent}>
-                        <span className={styles.activityAction}>
-                          {item.action} <strong>{item.company}</strong>
-                        </span>
-                        <span className={styles.activityRole}>{item.role}</span>
-                      </div>
-                      <span className={styles.activityTime}>{item.time}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className={styles.emptyCard}>
-                  <Briefcase size={32} />
-                  <p>No recent activity. Add your first application!</p>
-                </div>
-              )}
-            </Card>
-          </FadeSlide>
-        </div>
-
-        {/* Quick tip */}
-        <FadeSlide delay={0.25}>
-          <div className={styles.tip}>
-            <span className={styles.tipIcon}>💡</span>
-            <span>Press <kbd>⌘</kbd> + <kbd>K</kbd> to open the command palette</span>
-          </div>
-        </FadeSlide>
-      </div>
-    </div>
-  );
-}
-
+// ── Helper ──────────────────────────────────────────
 function getRelativeTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -253,8 +31,430 @@ function getRelativeTime(dateString: string): string {
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return 'Yesterday';
-  return `${diffDays} days ago`;
+  if (diffMins < 60) return `${diffMins}m`;
+  if (diffHours < 24) return `${diffHours}h`;
+  if (diffDays === 1) return '1d';
+  return `${diffDays}d`;
+}
+
+function getStatusLabel(status: string): string {
+  switch (status) {
+    case 'applied': return 'APPLICATION_SENT';
+    case 'interview': return 'INTERVIEW_SCHEDULED';
+    case 'screening': return 'SCREENING';
+    case 'oa': return 'ONLINE_ASSESSMENT';
+    case 'offer': return 'OFFER_RECEIVED';
+    case 'accepted': return 'ACCEPTED';
+    case 'rejected': return 'REJECTED';
+    default: return 'STATUS_UPDATE';
+  }
+}
+
+function getStatusColor(status: string): string {
+  switch (status) {
+    case 'applied': return '#3b82f6';
+    case 'interview': return '#22c55e';
+    case 'screening': return '#a855f7';
+    case 'oa': return '#f59e0b';
+    case 'offer': return '#22c55e';
+    case 'accepted': return '#22c55e';
+    case 'rejected': return '#ef4444';
+    default: return '#6b7280';
+  }
+}
+
+function getStatusIcon(status: string) {
+  switch (status) {
+    case 'applied': return <Send size={16} />;
+    case 'interview': return <Calendar size={16} />;
+    case 'screening': return <FileText size={16} />;
+    case 'oa': return <FileText size={16} />;
+    case 'offer': return <Trophy size={16} />;
+    default: return <Send size={16} />;
+  }
+}
+
+// ── Mini Calendar ───────────────────────────────────
+function MiniCalendar() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const today = now.getDate();
+  const monthName = now.toLocaleString('default', { month: 'long' });
+  const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const days = [];
+  for (let i = 0; i < firstDay; i++) {
+    days.push(<div key={`b${i}`} className={styles.calBlank} />);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    days.push(
+      <div
+        key={d}
+        className={`${styles.calDay} ${d === today ? styles.calToday : ''}`}
+      >
+        {d}
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.calendarWidget}>
+      <div className={styles.calHeader}>
+        <span className={styles.calMonth}>{monthName} {year}</span>
+        <div className={styles.calNav}>
+          <button className={styles.calNavBtn}><ChevronLeft size={12} /></button>
+          <button className={styles.calNavBtn}><ChevronRight size={12} /></button>
+        </div>
+      </div>
+      <div className={styles.calGrid}>
+        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+          <div key={i} className={styles.calLabel}>{d}</div>
+        ))}
+        {days}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Dashboard ──────────────────────────────────
+export default function DashboardPage() {
+  const { data, isLoading, error } = useApplications();
+  const applications = data?.applications || [];
+
+  const stats = useMemo(() => {
+    const total = applications.length;
+    const interviews = applications.filter((a) => a.status === 'interview').length;
+    const responded = applications.filter((a) =>
+      ['interview', 'offer', 'accepted', 'screening'].includes(a.status)
+    ).length;
+    const rate = total > 0 ? Math.round((responded / total) * 100) : 0;
+    return { total, interviews, rate };
+  }, [applications]);
+
+  const recentActivity = useMemo(() => {
+    return [...applications]
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, 5)
+      .map((app) => ({
+        id: app.id,
+        action:
+          app.status === 'applied' ? 'Applied to' :
+          app.status === 'interview' ? 'Scheduled interview with' :
+          app.status === 'offer' ? 'Received offer from' :
+          `Updated`,
+        company: app.company,
+        role: app.role,
+        time: getRelativeTime(app.updatedAt),
+        status: app.status,
+      }));
+  }, [applications]);
+
+  const upcomingDeadlines = useMemo(() => {
+    return applications
+      .filter((a) => ['interview', 'screening', 'oa'].includes(a.status))
+      .slice(0, 3)
+      .map((app, i) => ({
+        id: app.id,
+        company: app.company,
+        task: app.status === 'interview' ? 'Interview' : app.status === 'oa' ? 'Online Assessment' : 'Screening',
+        role: app.role,
+        urgency: i === 0 ? 'high' : i === 1 ? 'medium' : 'low',
+        daysLabel: i === 0 ? '2 days left' : i === 1 ? '4 days left' : 'Next week',
+        progress: i === 0 ? 75 : i === 1 ? 50 : 25,
+      }));
+  }, [applications]);
+
+  // Weekly mock bars (sourced from real data day-of-week distribution)
+  const weeklyBars = useMemo(() => {
+    const bars = [0, 0, 0, 0, 0, 0, 0];
+    applications.forEach((a) => {
+      const day = (new Date(a.appliedDate).getDay() + 6) % 7;
+      bars[day]++;
+    });
+    const max = Math.max(...bars, 1);
+    return bars.map((v) => Math.round((v / max) * 100));
+  }, [applications]);
+
+  if (isLoading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.loadingState}>
+          <Loader2 className={styles.spin} size={20} />
+          <span>Loading dashboard...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.loadingState}>
+          <span>Failed to load dashboard.</span>
+        </div>
+      </div>
+    );
+  }
+
+  const dayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
+  return (
+    <div className={styles.page}>
+      {/* ── Header ──────────────────────────────── */}
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <h1 className={styles.pageTitle}>Dashboard</h1>
+          <span className={styles.headerSep}>/</span>
+          <span className={styles.headerMeta}>OVERVIEW</span>
+        </div>
+        <div className={styles.headerRight}>
+          <div className={styles.searchWrapper}>
+            <Search size={14} className={styles.searchIcon} />
+            <input
+              className={styles.searchInput}
+              placeholder="Search..."
+              type="text"
+            />
+          </div>
+          <Link href="/applications" className={styles.newButton}>
+            <Plus size={14} />
+            New Application
+          </Link>
+        </div>
+      </div>
+
+      {/* ── Scrollable Content ──────────────────── */}
+      <div className={styles.scrollArea}>
+        <div className={styles.contentGrid}>
+          {/* ── Stat Cards ─────────────────────── */}
+          <div className={styles.statsRow}>
+            {/* Total Applications */}
+            <div className={styles.statCard}>
+              <div className={styles.statTop}>
+                <div>
+                  <p className={styles.statLabel}>Total Applications</p>
+                  <h3 className={styles.statValue}>{stats.total}</h3>
+                </div>
+                <span className={styles.statBadgeGreen}>+{Math.round(stats.total * 0.12)}%</span>
+              </div>
+              <div className={styles.miniChart}>
+                {[20, 40, 30, 60, 45, 75, 65].map((h, i) => (
+                  <div
+                    key={i}
+                    className={styles.miniBar}
+                    style={{ height: `${h}%` }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Interviews */}
+            <div className={styles.statCard}>
+              <div className={styles.statTop}>
+                <div>
+                  <p className={styles.statLabel}>Interviews</p>
+                  <h3 className={styles.statValue}>{stats.interviews}</h3>
+                </div>
+                <span className={styles.statBadgeBlue}>Active</span>
+              </div>
+              <div className={styles.miniChart}>
+                {[10, 10, 30, 20, 50, 80, 40].map((h, i) => (
+                  <div
+                    key={i}
+                    className={styles.miniBar}
+                    style={{ height: `${h}%` }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Response Rate */}
+            <div className={styles.statCard}>
+              <div className={styles.statTop}>
+                <div>
+                  <p className={styles.statLabel}>Response Rate</p>
+                  <h3 className={styles.statValue}>
+                    {stats.rate}<span className={styles.statUnit}>%</span>
+                  </h3>
+                </div>
+                <span className={styles.statBadgeNeutral}>Avg</span>
+              </div>
+              <div className={styles.miniChart}>
+                {[40, 35, 50, 45, 60, 55, 70].map((h, i) => (
+                  <div
+                    key={i}
+                    className={styles.miniBar}
+                    style={{ height: `${h}%` }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Main Layout: Left + Right ──────── */}
+          <div className={styles.mainLayout}>
+            {/* Left Column */}
+            <div className={styles.leftColumn}>
+              {/* Recent Activity */}
+              <div className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <h3 className={styles.panelTitle}>Recent Activity</h3>
+                  <Link href="/applications" className={styles.panelAction}>View All</Link>
+                </div>
+                <div className={styles.activityList}>
+                  {recentActivity.map((item) => (
+                    <Link
+                      href={`/applications/${item.id}`}
+                      key={item.id}
+                      className={styles.activityItem}
+                    >
+                      <div className={styles.activityIcon}>
+                        {getStatusIcon(item.status)}
+                      </div>
+                      <div className={styles.activityContent}>
+                        <p className={styles.activityText}>
+                          {item.action}{' '}
+                          <span className={styles.activityHighlight}>{item.role}</span>
+                          {' at '}
+                          <span className={styles.activityHighlight}>{item.company}</span>
+                        </p>
+                        <p className={styles.activityMeta}>
+                          <span
+                            className={styles.activityDot}
+                            style={{ backgroundColor: getStatusColor(item.status) }}
+                          />
+                          {getStatusLabel(item.status)}
+                        </p>
+                      </div>
+                      <span className={styles.activityTime}>{item.time}</span>
+                    </Link>
+                  ))}
+                  {recentActivity.length === 0 && (
+                    <div className={styles.emptyState}>
+                      <p>No recent activity</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Weekly Activity Chart */}
+              <div className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <h3 className={styles.panelTitle}>Weekly Activity</h3>
+                  <div className={styles.chartLegend}>
+                    <span className={styles.legendItem}>
+                      <span className={styles.legendDotWhite} />
+                      APPLICATIONS
+                    </span>
+                    <span className={styles.legendItem}>
+                      <span className={styles.legendDotGray} />
+                      INTERVIEWS
+                    </span>
+                  </div>
+                </div>
+                <div className={styles.chartArea}>
+                  {weeklyBars.map((height, i) => (
+                    <div key={i} className={styles.chartColumn}>
+                      <div className={styles.chartBarGroup}>
+                        <div
+                          className={styles.chartBarBack}
+                          style={{ height: `${Math.max(height * 0.3, 2)}%` }}
+                        />
+                        <div
+                          className={styles.chartBarFront}
+                          style={{ height: `${Math.max(height, 5)}%` }}
+                        />
+                      </div>
+                      <span className={styles.chartLabel}>{dayLabels[i]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className={styles.rightColumn}>
+              <div className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <h3 className={styles.panelTitle}>Upcoming Deadlines</h3>
+                  <button className={styles.panelFilterBtn}>
+                    <Filter size={14} />
+                  </button>
+                </div>
+
+                <div className={styles.deadlineList}>
+                  {upcomingDeadlines.map((item) => (
+                    <Link
+                      href={`/applications/${item.id}`}
+                      key={item.id}
+                      className={styles.deadlineCard}
+                    >
+                      <div
+                        className={styles.deadlineAccent}
+                        style={{
+                          backgroundColor:
+                            item.urgency === 'high' ? 'rgba(239,68,68,0.8)' :
+                            item.urgency === 'medium' ? 'rgba(249,115,22,0.8)' :
+                            'rgba(107,114,128,0.8)',
+                        }}
+                      />
+                      <div className={styles.deadlineTop}>
+                        <span
+                          className={styles.deadlineTag}
+                          style={{
+                            color:
+                              item.urgency === 'high' ? '#f87171' :
+                              item.urgency === 'medium' ? '#fb923c' : '#9ca3af',
+                            backgroundColor:
+                              item.urgency === 'high' ? 'rgba(248,113,113,0.1)' :
+                              item.urgency === 'medium' ? 'rgba(251,146,60,0.1)' :
+                              'rgba(156,163,175,0.1)',
+                            borderColor:
+                              item.urgency === 'high' ? 'rgba(248,113,113,0.2)' :
+                              item.urgency === 'medium' ? 'rgba(251,146,60,0.2)' :
+                              'rgba(156,163,175,0.2)',
+                          }}
+                        >
+                          {item.daysLabel}
+                        </span>
+                        <button className={styles.deadlineMore}>
+                          <MoreHorizontal size={14} />
+                        </button>
+                      </div>
+                      <h4 className={styles.deadlineName}>{item.company}</h4>
+                      <p className={styles.deadlineTask}>{item.task}</p>
+                      <div className={styles.deadlineProgress}>
+                        <div className={styles.deadlineProgressBar}>
+                          <div
+                            className={styles.deadlineProgressFill}
+                            style={{
+                              width: `${item.progress}%`,
+                              backgroundColor:
+                                item.urgency === 'high' ? 'rgba(239,68,68,0.5)' :
+                                item.urgency === 'medium' ? 'rgba(249,115,22,0.5)' :
+                                'rgba(107,114,128,0.5)',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                  {upcomingDeadlines.length === 0 && (
+                    <div className={styles.emptyState}>
+                      <p>No upcoming deadlines</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Calendar */}
+                <MiniCalendar />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
