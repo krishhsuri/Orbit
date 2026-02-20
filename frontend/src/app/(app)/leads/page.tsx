@@ -12,49 +12,17 @@ import {
 } from 'lucide-react';
 import styles from './page.module.css';
 import { useQuery } from '@tanstack/react-query';
-import { gmailApi } from '@/lib/api';
+import { leadsApi, LeadApiResponse } from '@/lib/api';
 import { formatDistanceToNow } from 'date-fns';
-
-interface Lead {
-  id: string;
-  company: string;
-  role: string | null;
-  recruiterName: string | null;
-  recruiterEmail: string | null;
-  links: string[];
-  source: string;
-  date: string;
-}
+import { useState } from 'react';
 
 export default function LeadsPage() {
-  const { data: pendingApps, isLoading, refetch } = useQuery({
-    queryKey: ['gmail', 'pending'],
-    queryFn: () => gmailApi.listPending(),
-    refetchInterval: 15000,
-  });
+  const [search, setSearch] = useState('');
 
-  // Transform pending apps into leads
-  const leads: Lead[] = (pendingApps || []).map((app: any) => {
-    const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
-    const links = (app.email_snippet || '').match(urlRegex) || [];
-
-    const fromMatch = (app.email_from || '').match(/^([^<]+)\s*</);
-    const recruiterName = fromMatch ? fromMatch[1].trim() : null;
-
-    const emailMatch = (app.email_from || '').match(/<([^>]+)>/) ||
-                       (app.email_from || '').match(/([^\s]+@[^\s]+)/);
-    const recruiterEmail = emailMatch ? emailMatch[1] : app.email_from;
-
-    return {
-      id: app.id,
-      company: app.parsed_company || 'Unknown Company',
-      role: app.parsed_role,
-      recruiterName,
-      recruiterEmail,
-      links: links.slice(0, 3),
-      source: app.email_subject || 'Email',
-      date: app.email_date,
-    };
+  const { data: leads = [], isLoading, refetch } = useQuery<LeadApiResponse[]>({
+    queryKey: ['leads', search],
+    queryFn: () => leadsApi.list({ search: search || undefined, limit: 200 }),
+    refetchInterval: 30000,
   });
 
   return (
@@ -76,6 +44,8 @@ export default function LeadsPage() {
               className={styles.searchInput}
               placeholder="Search leads..."
               type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <button
@@ -98,7 +68,7 @@ export default function LeadsPage() {
         {isLoading ? (
           <div className={styles.loadingState}>
             <Loader2 className={styles.spin} size={20} />
-            <span>Extracting leads from emails...</span>
+            <span>Loading leads...</span>
           </div>
         ) : leads.length === 0 ? (
           <div className={styles.emptyState}>
@@ -107,7 +77,7 @@ export default function LeadsPage() {
             </div>
             <h2 className={styles.emptyTitle}>No leads yet</h2>
             <p className={styles.emptyDesc}>
-              Sync your emails to extract recruiter contacts and job links
+              Sync your emails to auto-discover job opportunities and recruiter contacts
             </p>
           </div>
         ) : (
@@ -131,27 +101,27 @@ export default function LeadsPage() {
                 )}
 
                 {/* Recruiter */}
-                {(lead.recruiterName || lead.recruiterEmail) && (
+                {(lead.recruiter_name || lead.recruiter_email) && (
                   <div className={styles.recruiterRow}>
                     <div className={styles.recruiterAvatar}>
-                      {(lead.recruiterName || '?').charAt(0).toUpperCase()}
+                      {(lead.recruiter_name || '?').charAt(0).toUpperCase()}
                     </div>
                     <div className={styles.recruiterInfo}>
-                      {lead.recruiterName && (
-                        <span className={styles.recruiterName}>{lead.recruiterName}</span>
+                      {lead.recruiter_name && (
+                        <span className={styles.recruiterName}>{lead.recruiter_name}</span>
                       )}
-                      {lead.recruiterEmail && (
+                      {lead.recruiter_email && (
                         <a
-                          href={`mailto:${lead.recruiterEmail}`}
+                          href={`mailto:${lead.recruiter_email}`}
                           className={styles.recruiterEmail}
                         >
-                          {lead.recruiterEmail}
+                          {lead.recruiter_email}
                         </a>
                       )}
                     </div>
-                    {lead.recruiterEmail && (
+                    {lead.recruiter_email && (
                       <a
-                        href={`mailto:${lead.recruiterEmail}`}
+                        href={`mailto:${lead.recruiter_email}`}
                         className={styles.recruiterMailBtn}
                       >
                         <Mail size={14} />
@@ -160,37 +130,34 @@ export default function LeadsPage() {
                   </div>
                 )}
 
-                {/* Links */}
-                {lead.links.length > 0 && (
+                {/* Job URL / Site */}
+                {lead.job_url && (
                   <div className={styles.linksSection}>
                     <span className={styles.linksLabel}>
-                      <Link2 size={10} /> Links
+                      <Link2 size={10} /> {lead.job_site || 'Link'}
                     </span>
                     <div className={styles.linksList}>
-                      {lead.links.map((link, idx) => {
-                        let hostname = link;
-                        try { hostname = new URL(link).hostname.replace('www.', ''); } catch {}
-                        return (
-                          <a
-                            key={idx}
-                            href={link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.linkChip}
-                          >
-                            <ExternalLink size={10} />
-                            {hostname}
-                          </a>
-                        );
-                      })}
+                      <a
+                        href={lead.job_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={styles.linkChip}
+                      >
+                        <ExternalLink size={10} />
+                        {lead.job_site || (() => {
+                          try { return new URL(lead.job_url!).hostname.replace('www.', ''); } catch { return 'Link'; }
+                        })()}
+                      </a>
                     </div>
                   </div>
                 )}
 
-                {/* Source */}
-                <div className={styles.cardSource}>
-                  {lead.source.slice(0, 60)}{lead.source.length > 60 ? '…' : ''}
-                </div>
+                {/* Source badge */}
+                {lead.job_site && (
+                  <div className={styles.cardSource}>
+                    via {lead.job_site}
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -11,6 +11,8 @@ from app.models.event import Event, EVENT_TYPES
 from app.models.note import Note
 from app.models.email import Email, application_emails
 from app.models.pending_application import PendingApplication
+from app.models.lead import Lead
+from app.models.training_example import TrainingExample
 
 __all__ = [
     # Base
@@ -26,6 +28,8 @@ __all__ = [
     "Note",
     "Email",
     "PendingApplication",
+    "Lead",
+    "TrainingExample",
     # Junction tables
     "application_tags",
     "application_emails",

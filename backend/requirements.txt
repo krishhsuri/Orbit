@@ -11,6 +11,7 @@ alembic==1.13.1
 # Validation & Settings
 pydantic>=2.5.0,<3.0.0
 pydantic-settings>=2.1.0,<3.0.0
+email-validator>=2.1.0
 
 # Authentication
 pyjwt==2.8.0
@@ -25,6 +26,7 @@ aiohttp==3.9.1
 
 # Redis (caching, rate limiting)
 redis==5.0.1
+slowapi>=0.1.9
 
 # Testing
 pytest==7.4.4

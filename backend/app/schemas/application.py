@@ -115,6 +115,11 @@ class ApplicationResponse(ApplicationBase):
     updated_at: datetime
     status_updated_at: datetime
     
+    # Email context (from gmail sync)
+    email_subject: Optional[str] = None
+    email_snippet: Optional[str] = None
+    email_from: Optional[str] = None
+    
     # Related data
     tags: List[TagResponse] = []
     

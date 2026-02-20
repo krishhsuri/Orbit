@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useApplication, useUpdateApplication, useUpdateApplicationStatus, useDeleteApplication } from '@/hooks/use-applications';
+import { useApplication, useUpdateApplication, useUpdateApplicationStatus, useDeleteApplication, useApplicationEvents } from '@/hooks/use-applications';
 import type { ApplicationStatus } from '@/stores';
 import {
   ArrowLeft,
@@ -23,6 +23,10 @@ import {
   FileText,
   Send,
   Loader2,
+  Users,
+  Phone,
+  Upload,
+  Paperclip,
 } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -76,6 +80,7 @@ export default function ApplicationDetailPage() {
   const { mutate: updateApplication } = useUpdateApplication();
   const { mutate: updateStatus } = useUpdateApplicationStatus();
   const { mutate: deleteApplication } = useDeleteApplication();
+  const { data: events = [] } = useApplicationEvents(applicationId);
 
   const [isEditing, setIsEditing] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -354,8 +359,30 @@ export default function ApplicationDetailPage() {
                 <h3 className={styles.sectionTitle}>Application Timeline</h3>
               </div>
               <div className={styles.timeline}>
-                {/* Current status event */}
-                {application.status !== 'applied' && (
+                {/* Real events from API */}
+                {events.length > 0 && events.map((event, idx) => (
+                  <div key={event.id} className={`${styles.timelineItem} ${idx === events.length - 1 && application.status === 'applied' ? styles.timelineItemLast : ''}`}>
+                    <span className={styles.timelineNode}>
+                      <Check size={14} />
+                    </span>
+                    <div className={styles.timelineCard}>
+                      <div className={styles.timelineCardHeader}>
+                        <p className={styles.timelineCardTitle}>
+                          {event.title || event.event_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                        </p>
+                        <span className={styles.timelineCardDate}>
+                          {formatDateShort(event.scheduled_at || event.created_at)}
+                        </span>
+                      </div>
+                      {event.description && (
+                        <p className={styles.timelineCardDesc}>{event.description}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Current status event (if not applied) */}
+                {application.status !== 'applied' && events.length === 0 && (
                   <div className={styles.timelineItem}>
                     <span className={styles.timelineNode}>
                       <Check size={14} />
@@ -376,7 +403,7 @@ export default function ApplicationDetailPage() {
                   </div>
                 )}
 
-                {/* Application submitted */}
+                {/* Application submitted (always shown) */}
                 <div className={`${styles.timelineItem} ${styles.timelineItemLast}`}>
                   <span className={styles.timelineNodeMuted}>
                     <Mail size={14} />
@@ -421,6 +448,41 @@ export default function ApplicationDetailPage() {
               )}
             </div>
 
+            {/* Email Source — shows original email context */}
+            {(application.email_subject || application.email_snippet) && (
+              <div className={styles.sidePanel}>
+                <div className={styles.sidePanelHeader}>
+                  <h3 className={styles.sidePanelTitle}>Email Source</h3>
+                  <span className={styles.sidePanelTag}>GMAIL</span>
+                </div>
+                <div className={styles.quickInfoList}>
+                  {application.email_subject && (
+                    <div className={styles.quickInfoItem}>
+                      <Mail size={14} />
+                      <span style={{ fontWeight: 500 }}>{application.email_subject}</span>
+                    </div>
+                  )}
+                  {application.email_from && (
+                    <div className={styles.quickInfoItem}>
+                      <Send size={14} />
+                      <span style={{ opacity: 0.7, fontSize: '0.85rem' }}>{application.email_from}</span>
+                    </div>
+                  )}
+                  {application.email_snippet && (
+                    <p style={{
+                      fontSize: '0.82rem',
+                      lineHeight: 1.6,
+                      opacity: 0.6,
+                      margin: '4px 0 0 0',
+                      padding: '0 4px',
+                    }}>
+                      {application.email_snippet}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Quick Info */}
             <div className={styles.sidePanel}>
               <h3 className={styles.sidePanelTitle}>Quick Info</h3>
@@ -452,6 +514,33 @@ export default function ApplicationDetailPage() {
                     </a>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Contacts */}
+            <div className={styles.sidePanel}>
+              <div className={styles.sidePanelHeader}>
+                <h3 className={styles.sidePanelTitle}>Contacts</h3>
+              </div>
+              <div className={styles.quickInfoList}>
+                <div className={styles.emptyNotes}>
+                  <Users size={16} style={{ opacity: 0.4 }} />
+                  <span>No contacts linked yet. Contacts are auto-created from email leads.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Documents */}
+            <div className={styles.sidePanel}>
+              <div className={styles.sidePanelHeader}>
+                <h3 className={styles.sidePanelTitle}>Documents</h3>
+                <span className={styles.sidePanelTag}>ATTACHMENTS</span>
+              </div>
+              <div className={styles.quickInfoList}>
+                <div className={styles.emptyNotes}>
+                  <Paperclip size={16} style={{ opacity: 0.4 }} />
+                  <span>No documents attached. Coming soon.</span>
+                </div>
               </div>
             </div>
           </div>

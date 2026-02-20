@@ -63,7 +63,7 @@ export function useGmail(options?: { autoSync?: boolean }) {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: (id: string) => gmailApi.reject(id),
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) => gmailApi.reject(id, reason),
     onSuccess: () => {
       toast.success('Application dismissed');
       queryClient.invalidateQueries({ queryKey: ['gmail', 'pending'] });

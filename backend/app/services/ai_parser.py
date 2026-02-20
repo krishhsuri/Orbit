@@ -53,8 +53,20 @@ class AIParser:
         """
         subject = email_data.get('subject', '')
         sender = email_data.get('from_address', '')
+        snippet = email_data.get('body_preview', '')
 
         print(f"[QUICK_PARSE] Processing: {subject[:50]}")
+
+        # Layer 0: Learned Filter (self-learning from user feedback)
+        from app.ml.classifiers.learned_filter import learned_filter, CONFIDENCE_THRESHOLD
+        if learned_filter.is_ready:
+            label, confidence = learned_filter.predict(subject, snippet, sender)
+            if label and confidence >= CONFIDENCE_THRESHOLD:
+                if label == "negative":
+                    print(f"[QUICK_PARSE] BLOCKED by LearnedFilter ({confidence:.0%}): {subject[:40]}")
+                    return None
+                else:
+                    print(f"[QUICK_PARSE] LearnedFilter says POSITIVE ({confidence:.0%}): {subject[:40]}")
 
         # Layer 1: Quick Filter (blocks obvious spam)
         if not self.quick_filter.initial_filter(sender, subject):

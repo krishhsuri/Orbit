@@ -18,6 +18,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+MAX_PENDING_PER_USER = 200
+
 router = APIRouter()
 
 async def sync_emails_task(user_id: UUID, db_session_maker):
@@ -49,7 +51,12 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
             # Fetch more emails (100) to find at least 10 job-related ones
             import asyncio
             
-            emails = await asyncio.to_thread(service.fetch_recent_emails, max_results=100)
+            last_synced_id = user.gmail_last_synced_email_id
+            emails = await asyncio.to_thread(
+                service.fetch_recent_emails, 
+                max_results=100,
+                after_message_id=last_synced_id
+            )
             
             logger.info(f"[SYNC] Fetched {len(emails)} emails from Gmail")
             
@@ -121,15 +128,95 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                 )
                 db.add(pending)
                 job_related_count += 1
+                
+                # Auto-create global Lead for the shared job board
+                if parsed.get('company'):
+                    from app.models import Lead
+                    # Check if lead already exists for this email
+                    lead_exists = await db.execute(
+                        select(Lead).where(Lead.source_email_id == email_data['id'])
+                    )
+                    if not lead_exists.scalar_one_or_none():
+                        # Detect job site from URL
+                        job_site = None
+                        job_url = parsed.get('job_url')
+                        if job_url:
+                            try:
+                                from urllib.parse import urlparse
+                                domain = urlparse(job_url).hostname or ""
+                                domain = domain.replace("www.", "")
+                                site_map = {
+                                    "linkedin.com": "LinkedIn",
+                                    "wellfound.com": "Wellfound",
+                                    "indeed.com": "Indeed",
+                                    "glassdoor.com": "Glassdoor",
+                                    "lever.co": "Lever",
+                                    "greenhouse.io": "Greenhouse",
+                                    "ziprecruiter.com": "ZipRecruiter",
+                                    "monster.com": "Monster",
+                                    "dice.com": "Dice",
+                                }
+                                job_site = site_map.get(domain, domain)
+                            except Exception:
+                                pass
+                        
+                        # Extract recruiter info from email from_address
+                        from_addr = email_data.get('from_address', '')
+                        import re
+                        name_match = re.match(r'^([^<]+)\s*<', from_addr)
+                        email_match = re.search(r'<([^>]+)>', from_addr) or re.search(r'([^\s]+@[^\s]+)', from_addr)
+                        
+                        lead = Lead(
+                            company=parsed.get('company'),
+                            role=parsed.get('role'),
+                            job_site=job_site,
+                            job_url=job_url,
+                            recruiter_name=name_match.group(1).strip() if name_match else None,
+                            recruiter_email=email_match.group(1) if email_match else None,
+                            source_email_id=email_data['id'],
+                            date=parsed_email_date,
+                        )
+                        db.add(lead)
             
             logger.info(f"[SYNC] Summary: {job_related_count} job-related, {skipped_existing} skipped, {filtered_out} filtered out")
             
             if job_related_count > 0:
                 user.gmail_last_sync_at = datetime.now()
+                # Track the newest email ID for incremental sync
+                if emails:
+                    user.gmail_last_synced_email_id = emails[0]['id']
                 await db.commit()
                 logger.info(f"[SYNC] Committed: {job_related_count} job-related emails")
             else:
+                # Still update last sync time and newest ID even if no job emails found
+                user.gmail_last_sync_at = datetime.now()
+                if emails:
+                    user.gmail_last_synced_email_id = emails[0]['id']
+                await db.commit()
                 logger.info("[SYNC] No job-related emails found")
+            
+            # Enforce per-user pending email cap
+            from sqlalchemy import func
+            count_q = select(func.count()).select_from(PendingApplication).where(
+                PendingApplication.user_id == user_id
+            )
+            total = (await db.execute(count_q)).scalar() or 0
+            if total > MAX_PENDING_PER_USER:
+                excess = total - MAX_PENDING_PER_USER
+                # Find the oldest excess IDs
+                oldest_q = (
+                    select(PendingApplication.id)
+                    .where(PendingApplication.user_id == user_id)
+                    .order_by(PendingApplication.email_date.asc())
+                    .limit(excess)
+                )
+                oldest_ids = (await db.execute(oldest_q)).scalars().all()
+                if oldest_ids:
+                    await db.execute(
+                        delete(PendingApplication).where(PendingApplication.id.in_(oldest_ids))
+                    )
+                    await db.commit()
+                    logger.info(f"[SYNC] Enforced {MAX_PENDING_PER_USER} cap: deleted {len(oldest_ids)} oldest pending emails")
                 
         except Exception as e:
             logger.error(f"[SYNC] Error: {e}")
@@ -251,10 +338,25 @@ async def confirm_application(
         job_url=pending.parsed_job_url,
         status=app_status,
         applied_date=pending.email_date.date() if pending.email_date else date.today(),
-        source="gmail_auto"
+        source="gmail_auto",
+        # Preserve email context for the detail page
+        email_subject=pending.email_subject,
+        email_snippet=pending.email_snippet,
+        email_from=pending.email_from,
     )
     
     db.add(new_app)
+    
+    # Save as positive training example for self-learning
+    from app.models.training_example import TrainingExample
+    training = TrainingExample(
+        email_subject=pending.email_subject,
+        email_snippet=pending.email_snippet,
+        email_from=pending.email_from or "",
+        label="positive",
+        user_id=user.id,
+    )
+    db.add(training)
     
     # Update pending status
     pending.status = "confirmed"
@@ -262,15 +364,28 @@ async def confirm_application(
     await db.commit()
     await db.refresh(pending)
     
+    # Retrain the learned filter with the new example
+    from app.ml.classifiers.learned_filter import refresh_learned_model
+    await refresh_learned_model()
+    
     return {"message": "Application confirmed and created", "application_id": new_app.id}
 
 @router.delete("/pending/{id}")
 async def reject_application(
     id: UUID,
+    reason: str = "not_for_me",
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Reject/Dismiss a pending application"""
+    """
+    Reject/Dismiss a pending application.
+    
+    reason options:
+    - "not_job_email": Not a job-related email (newsletter, spam, promo) → trains as negative
+    - "not_for_me": Valid job email but not for this user (multi-candidate) → NO training
+    - "wrong_detection": AI misclassified this email → trains as negative
+    - "duplicate": Already tracked this application → NO training
+    """
     query = select(PendingApplication).where(
         PendingApplication.id == id,
         PendingApplication.user_id == user.id
@@ -280,9 +395,28 @@ async def reject_application(
     
     if not pending:
         raise HTTPException(status_code=404, detail="Pending application not found")
+    
+    # Only save as negative training example for reasons that indicate
+    # the email is genuinely NOT a job application for the user
+    trainable_reasons = {"not_job_email", "wrong_detection", "spam"}
+    if reason in trainable_reasons:
+        from app.models.training_example import TrainingExample
+        training = TrainingExample(
+            email_subject=pending.email_subject,
+            email_snippet=pending.email_snippet,
+            email_from=pending.email_from or "",
+            label="negative",
+            user_id=user.id,
+        )
+        db.add(training)
         
     pending.status = "rejected"
     await db.commit()
+    
+    # Retrain the learned filter if we added training data
+    if reason in trainable_reasons:
+        from app.ml.classifiers.learned_filter import refresh_learned_model
+        await refresh_learned_model()
     
     return {"message": "Pending application rejected"}
 

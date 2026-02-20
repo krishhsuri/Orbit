@@ -72,8 +72,8 @@ class GmailService:
             logger.error(f"Failed to load credentials for user {self.user.id}: {e}")
             return None
 
-    def fetch_recent_emails(self, max_results: int = 50) -> List[Dict[str, Any]]:
-        """Fetch recent emails for processing."""
+    def fetch_recent_emails(self, max_results: int = 50, after_message_id: str = None) -> List[Dict[str, Any]]:
+        """Fetch recent emails for processing. If after_message_id is provided, stops when reaching that message."""
         if not self.service:
             return []
             
@@ -92,6 +92,11 @@ class GmailService:
             email_data = []
             
             for msg in messages:
+                # If we hit the last synced message, stop — everything after is already processed
+                if after_message_id and msg['id'] == after_message_id:
+                    logger.info(f"[GMAIL] Reached last synced email ID {after_message_id}, stopping")
+                    break
+                
                 # Fetch full message details
                 # Only asking for headers and snippet to save bandwidth
                 full_msg = self.service.users().messages().get(

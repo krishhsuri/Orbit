@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import init_db, close_db
-from app.routers import health, applications, tags, analytics, auth, gmail
+from app.routers import health, applications, tags, analytics, auth, gmail, leads
 
 settings = get_settings()
 
@@ -106,6 +106,11 @@ app.include_router(
     gmail.router,
     prefix="/api/v1/gmail",
     tags=["Gmail Integration"],
+)
+app.include_router(
+    leads.router,
+    prefix="/api/v1/leads",
+    tags=["Leads"],
 )
 
 # Dev-only routes (only in debug mode)

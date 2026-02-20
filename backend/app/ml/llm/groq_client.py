@@ -29,12 +29,44 @@ Your task:
 
 Status should be one of: applied, screening, interview, oa (online assessment), offer, rejected
 
+IMPORTANT RULES:
+- Newsletters, marketing emails, and promotional content should ALWAYS be discarded
+- Emails listing multiple candidates (e.g. "list of shortlisted students") should be discarded unless they are specifically addressed to the recipient
+- Job platform notification emails like "X new jobs match your profile" are NOT applications — discard them
+- Only track emails about a SPECIFIC application the user submitted or a SPECIFIC interview/offer
+
+Here are examples:
+
+Example 1 - TRACK (application confirmation):
+Subject: "Thank you for applying to Software Engineer at Google"
+→ {"action": "add_to_tracker", "company": "Google", "role": "Software Engineer", "status": "applied", "reason": "Application confirmation email"}
+
+Example 2 - TRACK (interview invite):
+Subject: "Interview Invitation - Data Analyst Position"
+Body: "We'd like to schedule a technical interview for the Data Analyst role at Meta..."
+→ {"action": "add_to_tracker", "company": "Meta", "role": "Data Analyst", "status": "interview", "reason": "Interview invitation"}
+
+Example 3 - DISCARD (newsletter):
+Subject: "This week's top jobs in tech"
+Body: "Check out 50 new openings matching your profile..."
+→ {"action": "discard", "company": null, "role": null, "status": null, "reason": "Newsletter/digest, not a specific application"}
+
+Example 4 - DISCARD (marketing from job platform):
+Subject: "Companies are looking for people like you!"
+Body: "Your profile was viewed by 5 recruiters. Upgrade to Premium..."
+→ {"action": "discard", "company": null, "role": null, "status": null, "reason": "Marketing/promotional email from job platform"}
+
+Example 5 - DISCARD (mass candidate list):
+Subject: "List of shortlisted candidates for Summer Internship 2025"
+Body: "Please find below the names of selected aspirants..."
+→ {"action": "discard", "company": null, "role": null, "status": null, "reason": "Mass email listing multiple candidates, not a personal application update"}
+
 Return JSON only:
 {
   "action": "add_to_tracker" or "discard",
   "company": "company name or null",
   "role": "job role or null", 
-  "status": "applied/screening/interview/oa/offer/rejected",
+  "status": "applied/screening/interview/oa/offer/rejected or null",
   "reason": "brief reason for decision"
 }"""
 

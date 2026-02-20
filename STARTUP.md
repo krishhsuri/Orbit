@@ -9,6 +9,13 @@ All commands to get the full stack running. Open **4 separate terminals**.
 - **Docker Desktop** must be running
 - **Node.js** installed (v18+ recommended)
 - **Python 3.10+** with a virtual environment set up for the backend
+- **Backend dependencies** installed:
+  ```bash
+  cd d:\Orbit\backend
+  .\venv\Scripts\activate
+  pip install -r requirements.txt
+  python -m spacy download en_core_web_sm
+  ```
 
 ---
 
@@ -64,6 +71,18 @@ npm run dev
 
 ---
 
+## Terminal 5 — Celery Beat (Periodic Tasks)
+
+```bash
+cd d:\Orbit\backend
+.\venv\Scripts\activate
+celery -A app.celery_app:celery_app beat --loglevel=info
+```
+
+> Runs scheduled cleanup tasks (purge old rejected emails, enforce 200 pending cap). Optional for development.
+
+---
+
 ## Quick Reference
 
 | Service    | URL / Port                | Health Check                |
@@ -90,3 +109,19 @@ To also wipe the database volumes:
 ```bash
 docker-compose down -v
 ```
+
+---
+
+## Database Backups
+
+Create a compressed backup of the PostgreSQL database:
+
+```bash
+cd d:\Orbit\backend
+.\venv\Scripts\activate
+python scripts/backup_db.py
+```
+
+> Backups are saved to `backend/backups/` as `.sql.gz` files. Only the last 7 are retained automatically.
+
+> **Requires** `pg_dump` (PostgreSQL client tools) on your PATH. If using Docker, install [PostgreSQL client](https://www.postgresql.org/download/) or run pg_dump inside the container.

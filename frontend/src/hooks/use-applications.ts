@@ -113,6 +113,28 @@ export function useDeleteApplication() {
   });
 }
 
+// Get application events
+export function useApplicationEvents(id: string) {
+  return useQuery({
+    queryKey: applicationKeys.events(id),
+    queryFn: () => applicationsApi.getEvents(id),
+    enabled: !!id,
+  });
+}
+
+// Create event mutation
+export function useCreateEvent() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, event }: { id: string; event: { event_type: string; title?: string; description?: string; data?: Record<string, unknown> } }) =>
+      applicationsApi.createEvent(id, event),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: applicationKeys.events(id) });
+    },
+  });
+}
+
 // Analytics hooks
 export function useAnalyticsSummary() {
   return useQuery({

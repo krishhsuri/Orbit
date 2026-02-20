@@ -1,10 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { Mail, RefreshCw, Loader2, Trash2, Sparkles, Settings, Search, Filter } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Mail, RefreshCw, Loader2, Trash2, Sparkles, Settings, Search, Filter, Check, X, ChevronDown } from 'lucide-react';
 import styles from './page.module.css';
 import { useGmail } from '@/hooks/use-gmail';
 import { formatDistanceToNow } from 'date-fns';
+
+const REJECT_REASONS = [
+  { value: 'not_for_me', label: 'Not for me', desc: 'Valid job email but not mine' },
+  { value: 'not_job_email', label: 'Not a job email', desc: 'Newsletter, spam, promo' },
+  { value: 'wrong_detection', label: 'Wrong detection', desc: 'AI misclassified this' },
+  { value: 'duplicate', label: 'Duplicate', desc: 'Already tracking this' },
+];
 
 export default function EmailsPage() {
   const {
@@ -21,6 +28,19 @@ export default function EmailsPage() {
   } = useGmail({ autoSync: true });
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const handleSync = () => syncEmails();
   const handleCleanup = () => cleanupNonJobRelated();
@@ -142,6 +162,7 @@ export default function EmailsPage() {
         <div className={styles.colSender}>Sender</div>
         <div className={styles.colSubject}>Subject</div>
         <div className={styles.colDate}>Received</div>
+        <div className={styles.colActions}>Actions</div>
       </div>
 
       {/* Table Body */}
@@ -170,6 +191,7 @@ export default function EmailsPage() {
         ) : (
           filtered.map((app) => {
             const statusLabel = getStatusLabel(app);
+            const isPending = app.status === 'pending';
             return (
               <div key={app.id} className={styles.tableRow}>
                 <div className={styles.colStatus}>
@@ -195,6 +217,50 @@ export default function EmailsPage() {
                 </div>
                 <div className={styles.colDate}>
                   {formatDistanceToNow(new Date(app.email_date), { addSuffix: false })}
+                </div>
+                <div className={styles.colActions}>
+                  {isPending && (
+                    <div className={styles.actionButtons}>
+                      <button
+                        className={styles.confirmBtn}
+                        onClick={(e) => { e.stopPropagation(); confirmApplication(app.id); }}
+                        title="Confirm — add to tracker"
+                      >
+                        <Check size={14} />
+                      </button>
+                      <div className={styles.rejectWrapper} ref={openDropdownId === app.id ? dropdownRef : null}>
+                        <button
+                          className={styles.rejectBtn}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenDropdownId(openDropdownId === app.id ? null : app.id);
+                          }}
+                          title="Dismiss"
+                        >
+                          <X size={14} />
+                          <ChevronDown size={10} />
+                        </button>
+                        {openDropdownId === app.id && (
+                          <div className={styles.rejectDropdown}>
+                            {REJECT_REASONS.map((r) => (
+                              <button
+                                key={r.value}
+                                className={styles.rejectOption}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  rejectApplication({ id: app.id, reason: r.value });
+                                  setOpenDropdownId(null);
+                                }}
+                              >
+                                <span className={styles.rejectOptionLabel}>{r.label}</span>
+                                <span className={styles.rejectOptionDesc}>{r.desc}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );

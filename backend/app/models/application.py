@@ -109,6 +109,11 @@ class Application(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
         default=dict,
     )
     
+    # Email context (preserved from PendingApplication on confirm)
+    email_subject: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    email_snippet: Mapped[str | None] = mapped_column(Text, nullable=True)
+    email_from: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    
     # Status tracking
     status_updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

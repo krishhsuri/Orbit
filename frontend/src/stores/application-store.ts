@@ -18,6 +18,10 @@ export interface Application {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+  // Email context (from gmail sync)
+  email_subject?: string;
+  email_snippet?: string;
+  email_from?: string;
 }
 
 export type ApplicationStatus = 
