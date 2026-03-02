@@ -10,6 +10,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
+def _parse_bare_email(raw: str) -> str:
+    """Extract bare email from 'Display Name <email@domain.com>' format."""
+    import re as _re
+    match = _re.search(r'<([^>]+)>', raw)
+    return match.group(1).strip() if match else raw.strip()
+
 # Job-related keywords with weights
 JOB_KEYWORDS = {
     'application': 2,
@@ -119,7 +126,8 @@ class NLPAnalyzer:
         """
         subject = email.get('subject', '')
         body = email.get('body_preview', '')[:1000]  # Limit body length
-        from_addr = email.get('from_address', '')
+        raw_from = email.get('from_address', '')
+        from_addr = _parse_bare_email(raw_from)  # Fix #6: handle 'Name <email>' format
         from_name = email.get('from_name', '')
         
         text = f"{subject} {body}"
@@ -204,6 +212,7 @@ class NLPAnalyzer:
 
     def analyze_sender(self, email_addr: str, name: str) -> Dict[str, bool]:
         """Analyze sender to detect recruiter/HR signals."""
+        email_addr = _parse_bare_email(email_addr)  # Fix #6: normalize before analysis
         email_lower = email_addr.lower()
         name_lower = (name or '').lower()
         
@@ -232,6 +241,7 @@ class NLPAnalyzer:
 
     def extract_company_from_email(self, email_addr: str) -> Optional[str]:
         """Extract company name from email domain."""
+        email_addr = _parse_bare_email(email_addr)  # Fix #6: normalize first
         try:
             domain = email_addr.split('@')[1]
             company = domain.split('.')[0]

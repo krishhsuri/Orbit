@@ -13,6 +13,7 @@ from app.schemas.pending_application import PendingApplicationResponse, PendingA
 from app.services.gmail_service import GmailService
 from app.services.ai_parser import AIParser
 from app.middleware.auth import get_current_user
+from app.ml.matching.email_matcher import EmailMatcher
 from email.utils import parsedate_to_datetime
 import logging
 
@@ -45,7 +46,8 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
 
             logger.info(f"[SYNC] Gmail sync enabled for user {user.email}")
             
-            service = GmailService(user, db=None) 
+            # Fix #5: Pass db session so refreshed OAuth tokens are persisted
+            service = GmailService(user, db=db)
             
             # Run in threadpool (fetch_recent_emails is blocking I/O)
             # Fetch more emails (100) to find at least 10 job-related ones
@@ -70,9 +72,29 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
 
             # 2. Process with AI Parser (Quick local ML, no LLM)
             parser = AIParser()
+            matcher = EmailMatcher()  # Fix #11: wire up matcher
+            
+            from app.ml.parsers.digest_parser import DigestParser
+            digest_parser = DigestParser()
+            
+            # Load user's existing applications for matching
+            apps_result = await db.execute(
+                select(Application.id, Application.company_name).where(
+                    Application.user_id == user_id,
+                    Application.deleted_at.is_(None)
+                )
+            )
+            existing_apps = [
+                {'id': str(row.id), 'company_name': row.company_name}
+                for row in apps_result.fetchall()
+            ]
+            
             job_related_count = 0
             skipped_existing = 0
             filtered_out = 0
+            matched_as_update = 0
+            digest_leads_count = 0
+            parsed_email_date = None  # Will be set per-email in the loop
             
             # Non-job statuses to auto-filter (ONLY truly non-job emails)
             # Keep general_hr and unknown - better to show uncertain emails than miss them
@@ -87,6 +109,48 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                     skipped_existing += 1
                     continue
 
+                # --- DIGEST BRANCH ---
+                # Check if this is a job digest email (Unstop, Hirist, etc.)
+                # Parse date first so it's available for digest lead creation
+                email_date_str = email_data.get('date', '')
+                try:
+                    parsed_email_date = parsedate_to_datetime(email_date_str)
+                except Exception:
+                    parsed_email_date = datetime.now()
+
+                if digest_parser.is_digest_email(
+                    email_data.get('from_address', ''),
+                    email_data.get('subject', ''),
+                    email_data.get('body_preview', '')
+                ):
+                    logger.info(f"[SYNC] DIGEST detected: {email_data.get('subject', '')[:50]}")
+                    listings = await digest_parser.extract_leads(
+                        email_id=email_data['id'],
+                        sender=email_data.get('from_address', ''),
+                        body=email_data.get('body_preview', ''),
+                        email_date=parsed_email_date,
+                    )
+                    for listing in listings:
+                        # on_conflict_do_nothing for composite unique (source_email_id, company, role)
+                        from sqlalchemy.dialects.postgresql import insert as pg_insert
+                        stmt_lead = pg_insert(Lead).values(
+                            company=listing['company'],
+                            role=listing['role'],
+                            stipend=listing.get('stipend'),
+                            location=listing.get('location'),
+                            job_url=listing.get('job_url'),
+                            job_site=listing.get('job_site'),
+                            recruiter_email=listing.get('recruiter_email'),
+                            source_email_id=listing['source_email_id'],
+                            date=listing['date'],
+                            is_from_digest=True,
+                        ).on_conflict_do_nothing(constraint='uq_lead_email_company_role')
+                        result_lead = await db.execute(stmt_lead)
+                        if result_lead.rowcount:
+                            digest_leads_count += 1
+                    filtered_out += 1  # Don't create PendingApplication for digest emails
+                    continue  # Skip the normal ML pipeline
+
                 # Quick parse - local ML only, no LLM (fast)
                 # Pass user email to detect multi-candidate emails where user isn't listed
                 parsed = await parser.quick_parse(email_data, user_email=user.email)
@@ -97,31 +161,51 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                     continue
                     
                 # Auto-cleanup: Skip non-job-related emails entirely
-                status = parsed.get('status', 'unknown')
-                if status in NON_JOB_STATUSES:
-                    logger.debug(f"[SYNC] FILTERED: {email_data.get('subject', '')[:40]} (status: {status})")
+                parsed_status = parsed.get('status', 'unknown')
+                if parsed_status in NON_JOB_STATUSES:
+                    logger.debug(f"[SYNC] FILTERED: {email_data.get('subject', '')[:40]} (status: {parsed_status})")
                     filtered_out += 1
                     continue
+
+                # Fix #11: Try to match this email to an existing application
+                # If matched, update that app's status instead of creating a new pending entry
+                nlp_result = {'entities': {'organizations': []}, 'company': parsed.get('company')}
+                matched_app_id, match_confidence = matcher.match(email_data, existing_apps, nlp_result)
                 
-                # Parse actual email date from Date header
-                email_date_str = email_data.get('date', '')
-                try:
-                    parsed_email_date = parsedate_to_datetime(email_date_str)
-                except Exception:
-                    parsed_email_date = datetime.now()
+                if matched_app_id and match_confidence >= 0.80:
+                    # Map the local ML status to an Application status
+                    from app.services.ai_parser import STATUS_MAPPING
+                    new_status = STATUS_MAPPING.get(parsed_status, None)
+                    if new_status and new_status in APPLICATION_STATUSES:
+                        await db.execute(
+                            update(Application)
+                            .where(Application.id == UUID(matched_app_id))
+                            .values(status=new_status, status_updated_at=datetime.utcnow())
+                        )
+                        matched_as_update += 1
+                        logger.info(f"[SYNC] MATCHED+UPDATED app {matched_app_id} status → {new_status}")
+                    continue  # Don't create a duplicate pending entry
+                
+                # Parse actual email date from Date header (if not already done in digest branch)
+                if parsed_email_date is None:
+                    email_date_str = email_data.get('date', '')
+                    try:
+                        parsed_email_date = parsedate_to_datetime(email_date_str)
+                    except Exception:
+                        parsed_email_date = datetime.now()
                 
                 # This is a job-related email - add to pending queue
-                logger.info(f"[SYNC] JOB FOUND: {parsed.get('company')} - {status}")
+                logger.info(f"[SYNC] JOB FOUND: {parsed.get('company')} - {parsed_status}")
                 pending = PendingApplication(
                     user_id=user.id,
                     email_id=email_data['id'],
                     email_subject=email_data['subject'],
-                    email_snippet=email_data['snippet'][:1000] if email_data.get('snippet') else None,
-                    email_from=email_data.get('from_address'),  # Capture sender for leads
+                    email_snippet=email_data.get('body_preview', '')[:1000],
+                    email_from=email_data.get('from_address'),
                     email_date=parsed_email_date,
                     parsed_company=parsed.get('company'),
                     parsed_role=parsed.get('role'),
-                    parsed_status=status,
+                    parsed_status=parsed_status,
                     parsed_job_url=parsed.get('job_url'),
                     confidence_score=parsed.get('confidence', 0.0),
                     status="pending"
@@ -160,11 +244,11 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                             except Exception:
                                 pass
                         
-                        # Extract recruiter info from email from_address
-                        from_addr = email_data.get('from_address', '')
-                        import re
-                        name_match = re.match(r'^([^<]+)\s*<', from_addr)
-                        email_match = re.search(r'<([^>]+)>', from_addr) or re.search(r'([^\s]+@[^\s]+)', from_addr)
+                        # Extract recruiter info from raw from_address (includes display name)
+                        from_addr_raw = email_data.get('from_address_raw', email_data.get('from_address', ''))
+                        import re as _re
+                        name_match = _re.match(r'^([^<]+)\s*<', from_addr_raw)
+                        email_match = _re.search(r'<([^>]+)>', from_addr_raw) or _re.search(r'([^\s]+@[^\s]+)', from_addr_raw)
                         
                         lead = Lead(
                             company=parsed.get('company'),
@@ -178,7 +262,7 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                         )
                         db.add(lead)
             
-            logger.info(f"[SYNC] Summary: {job_related_count} job-related, {skipped_existing} skipped, {filtered_out} filtered out")
+            logger.info(f"[SYNC] Summary: {job_related_count} job-related, {digest_leads_count} digest leads, {matched_as_update} status-updates, {skipped_existing} skipped, {filtered_out} filtered out")
             
             if job_related_count > 0:
                 user.gmail_last_sync_at = datetime.now()
@@ -325,12 +409,46 @@ async def confirm_application(
     if pending.status == "confirmed":
         raise HTTPException(status_code=400, detail="Already confirmed")
 
-    # Create new Application
-    # Map parsed status to Application status if possible
-    app_status = "applied" # Default
+    # Map parsed status to Application status
+    app_status = "applied"  # Default
     if pending.parsed_status and pending.parsed_status in APPLICATION_STATUSES:
         app_status = pending.parsed_status
+
+    # Fix #12: Deduplicate — check if an application already exists for this company
+    existing_app_stmt = select(Application).where(
+        Application.user_id == user.id,
+        Application.company_name.ilike(pending.parsed_company or ""),
+        Application.deleted_at.is_(None)
+    )
+    existing_app_result = await db.execute(existing_app_stmt)
+    existing_app = existing_app_result.scalar_one_or_none()
+    
+    if existing_app:
+        # Update existing application's status instead of creating duplicate
+        if app_status != 'applied':  # Only upgrade status, don't downgrade
+            existing_app.status = app_status
+            existing_app.status_updated_at = datetime.utcnow()
+        pending.status = "confirmed"
+        await db.commit()
         
+        # Save positive training example
+        from app.models.training_example import TrainingExample
+        training = TrainingExample(
+            email_subject=pending.email_subject,
+            email_snippet=pending.email_snippet,
+            email_from=pending.email_from or "",
+            label="positive",
+            user_id=user.id,
+        )
+        db.add(training)
+        await db.commit()
+        
+        from app.ml.classifiers.learned_filter import refresh_learned_model
+        await refresh_learned_model()
+        
+        return {"message": "Existing application updated", "application_id": existing_app.id}
+    
+    # No existing app — create a new one
     new_app = Application(
         user_id=user.id,
         company_name=pending.parsed_company or "Unknown Company",

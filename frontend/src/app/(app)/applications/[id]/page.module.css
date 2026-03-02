@@ -319,9 +319,6 @@
   border-top: 1px solid var(--border-subtle);
 }
 
-.metaItem {
-  /* single meta cell */
-}
 
 .metaLabel {
   font-size: 10px;

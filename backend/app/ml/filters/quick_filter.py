@@ -41,6 +41,21 @@ JOB_PLATFORM_SENDERS = [
     'hire.', 'careers.', 'jobs.', 'recruiting.', 'talent.',
 ]
 
+# Job digest/newsletter senders — blocked even if subject has job signals.
+# These send curated lists, NOT personal job application responses.
+DIGEST_SENDER_DOMAINS: set = {
+    'unstop.news',        # Unstop job digests
+    'hirist.tech',        # Hirist job mailer
+    'apexearlycareers.com', # Apex early careers digest
+    'internships@',       # Generic internship broadcast
+    'jobalerts-noreply@', # LinkedIn job alert digests
+    'jobs-noreply@',      # LinkedIn job suggestions
+    'noreply@mailers.',   # Generic mailer prefixes
+    'noreply@mail.',
+    'mail.internshala',   # Internshala digest (non-personal, e.g. jos@mail.internshala.com)
+    'resumeworded.com',   # ResumeWorded newsletters
+}
+
 
 class QuickFilter:
     """
@@ -63,6 +78,13 @@ class QuickFilter:
             if platform in sender_lower:
                 logger.info(f"QuickFilter PASSED (job platform): {sender}")
                 return True
+
+        # SECOND: Block known digest/newsletter senders BEFORE checking job signals.
+        # These send curated lists, not personal responses — block regardless of subject.
+        for digest_domain in DIGEST_SENDER_DOMAINS:
+            if digest_domain in sender_lower:
+                logger.warning(f"QuickFilter BLOCKED (job digest sender): {sender}")
+                return False
         
         # Check for positive job signals in subject - ALLOW these
         job_signals = [

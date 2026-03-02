@@ -7,7 +7,7 @@ Shared across all users — not scoped to a single user.
 from typing import Optional
 from datetime import datetime
 
-from sqlalchemy import String, Text, DateTime, Index
+from sqlalchemy import String, Text, DateTime, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,6 +26,9 @@ class Lead(Base, UUIDMixin, TimestampMixin):
         Index("idx_leads_company", "company"),
         Index("idx_leads_role", "role"),
         Index("idx_leads_status", "status"),
+        # Composite unique: one digest email can produce many leads, but not duplicate
+        # the same (email_id + company + role) combination.
+        UniqueConstraint("source_email_id", "company", "role", name="uq_lead_email_company_role"),
     )
 
     # Core fields
@@ -41,11 +44,18 @@ class Lead(Base, UUIDMixin, TimestampMixin):
     recruiter_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     recruiter_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    # Dedup — email ID that generated this lead (prevents duplicates)
+    # Dedup — email ID that generated this lead
+    # NOTE: NOT unique alone — one digest email generates many leads.
+    # Use composite unique (source_email_id, company, role) instead.
     source_email_id: Mapped[str | None] = mapped_column(
-        String(255), unique=True, nullable=True, index=True,
+        String(255), nullable=True, index=True,
         doc="Gmail message ID that sourced this lead"
     )
+
+    # Enriched fields extracted from digest emails
+    stipend: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    location: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_from_digest: Mapped[bool] = mapped_column(default=False, doc="True if extracted from a job digest email")
 
     # When the job was originally found
     date: Mapped[datetime] = mapped_column(
