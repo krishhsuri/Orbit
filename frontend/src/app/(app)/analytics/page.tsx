@@ -6,7 +6,9 @@ import {
   useAnalyticsSummary,
   useAnalyticsFunnel,
   useAnalyticsSources,
-  useAnalyticsInsights
+  useAnalyticsInsights,
+  useAnalyticsMlStats,
+  useAnalyticsGhosting,
 } from '@/hooks/use-applications';
 import { 
   TrendingDown, 
@@ -15,7 +17,12 @@ import {
   Clock,
   Users,
   Lightbulb,
-  AlertCircle
+  AlertCircle,
+  Ghost,
+  Brain,
+  CheckCircle2,
+  XCircle,
+  Zap,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -67,11 +74,124 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
+// Ghost Town widget
+function GhostTownWidget({ data }: { data: any }) {
+  if (!data) return null;
+  const { total_ghosted, ghost_rate, ghosted_applications } = data;
+
+  return (
+    <section className={`${styles.card} ${styles.ghostCard}`}>
+      <h2 className={styles.cardTitle}>
+        <Ghost size={18} />
+        Ghost Town
+        <span className={styles.ghostBadge} title={`${ghost_rate}% of your applications were ghosted`}>
+          {ghost_rate}% ghosted
+        </span>
+      </h2>
+      {total_ghosted === 0 ? (
+        <div className={styles.emptyInsights}>
+          <CheckCircle2 size={28} style={{ color: 'var(--green)' }} />
+          <p>No ghosted applications! 🎉</p>
+          <span>Keep up the great work.</span>
+        </div>
+      ) : (
+        <>
+          <p className={styles.ghostSubtitle}>
+            <strong>{total_ghosted}</strong> companies never replied.
+          </p>
+          <div className={styles.ghostList}>
+            {ghosted_applications.slice(0, 8).map((g: any) => (
+              <div key={g.id} className={styles.ghostRow}>
+                <div className={styles.ghostInfo}>
+                  <span className={styles.ghostCompany}>{g.company}</span>
+                  {g.role && <span className={styles.ghostRole}>{g.role}</span>}
+                </div>
+                <span className={styles.ghostDays}>{g.days_waiting}d ago</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+// ML Stats / Orbit Learning widget
+function OrbitLearningWidget({ data }: { data: any }) {
+  if (!data) return null;
+  const {
+    model_active,
+    user_decisions,
+    user_positive,
+    user_negative,
+    min_examples_required,
+    global_training_examples,
+    progress_pct,
+  } = data;
+
+  return (
+    <section className={`${styles.card} ${styles.mlCard}`}>
+      <h2 className={styles.cardTitle}>
+        <Brain size={18} />
+        Orbit Learning
+        {model_active && (
+          <span className={styles.activeBadge}>
+            <Zap size={11} /> Active
+          </span>
+        )}
+      </h2>
+
+      {!model_active ? (
+        <>
+          <p className={styles.mlSubtitle}>
+            Orbit learns from your decisions and auto-filters your inbox.
+            Keep confirming and rejecting emails to activate it!
+          </p>
+          <div className={styles.mlProgress}>
+            <div className={styles.mlProgressBar}>
+              <div
+                className={styles.mlProgressFill}
+                style={{ width: `${progress_pct}%` }}
+              />
+            </div>
+            <span className={styles.mlProgressLabel}>
+              {global_training_examples} / {min_examples_required} examples needed to activate
+            </span>
+          </div>
+        </>
+      ) : (
+        <p className={styles.mlSubtitle}>
+          Orbit is actively filtering your inbox based on your preferences.
+        </p>
+      )}
+
+      <div className={styles.mlStats}>
+        <div className={styles.mlStat}>
+          <span className={styles.mlStatValue}>{user_decisions}</span>
+          <span className={styles.mlStatLabel}>Your decisions</span>
+        </div>
+        <div className={styles.mlStat}>
+          <CheckCircle2 size={14} style={{ color: 'var(--green)', marginBottom: 2 }} />
+          <span className={styles.mlStatValue} style={{ color: 'var(--green)' }}>{user_positive}</span>
+          <span className={styles.mlStatLabel}>Confirmed</span>
+        </div>
+        <div className={styles.mlStat}>
+          <XCircle size={14} style={{ color: 'var(--red)', marginBottom: 2 }} />
+          <span className={styles.mlStatValue} style={{ color: 'var(--red)' }}>{user_negative}</span>
+          <span className={styles.mlStatLabel}>Rejected</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function AnalyticsPage() {
   const { data: summary, isLoading: isLoadingSummary } = useAnalyticsSummary();
   const { data: funnelData, isLoading: isLoadingFunnel } = useAnalyticsFunnel();
   const { data: sourceData, isLoading: isLoadingSources } = useAnalyticsSources();
   const { data: insightsData, isLoading: isLoadingInsights } = useAnalyticsInsights();
+  const { data: mlStats } = useAnalyticsMlStats();
+  const { data: ghostingData } = useAnalyticsGhosting();
 
   const isLoading = isLoadingSummary || isLoadingFunnel || isLoadingSources || isLoadingInsights;
 
@@ -333,6 +453,12 @@ export default function AnalyticsPage() {
               </div>
             )}
           </section>
+
+          {/* Ghost Town */}
+          <GhostTownWidget data={ghostingData} />
+
+          {/* Orbit Learning (ML Stats) */}
+          <OrbitLearningWidget data={mlStats} />
         </div>
       </div>
     </div>

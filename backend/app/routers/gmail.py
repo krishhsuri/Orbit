@@ -408,16 +408,16 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
 
 @router.post("/sync")
 async def trigger_sync(
+    background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Trigger manual email sync via Celery (non-blocking)"""
+    """Trigger manual email sync in the background (non-blocking)"""
     if not user.gmail_sync_enabled:
         raise HTTPException(status_code=400, detail="Gmail sync is not enabled")
         
-    # Use Celery for true async processing (doesn't block the request)
-    from app.tasks.email_sync import sync_emails
-    sync_emails.delay(str(user.id))
+    from app.tasks.email_sync import _async_email_sync
+    background_tasks.add_task(_async_email_sync, user.id)
     
     return {"status": "request_accepted", "message": "Email sync started in background"}
 
@@ -458,11 +458,12 @@ async def cleanup_non_job_related(
 
 @router.post("/pending/process-ai")
 async def process_with_ai(
+    background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Process all pending emails with Groq LLM via Celery (non-blocking).
+    Process all pending emails with Groq LLM in the background.
     LLM decides whether to add to applications or discard.
     """
     # Check if there are pending applications
@@ -476,9 +477,9 @@ async def process_with_ai(
     if pending_count == 0:
         return {"message": "No pending applications to process", "queued": 0}
     
-    # Queue AI processing via Celery (non-blocking)
-    from app.tasks.email_sync import process_ai_emails
-    process_ai_emails.delay(str(user.id))
+    # Queue AI processing in the background (non-blocking)
+    from app.tasks.email_sync import _async_process_ai
+    background_tasks.add_task(_async_process_ai, user.id)
     
     return {
         "message": f"AI processing started for {pending_count} emails",

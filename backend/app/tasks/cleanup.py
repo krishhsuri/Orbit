@@ -7,22 +7,12 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 
-from app.celery_app import celery_app
-
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name="cleanup.purge_old_rejected")
-def purge_old_rejected():
+async def purge_old_rejected():
     """Delete rejected pending applications older than 30 days."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        result = loop.run_until_complete(_async_purge_rejected())
-        return result
-    finally:
-        loop.close()
-
+    return await _async_purge_rejected()
 
 async def _async_purge_rejected():
     from app.database import async_session_maker
@@ -43,17 +33,9 @@ async def _async_purge_rejected():
         return {"purged_rejected": count}
 
 
-@celery_app.task(name="cleanup.enforce_pending_cap")
-def enforce_pending_cap():
+async def enforce_pending_cap():
     """Enforce the 200 pending email cap for all users."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        result = loop.run_until_complete(_async_enforce_cap())
-        return result
-    finally:
-        loop.close()
-
+    return await _async_enforce_cap()
 
 async def _async_enforce_cap():
     from app.database import async_session_maker

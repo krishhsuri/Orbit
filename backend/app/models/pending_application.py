@@ -51,6 +51,10 @@ class PendingApplication(Base, UUIDMixin, TimestampMixin):
     # "rejected": user dismissed it
     status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
 
+    # Source of this pending email: "gmail_sync" (default) or "cold_email" (from sent mail detection)
+    source: Mapped[str | None] = mapped_column(String(50), nullable=True, default="gmail_sync")
+
+
     # Relationships
     user = relationship("User", backref="pending_applications")
 

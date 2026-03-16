@@ -248,3 +248,174 @@
     flex-direction: column;
   }
 }
+
+/* =====================================================
+   GHOST TOWN WIDGET
+   ===================================================== */
+
+.ghostCard {
+  border-color: rgba(64, 65, 69, 0.6);
+  background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(64, 65, 69, 0.15) 100%);
+}
+
+.ghostBadge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 2px 10px;
+  letter-spacing: 0.02em;
+}
+
+.ghostSubtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.ghostSubtitle strong {
+  color: var(--text-primary);
+}
+
+.ghostList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ghostRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  transition: background 150ms;
+}
+
+.ghostRow:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ghostInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ghostCompany {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ghostRole {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ghostDays {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* =====================================================
+   ORBIT LEARNING (ML STATS) WIDGET
+   ===================================================== */
+
+.mlCard {
+  border-color: rgba(94, 106, 210, 0.3);
+  background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(94, 106, 210, 0.06) 100%);
+}
+
+.activeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: #5DCE87;
+  background: rgba(93, 206, 135, 0.1);
+  border: 1px solid rgba(93, 206, 135, 0.25);
+  border-radius: 20px;
+  padding: 2px 10px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
+.mlSubtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.mlProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.mlProgressBar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.mlProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #5E6AD2, #9B7DD4);
+  border-radius: 99px;
+  transition: width 600ms ease;
+}
+
+.mlProgressLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.mlStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.mlStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.mlStatValue {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.mlStatLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+}

@@ -24,8 +24,7 @@ google-auth-oauthlib==1.2.0
 httpx==0.26.0
 aiohttp==3.9.1
 
-# Redis (caching, rate limiting)
-redis==5.0.1
+# Rate limiting
 slowapi>=0.1.9
 
 # Testing
@@ -50,6 +49,3 @@ groq==0.4.2
 
 # Encryption
 cryptography==42.0.2
-
-# Celery (background tasks)
-celery[redis]==5.3.6

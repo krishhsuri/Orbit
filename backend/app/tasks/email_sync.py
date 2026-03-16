@@ -5,43 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from app.celery_app import celery_app
-
-
-@celery_app.task(bind=True, max_retries=3, name="app.tasks.email_sync.sync_emails")
-def sync_emails(self, user_id: str):
-    """Celery task for email sync - fetches emails from Gmail."""
-    try:
-        # asyncio.run() creates a fresh loop, runs the coroutine, and CLEANLY
-        # closes the loop including all pending tasks and callbacks.
-        asyncio.run(_async_email_sync(UUID(user_id)))
-        logger.info(f"[CELERY] Email sync completed for user {user_id}")
-    except Exception as exc:
-        logger.error(f"[CELERY] Email sync failed for {user_id}: {exc}")
-        raise self.retry(exc=exc, countdown=60)
-
-
-@celery_app.task(bind=True, max_retries=3, name="app.tasks.email_sync.process_ai_emails")
-def process_ai_emails(self, user_id: str):
-    """Celery task for AI email processing with Groq LLM."""
-    try:
-        asyncio.run(_async_process_ai(UUID(user_id)))
-        logger.info(f"[CELERY] AI processing completed for user {user_id}")
-    except Exception as exc:
-        logger.error(f"[CELERY] AI processing failed for {user_id}: {exc}")
-        raise self.retry(exc=exc, countdown=60)
-
-
-@celery_app.task(bind=True, max_retries=2, name="app.tasks.email_sync.detect_ghosted")
-def detect_ghosted_task(self, user_id: str):
-    """Celery task for detecting ghosted applications."""
-    try:
-        asyncio.run(_async_detect_ghosted(UUID(user_id)))
-        logger.info(f"[CELERY] Ghost detection completed for user {user_id}")
-    except Exception as exc:
-        logger.error(f"[CELERY] Ghost detection failed for {user_id}: {exc}")
-        raise self.retry(exc=exc, countdown=30)
-
+logger = logging.getLogger(__name__)
 
 # ============== Async Implementations ==============
 
