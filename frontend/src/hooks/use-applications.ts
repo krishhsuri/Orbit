@@ -4,7 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { applicationsApi, analyticsApi } from '@/lib/api';
+import { applicationsApi, analyticsApi, gmailApi } from '@/lib/api';
 import type { Application, ApplicationStatus, CreateApplicationInput, UpdateApplicationInput } from '@/stores';
 
 // Query keys
@@ -23,6 +23,12 @@ export const analyticsKeys = {
   funnel: (startDate?: string) => [...analyticsKeys.all, 'funnel', startDate] as const,
   sources: () => [...analyticsKeys.all, 'sources'] as const,
   insights: () => [...analyticsKeys.all, 'insights'] as const,
+  mlStats: () => [...analyticsKeys.all, 'ml-stats'] as const,
+  ghosting: () => [...analyticsKeys.all, 'ghosting'] as const,
+};
+
+export const gmailKeys = {
+  pending: ['gmail', 'pending'] as const,
 };
 
 // List applications hook
@@ -164,6 +170,32 @@ export function useAnalyticsInsights() {
   return useQuery({
     queryKey: analyticsKeys.insights(),
     queryFn: () => analyticsApi.getInsights(),
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useAnalyticsMlStats() {
+  return useQuery({
+    queryKey: analyticsKeys.mlStats(),
+    queryFn: () => analyticsApi.getMlStats(),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useAnalyticsGhosting() {
+  return useQuery({
+    queryKey: analyticsKeys.ghosting(),
+    queryFn: () => analyticsApi.getGhosting(),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useUndoReject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => gmailApi.undoReject(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gmail', 'pending'] });
+    },
   });
 }

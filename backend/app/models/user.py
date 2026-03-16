@@ -69,6 +69,10 @@ class User(Base, UUIDMixin, TimestampMixin):
         String(255), nullable=True,
         doc="Gmail message ID of the newest email processed in last sync"
     )
+    gmail_last_synced_sent_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True,
+        doc="Gmail message ID of the newest sent email processed in last sync"
+    )
     
     # Relationships
     applications: Mapped[List["Application"]] = relationship(

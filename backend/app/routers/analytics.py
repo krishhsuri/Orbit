@@ -260,3 +260,109 @@ async def get_insights(
         generated_at=datetime.utcnow().isoformat(),
     )
 
+
+@router.get("/ml-stats")
+async def get_ml_stats(
+    db: AsyncSession = Depends(get_db),
+    user_id: UUID = Depends(get_current_user_id),
+):
+    """
+    Get ML self-learning stats for the feedback loop transparency widget.
+    Returns total training examples, label breakdown, and whether the model is active.
+    """
+    from app.models.training_example import TrainingExample
+    from app.ml.classifiers.learned_filter import learned_filter, MIN_EXAMPLES
+
+    # Count training examples for this user
+    user_total_q = select(func.count()).select_from(TrainingExample).where(
+        TrainingExample.user_id == user_id
+    )
+    user_total = (await db.execute(user_total_q)).scalar() or 0
+
+    user_positive_q = select(func.count()).select_from(TrainingExample).where(
+        TrainingExample.user_id == user_id,
+        TrainingExample.label == "positive"
+    )
+    user_positive = (await db.execute(user_positive_q)).scalar() or 0
+
+    user_negative_q = select(func.count()).select_from(TrainingExample).where(
+        TrainingExample.user_id == user_id,
+        TrainingExample.label == "negative"
+    )
+    user_negative = (await db.execute(user_negative_q)).scalar() or 0
+
+    # Global training data (what the model actually trains on)
+    global_total_q = select(func.count()).select_from(TrainingExample)
+    global_total = (await db.execute(global_total_q)).scalar() or 0
+
+    return {
+        "model_active": learned_filter.is_ready,
+        "model_example_count": learned_filter.example_count,
+        "min_examples_required": MIN_EXAMPLES,
+        "user_decisions": user_total,
+        "user_positive": user_positive,
+        "user_negative": user_negative,
+        "global_training_examples": global_total,
+        "progress_pct": min(100, round((global_total / MIN_EXAMPLES) * 100)) if not learned_filter.is_ready else 100,
+    }
+
+
+@router.get("/ghosting")
+async def get_ghosting_stats(
+    db: AsyncSession = Depends(get_db),
+    user_id: UUID = Depends(get_current_user_id),
+):
+    """
+    Get ghosting analytics: list of ghosted applications and summary stats.
+    Used for the 'Ghost Town' widget on the analytics dashboard.
+    """
+    # Get all ghosted applications
+    query = select(
+        Application.id,
+        Application.company_name,
+        Application.role_title,
+        Application.applied_date,
+        Application.status_updated_at,
+    ).where(
+        Application.user_id == user_id,
+        Application.deleted_at.is_(None),
+        Application.status == "ghosted",
+    ).order_by(Application.applied_date.desc()).limit(20)
+
+    result = await db.execute(query)
+    rows = result.all()
+
+    today = date.today()
+
+    ghosted = []
+    for r in rows:
+        days_waiting = (today - r.applied_date).days if r.applied_date else 0
+        ghosted.append({
+            "id": str(r.id),
+            "company": r.company_name,
+            "role": r.role_title,
+            "applied_date": r.applied_date.isoformat() if r.applied_date else None,
+            "days_waiting": days_waiting,
+        })
+
+    # Aggregate stats
+    total_ghosted_q = select(func.count()).select_from(Application).where(
+        Application.user_id == user_id,
+        Application.deleted_at.is_(None),
+        Application.status == "ghosted",
+    )
+    total_ghosted = (await db.execute(total_ghosted_q)).scalar() or 0
+
+    total_apps_q = select(func.count()).select_from(Application).where(
+        Application.user_id == user_id,
+        Application.deleted_at.is_(None),
+    )
+    total_apps = (await db.execute(total_apps_q)).scalar() or 1
+
+    ghost_rate = round((total_ghosted / total_apps) * 100, 1)
+
+    return {
+        "total_ghosted": total_ghosted,
+        "ghost_rate": ghost_rate,
+        "ghosted_applications": ghosted,
+    }

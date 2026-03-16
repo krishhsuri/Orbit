@@ -278,6 +278,104 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                     user.gmail_last_synced_email_id = emails[0]['id']
                 await db.commit()
                 logger.info("[SYNC] No job-related emails found")
+
+            # --- SENT EMAILS BRANCH (Cold Application Tracking) ---
+            try:
+                logger.info(f"[SYNC] Fetching sent emails for cold application detection")
+                last_synced_sent_id = user.gmail_last_synced_sent_id
+                sent_emails = await asyncio.to_thread(
+                    service.fetch_sent_emails,
+                    max_results=50,
+                    after_message_id=last_synced_sent_id
+                )
+                
+                logger.info(f"[SYNC] Fetched {len(sent_emails)} sent emails from Gmail")
+                
+                if sent_emails:
+                    from app.ml.classifiers.cold_email_detector import ColdEmailDetector
+                    cold_detector = ColdEmailDetector()
+                    
+                    cold_app_count = 0
+                    skipped_sent = 0
+                    
+                    for sent_email in sent_emails:
+                        # Check if already processed
+                        stmt = select(PendingApplication).where(PendingApplication.email_id == sent_email['id'])
+                        existing = await db.execute(stmt)
+                        if existing.scalar_one_or_none():
+                            skipped_sent += 1
+                            continue
+                            
+                        # Detect cold application
+                        detection = cold_detector.detect(sent_email)
+                        
+                        if detection['is_cold_email']:
+                            logger.info(f"[SYNC] COLD EMAIL DETECTED: {sent_email.get('subject')[:50]} (conf: {detection['confidence']:.2f})")
+                            
+                            # Parse date
+                            email_date_str = sent_email.get('date', '')
+                            try:
+                                parsed_sent_date = parsedate_to_datetime(email_date_str)
+                            except Exception:
+                                parsed_sent_date = datetime.now()
+                                
+                            # Create PendingApplication
+                            pending = PendingApplication(
+                                user_id=user.id,
+                                email_id=sent_email['id'],
+                                email_subject=sent_email['subject'],
+                                email_snippet=sent_email.get('body_preview', '')[:1000],
+                                email_from=sent_email.get('to_address'),  # We use 'to' for the company contact in sent emails
+                                email_date=parsed_sent_date,
+                                parsed_company=detection['company'],
+                                parsed_role=detection['role'],
+                                parsed_status='applied',  # Sent cold emails always map to applied
+                                parsed_job_url=None,
+                                confidence_score=detection['confidence'],
+                                source='cold_email',
+                                status="pending"
+                            )
+                            db.add(pending)
+                            cold_app_count += 1
+                            
+                            # Also add global Lead if company extracted
+                            if detection['company']:
+                                from app.models import Lead
+                                lead_exists = await db.execute(
+                                    select(Lead).where(Lead.source_email_id == sent_email['id'])
+                                )
+                                if not lead_exists.scalar_one_or_none():
+                                    raw_to = sent_email.get('to_address_raw', sent_email.get('to_address', ''))
+                                    import re as _re
+                                    name_match = _re.match(r'^([^<]+)\s*<', raw_to)
+                                    email_match = _re.search(r'<([^>]+)>', raw_to) or _re.search(r'([^\s]+@[^\s]+)', raw_to)
+                                    
+                                    lead = Lead(
+                                        company=detection['company'],
+                                        role=detection['role'] or "Unknown Role",
+                                        job_site="Cold Email",
+                                        job_url=None,
+                                        recruiter_name=name_match.group(1).strip() if name_match else None,
+                                        recruiter_email=email_match.group(1) if email_match else None,
+                                        source_email_id=sent_email['id'],
+                                        date=parsed_sent_date,
+                                    )
+                                    db.add(lead)
+                    
+                    # Update sync tracking for sent emails
+                    user.gmail_last_synced_sent_id = sent_emails[0]['id']
+                    if cold_app_count > 0:
+                        await db.commit()
+                        logger.info(f"[SYNC] Committed {cold_app_count} cold application emails")
+                    else:
+                        await db.commit()
+                        logger.info(f"[SYNC] Processed sent emails, skipped {skipped_sent}")
+
+            except Exception as e:
+                logger.error(f"[SYNC] Error processing sent emails: {e}")
+                # We don't rollback the entire transaction here, 
+                # we just skip the sent email portion if it fails
+
             
             # Enforce per-user pending email cap
             from sqlalchemy import func
@@ -537,6 +635,60 @@ async def reject_application(
         await refresh_learned_model()
     
     return {"message": "Pending application rejected"}
+
+
+@router.post("/pending/{id}/undo-reject")
+async def undo_reject_application(
+    id: UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Undo a pending application rejection.
+    - Reverts status back to 'pending'
+    - Deletes the negative TrainingExample that was created (un-poisons the model)
+    - Retrains the learned filter
+    """
+    query = select(PendingApplication).where(
+        PendingApplication.id == id,
+        PendingApplication.user_id == user.id
+    )
+    result = await db.execute(query)
+    pending = result.scalar_one_or_none()
+
+    if not pending:
+        raise HTTPException(status_code=404, detail="Pending application not found")
+
+    if pending.status != "rejected":
+        raise HTTPException(status_code=400, detail="Application is not rejected, cannot undo")
+
+    # Revert status
+    pending.status = "pending"
+
+    # Delete the most recent negative TrainingExample for this email (un-poison)
+    from app.models.training_example import TrainingExample
+    from sqlalchemy import desc
+    neg_example = await db.execute(
+        select(TrainingExample)
+        .where(
+            TrainingExample.user_id == user.id,
+            TrainingExample.label == "negative",
+            TrainingExample.email_subject == pending.email_subject,
+        )
+        .order_by(desc(TrainingExample.created_at))
+        .limit(1)
+    )
+    neg_row = neg_example.scalar_one_or_none()
+    if neg_row:
+        await db.delete(neg_row)
+
+    await db.commit()
+
+    # Retrain to remove the deleted negative example from model
+    from app.ml.classifiers.learned_filter import refresh_learned_model
+    await refresh_learned_model()
+
+    return {"message": "Rejection undone successfully", "id": str(id)}
 
 
 @router.post("/detect-ghosted")

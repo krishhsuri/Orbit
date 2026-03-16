@@ -223,3 +223,68 @@ class GmailService:
         except Exception as e:
             logger.error(f"Gmail fetch failed: {e}")
             return []
+
+    def fetch_sent_emails(self, max_results: int = 50, after_message_id: str = None) -> List[Dict[str, Any]]:
+        """
+        Fetch recent sent emails for cold application detection.
+        Filters by 'in:sent newer_than:7d'.
+        """
+        if not self.service:
+            return []
+
+        try:
+            # Query: newer than 7 days, in sent folder
+            query = "in:sent newer_than:7d -is:chat"
+
+            results = self.service.users().messages().list(
+                userId='me',
+                q=query,
+                maxResults=max_results
+            ).execute()
+
+            messages = results.get('messages', [])
+            email_data = []
+
+            for msg in messages:
+                # If we hit the last synced message, stop
+                if after_message_id and msg['id'] == after_message_id:
+                    logger.info(f"[GMAIL] Reached last synced sent email ID {after_message_id}, stopping")
+                    break
+
+                full_msg = self.service.users().messages().get(
+                    userId='me',
+                    id=msg['id'],
+                    format='full',
+                ).execute()
+
+                payload = full_msg.get('payload', {})
+                headers = {h['name']: h['value'] for h in payload.get('headers', [])}
+
+                raw_to = headers.get('To', '')
+                bare_to = parse_bare_email(raw_to)
+                
+                raw_from = headers.get('From', '')
+                bare_from = parse_bare_email(raw_from)
+
+                body_text = _extract_body_from_payload(payload)
+                snippet = full_msg.get('snippet', '')
+                body_preview = (body_text or snippet)[:BODY_PREVIEW_MAX_CHARS]
+
+                email_data.append({
+                    'id': msg['id'],
+                    'threadId': msg['threadId'],
+                    'snippet': snippet,
+                    'subject': headers.get('Subject', ''),
+                    'from_address': bare_from,
+                    'to_address': bare_to,
+                    'to_address_raw': raw_to,
+                    'date': headers.get('Date', ''),
+                    'body_preview': body_preview,
+                    'direction': 'sent',
+                })
+
+            return email_data
+
+        except Exception as e:
+            logger.error(f"Gmail sent fetch failed: {e}")
+            return []
