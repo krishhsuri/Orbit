@@ -9,15 +9,16 @@ from alembic import context
 
 # Import our app config and models
 from app.config import get_settings
-from app.database import Base
+from app.database import Base, _build_engine_args
 from app.models import *  # Import all models to register them
 
 # this is the Alembic Config object
 config = context.config
 
-# Get database URL from settings
+# Get database URL from settings — strip libpq-only params for asyncpg
 settings = get_settings()
-config.set_main_option("sqlalchemy.url", settings.database_url)
+clean_url, _connect_args = _build_engine_args(settings.database_url)
+config.set_main_option("sqlalchemy.url", clean_url)
 
 # Interpret the config file for Python logging
 if config.config_file_name is not None:
