@@ -21,30 +21,21 @@ settings = get_settings()
 
 def _build_engine_args(database_url: str):
     """
-    asyncpg does not support libpq-only query parameters like 'sslmode',
-    'channel_binding', 'connect_timeout', etc. Strip them all and translate
-    ssl requirements into connect_args instead.
+    asyncpg does NOT support any libpq/psycopg2 URL query parameters
+    (sslmode, channel_binding, connect_timeout, etc.).
+    The safest approach: strip the entire query string and pass ssl
+    via connect_args only.
     """
-    # These are libpq/psycopg2 params that asyncpg does NOT accept
-    LIBPQ_ONLY_PARAMS = {
-        "sslmode", "channel_binding", "connect_timeout",
-        "application_name", "options", "gssencmode",
-    }
-
     parsed = urlparse(database_url)
     params = parse_qs(parsed.query, keep_blank_values=True)
 
+    # Detect SSL requirement before stripping everything
     ssl_required = params.get("sslmode", ["disable"])[0] in (
         "require", "verify-ca", "verify-full", "prefer"
     )
 
-    # Remove all unsupported params
-    for key in LIBPQ_ONLY_PARAMS:
-        params.pop(key, None)
-
-    # Rebuild URL without the stripped params
-    clean_query = urlencode({k: v[0] for k, v in params.items()})
-    clean_url = urlunparse(parsed._replace(query=clean_query))
+    # Strip the ENTIRE query string — asyncpg does not accept any URL params
+    clean_url = urlunparse(parsed._replace(query=""))
 
     connect_args = {"ssl": True} if ssl_required else {}
     return clean_url, connect_args
@@ -59,7 +50,7 @@ engine = create_async_engine(
     pool_size=20,
     max_overflow=30,
     pool_recycle=3600,
-    pool_pre_ping=True,  # Health check connections before use
+    pool_pre_ping=True,
     connect_args=_connect_args,
 )
 
