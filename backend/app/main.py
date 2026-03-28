@@ -21,12 +21,29 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     """
     Lifespan context manager for startup/shutdown events
     """
-    # Startup
-    if settings.debug:
-        await init_db()  # Create tables in dev
-    
+    # Startup — run migrations on every deploy (idempotent)
+    import asyncio
+    import subprocess
+    import sys
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        logger.info("Running database migrations...")
+        result = subprocess.run(
+            [sys.executable, "-m", "alembic", "upgrade", "head"],
+            capture_output=True,
+            text=True,
+            cwd="/opt/render/project/src/backend" if not settings.debug else ".",
+        )
+        if result.returncode == 0:
+            logger.info(f"Migrations complete: {result.stdout}")
+        else:
+            logger.error(f"Migration failed: {result.stderr}")
+    except Exception as e:
+        logger.error(f"Could not run migrations: {e}")
+
     yield
-    
+
     # Shutdown
     await close_db()
 
