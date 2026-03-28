@@ -5,6 +5,7 @@ Uses SQLAlchemy 2.0 async engine
 
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+from urllib.parse import urlparse, urlencode, parse_qs, urlunparse
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -17,14 +18,36 @@ from app.config import get_settings
 
 settings = get_settings()
 
+
+def _build_engine_args(database_url: str):
+    """
+    asyncpg does not support the 'sslmode' query parameter (that's psycopg2/libpq).
+    Strip it from the URL and pass ssl=True via connect_args when required.
+    """
+    parsed = urlparse(database_url)
+    params = parse_qs(parsed.query, keep_blank_values=True)
+
+    ssl_required = params.pop("sslmode", ["disable"])[0] in ("require", "verify-ca", "verify-full", "prefer")
+
+    # Rebuild URL without sslmode
+    clean_query = urlencode({k: v[0] for k, v in params.items()})
+    clean_url = urlunparse(parsed._replace(query=clean_query))
+
+    connect_args = {"ssl": True} if ssl_required else {}
+    return clean_url, connect_args
+
+
+_db_url, _connect_args = _build_engine_args(settings.database_url)
+
 # Create async engine
 engine = create_async_engine(
-    settings.database_url,
+    _db_url,
     echo=settings.database_echo,
     pool_size=20,
     max_overflow=30,
     pool_recycle=3600,
     pool_pre_ping=True,  # Health check connections before use
+    connect_args=_connect_args,
 )
 
 # Session factory

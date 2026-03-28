@@ -110,6 +110,7 @@ async def callback(
         )
     
     # Exchange code for tokens
+    logger.info(f"OAuth callback: using redirect_uri={settings.google_redirect_uri}")
     async with httpx.AsyncClient() as client:
         token_response = await client.post(
             GOOGLE_TOKEN_URL,
@@ -123,6 +124,7 @@ async def callback(
         )
         
         if token_response.status_code != 200:
+            logger.error(f"Google token exchange failed: {token_response.status_code} - {token_response.text}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Failed to exchange code for tokens",
