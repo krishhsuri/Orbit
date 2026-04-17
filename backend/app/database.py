@@ -23,8 +23,8 @@ def _build_engine_args(database_url: str):
     """
     asyncpg does NOT support any libpq/psycopg2 URL query parameters
     (sslmode, channel_binding, connect_timeout, etc.).
-    The safest approach: strip the entire query string and pass ssl
-    via connect_args only.
+    Normalizes the scheme to postgresql+asyncpg:// and strips all query params,
+    passing SSL via connect_args instead.
     """
     parsed = urlparse(database_url)
     params = parse_qs(parsed.query, keep_blank_values=True)
@@ -34,10 +34,23 @@ def _build_engine_args(database_url: str):
         "require", "verify-ca", "verify-full", "prefer"
     )
 
-    # Strip the ENTIRE query string — asyncpg does not accept any URL params
-    clean_url = urlunparse(parsed._replace(query=""))
+    # Normalize scheme: postgres:// or postgresql:// → postgresql+asyncpg://
+    scheme = parsed.scheme
+    if scheme in ("postgres", "postgresql"):
+        scheme = "postgresql+asyncpg"
+    # Already has +asyncpg or +psycopg2, replace the driver part
+    elif "+" in scheme:
+        scheme = "postgresql+asyncpg"
 
-    connect_args = {"ssl": True} if ssl_required else {}
+    # Strip the ENTIRE query string — asyncpg does not accept any URL params
+    clean_url = urlunparse(parsed._replace(scheme=scheme, query=""))
+
+    # For non-localhost connections (e.g. Neon), always enable SSL
+    host = parsed.hostname or ""
+    is_remote = host not in ("localhost", "127.0.0.1", "")
+    use_ssl = ssl_required or is_remote
+
+    connect_args = {"ssl": True} if use_ssl else {}
     return clean_url, connect_args
 
 

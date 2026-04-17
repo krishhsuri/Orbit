@@ -44,6 +44,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     except Exception as e:
         logger.error(f"Could not run migrations: {e}")
 
+    # Fallback: ensure all tables exist via create_all (idempotent, checkfirst=True)
+    # This is a no-op when tables already exist. Guards against alembic env failures.
+    try:
+        from app.database import engine, Base
+        from app.models import *  # noqa: F401, F403 — register all models
+        async with engine.begin() as conn:
+            await conn.run_sync(
+                lambda sync_conn: Base.metadata.create_all(sync_conn, checkfirst=True)
+            )
+        logger.info("DB schema verified (create_all checkfirst=True).")
+    except Exception as e:
+        logger.error(f"create_all fallback failed: {e}")
+
     yield
 
     # Shutdown
