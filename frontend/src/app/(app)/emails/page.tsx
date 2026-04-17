@@ -47,7 +47,8 @@ export default function EmailsPage() {
   const handleProcessAI = () => processWithAI();
 
   const handleConnect = () => {
-    window.location.href = 'http://localhost:8000/auth/login';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    window.location.href = `${apiUrl}/auth/login`;
   };
 
   // Filter emails by search

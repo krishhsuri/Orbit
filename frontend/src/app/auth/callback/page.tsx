@@ -23,7 +23,8 @@ function CallbackContent() {
     // Fetch user info with the token
     const fetchUser = async () => {
       try {
-        const response = await fetch('http://localhost:8000/auth/me', {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${apiUrl}/auth/me`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

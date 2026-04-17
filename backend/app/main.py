@@ -38,7 +38,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         if result.returncode == 0:
             logger.info(f"Migrations complete: {result.stdout}")
         else:
-            logger.error(f"Migration failed: {result.stderr}")
+            logger.error(
+                f"Migration failed!\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}"
+            )
     except Exception as e:
         logger.error(f"Could not run migrations: {e}")
 

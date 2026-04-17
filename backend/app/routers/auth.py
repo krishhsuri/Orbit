@@ -86,6 +86,18 @@ async def login():
     return RedirectResponse(url=auth_url)
 
 
+@router.head("/callback")
+async def callback_head():
+    """
+    HEAD handler for the OAuth callback URL.
+    Browsers and proxies sometimes preflight with HEAD before following a redirect.
+    Without this, the HEAD request would attempt to consume the one-time OAuth code
+    and hit the DB (which may not exist yet), causing 'invalid_grant' on the real GET.
+    """
+    from fastapi.responses import Response as FastAPIResponse
+    return FastAPIResponse(status_code=200)
+
+
 @router.get("/callback")
 async def callback(
     code: Optional[str] = None,
