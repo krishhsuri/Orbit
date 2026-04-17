@@ -79,14 +79,15 @@ def build_csp_header(is_dev: bool = False) -> str:
             "form-action 'self'",
         ])
     else:
-        # Production: Strict CSP
+        # Production: Strict CSP — allow Vercel frontend and Google OAuth
+        frontend_origins = " ".join(settings.cors_origins)
         return "; ".join([
             "default-src 'self'",
             "script-src 'self'",
-            "style-src 'self' 'unsafe-inline'",  # Allow inline styles for UI frameworks
+            "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https:",
             "font-src 'self' https://fonts.gstatic.com",
-            "connect-src 'self' https://api.groq.com https://accounts.google.com",
+            f"connect-src 'self' {frontend_origins} https://api.groq.com https://accounts.google.com",
             "frame-ancestors 'none'",
             "base-uri 'self'",
             "form-action 'self'",
@@ -97,18 +98,12 @@ def build_csp_header(is_dev: bool = False) -> str:
 def get_cors_origins(is_dev: bool = False) -> list:
     """
     Get CORS allowed origins based on environment.
+    Always reads from settings.cors_origins (set via ALLOWED_ORIGINS env var).
     """
     if is_dev:
         return [
             "http://localhost:3000",
             "http://localhost:5173",
             "http://127.0.0.1:3000",
-            "http://127.0.0.1:5173",
-        ]
-    else:
-        # Production origins - update with your actual domains
-        return [
-            "https://orbit.app",
-            "https://www.orbit.app",
-            "https://orbit-app.vercel.app",
-        ]
+        ] + settings.cors_origins
+    return settings.cors_origins

@@ -21,19 +21,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     """
     Lifespan context manager for startup/shutdown events
     """
-    # Startup — run migrations on every deploy (idempotent)
-    import asyncio
+    # Startup — run alembic migrations on every deploy (idempotent)
     import subprocess
     import sys
     import logging
+    from pathlib import Path
     logger = logging.getLogger(__name__)
+    # backend/ dir is always parent of the app/ package (i.e. parent of this file's dir)
+    backend_dir = str(Path(__file__).parent.parent)
     try:
-        logger.info("Running database migrations...")
+        logger.info(f"Running database migrations from {backend_dir}...")
         result = subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", "head"],
             capture_output=True,
             text=True,
-            cwd="/opt/render/project/src/backend" if not settings.debug else ".",
+            cwd=backend_dir,
         )
         if result.returncode == 0:
             logger.info(f"Migrations complete: {result.stdout}")
