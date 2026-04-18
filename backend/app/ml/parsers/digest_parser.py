@@ -46,7 +46,8 @@ class DigestParser:
 
     def __init__(self):
         from app.ml.llm.groq_client import GroqClient
-        self.llm = GroqClient()
+        from app.config import get_settings
+        self.llm = GroqClient(api_key=get_settings().groq_api_key)
 
     def is_digest_email(self, sender: str, subject: str, body: str) -> bool:
         """
