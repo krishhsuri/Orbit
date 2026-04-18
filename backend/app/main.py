@@ -19,46 +19,10 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     """
-    Lifespan context manager for startup/shutdown events
+    Lifespan context manager for startup/shutdown events.
+    Migrations are run by the start command BEFORE uvicorn starts:
+      alembic upgrade head && uvicorn app.main:app ...
     """
-    # Startup — run alembic migrations on every deploy (idempotent)
-    import subprocess
-    import sys
-    import logging
-    from pathlib import Path
-    logger = logging.getLogger(__name__)
-    # backend/ dir is always parent of the app/ package (i.e. parent of this file's dir)
-    backend_dir = str(Path(__file__).parent.parent)
-    try:
-        logger.info(f"Running database migrations from {backend_dir}...")
-        result = subprocess.run(
-            [sys.executable, "-m", "alembic", "upgrade", "head"],
-            capture_output=True,
-            text=True,
-            cwd=backend_dir,
-        )
-        if result.returncode == 0:
-            logger.info(f"Migrations complete: {result.stdout}")
-        else:
-            logger.error(
-                f"Migration failed!\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}"
-            )
-    except Exception as e:
-        logger.error(f"Could not run migrations: {e}")
-
-    # Fallback: ensure all tables exist via create_all (idempotent, checkfirst=True)
-    # This is a no-op when tables already exist. Guards against alembic env failures.
-    try:
-        from app.database import engine, Base
-        from app.models import *  # noqa: F401, F403 — register all models
-        async with engine.begin() as conn:
-            await conn.run_sync(
-                lambda sync_conn: Base.metadata.create_all(sync_conn, checkfirst=True)
-            )
-        logger.info("DB schema verified (create_all checkfirst=True).")
-    except Exception as e:
-        logger.error(f"create_all fallback failed: {e}")
-
     yield
 
     # Shutdown
