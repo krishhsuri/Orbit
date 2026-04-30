@@ -233,8 +233,8 @@ class GmailService:
             return []
 
         try:
-            # Query: newer than 7 days, in sent folder
-            query = "in:sent newer_than:7d -is:chat"
+            # Query: newer than 60 days, in sent folder
+            query = "in:sent newer_than:60d -is:chat"
 
             results = self.service.users().messages().list(
                 userId='me',

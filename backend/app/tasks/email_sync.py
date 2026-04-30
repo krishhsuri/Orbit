@@ -15,6 +15,8 @@ async def _async_email_sync(user_id: UUID):
     from app.routers.gmail import sync_emails_task
     try:
         await sync_emails_task(user_id, None)
+        # Auto-trigger AI processing immediately after sync finishes
+        await _async_process_ai_internal(user_id)
     finally:
         # CRITICAL: Dispose engine before asyncio.run() closes the loop.
         # Without this, asyncpg connections from this loop stay in the pool
@@ -22,79 +24,107 @@ async def _async_email_sync(user_id: UUID):
         await engine.dispose()
 
 
-async def _async_process_ai(user_id: UUID):
-    """Async implementation of AI email processing."""
-    from app.database import async_session_maker, engine
+async def _async_process_ai_internal(user_id: UUID):
+    """Internal implementation of AI email processing (no engine disposal)."""
+    from app.database import async_session_maker
     from app.models import PendingApplication, Application
     from app.services.ai_parser import AIParser
     from app.services.action_extractor import ActionExtractor
     from sqlalchemy import select
     from datetime import date
 
-    try:
-        async with async_session_maker() as db:
-            query = select(PendingApplication).where(
-                PendingApplication.user_id == user_id,
-                PendingApplication.status == "pending"
-            )
-            result = await db.execute(query)
-            pending_apps = result.scalars().all()
+    async with async_session_maker() as db:
+        query = select(PendingApplication).where(
+            PendingApplication.user_id == user_id,
+            PendingApplication.status == "pending"
+        )
+        result = await db.execute(query)
+        pending_apps = result.scalars().all()
 
-            if not pending_apps:
-                logger.info(f"[AI] No pending apps for user {user_id}")
-                return
+        if not pending_apps:
+            logger.info(f"[AI] No pending apps for user {user_id}")
+            return
 
-            parser = AIParser()
-            action_extractor = ActionExtractor()
-            added = 0
-            discarded = 0
+        parser = AIParser()
+        action_extractor = ActionExtractor()
+        added = 0
+        discarded = 0
 
-            for pending in pending_apps:
-                try:
-                    email_data = {
-                        'subject': pending.email_subject,
-                        'snippet': pending.email_snippet or '',
-                        'body_preview': pending.email_snippet or ''
-                    }
+        for pending in pending_apps:
+            try:
+                email_data = {
+                    'subject': pending.email_subject,
+                    'snippet': pending.email_snippet or '',
+                    'body_preview': pending.email_snippet or ''
+                }
 
-                    llm_result = await parser.process_with_llm(email_data)
+                llm_result = await parser.process_with_llm(email_data)
 
-                    if llm_result and llm_result.get('action') == 'add_to_tracker':
+                if llm_result and llm_result.get('action') == 'add_to_tracker':
+                    company_name = llm_result.get('company') or pending.parsed_company or "Unknown Company"
+                    app_status = llm_result.get('status', 'applied')
+                    
+                    # Deduplicate: check if an application already exists for this company
+                    existing_app_stmt = select(Application).where(
+                        Application.user_id == user_id,
+                        Application.company_name.ilike(company_name),
+                        Application.deleted_at.is_(None)
+                    )
+                    existing_app_result = await db.execute(existing_app_stmt)
+                    existing_app = existing_app_result.scalars().first()
+
+                    if existing_app:
+                        # Update existing application's status instead of creating duplicate
+                        if app_status != 'applied':  # Only upgrade status, don't downgrade
+                            from datetime import datetime
+                            existing_app.status = app_status
+                            existing_app.status_updated_at = datetime.utcnow()
+                        app_to_use = existing_app
+                        logger.info(f"[AI] Updated existing: {company_name} to {app_status}")
+                    else:
                         new_app = Application(
                             user_id=user_id,
-                            company_name=llm_result.get('company') or pending.parsed_company or "Unknown Company",
+                            company_name=company_name,
                             role_title=llm_result.get('role') or pending.parsed_role or "Unknown Role",
                             job_url=pending.parsed_job_url,
-                            status=llm_result.get('status', 'applied'),
+                            status=app_status,
                             applied_date=pending.email_date.date() if pending.email_date else date.today(),
                             source="gmail_ai"
                         )
                         db.add(new_app)
                         await db.flush() # Ensure new_app.id is generated
-                        
-                        # Agent A: Action Extraction
-                        await action_extractor.extract_and_record(
-                            db=db,
-                            application_id=new_app.id,
-                            email_subject=pending.email_subject,
-                            email_body=pending.email_snippet or "", # Using snippet as body for now
-                            email_id=pending.email_id,
-                        )
-                        
-                        pending.status = "confirmed"
+                        app_to_use = new_app
                         added += 1
-                        logger.info(f"[AI] Added: {new_app.company_name}")
+                        logger.info(f"[AI] Added new: {company_name}")
+                    
+                    # Agent A: Action Extraction
+                    await action_extractor.extract_and_record(
+                        db=db,
+                        application_id=app_to_use.id,
+                        email_subject=pending.email_subject,
+                        email_body=pending.email_snippet or "", # Using snippet as body for now
+                        email_id=pending.email_id,
+                    )
+                    
+                    pending.status = "confirmed"
 
-                    elif llm_result and llm_result.get('action') == 'discard':
-                        pending.status = "rejected"
-                        discarded += 1
+                elif llm_result and llm_result.get('action') == 'discard':
+                    pending.status = "rejected"
+                    discarded += 1
 
-                except Exception as e:
-                    logger.error(f"[AI] Error processing {pending.id}: {e}")
-                    continue
+            except Exception as e:
+                logger.error(f"[AI] Error processing {pending.id}: {e}")
+                continue
 
-            await db.commit()
-            logger.info(f"[AI] Completed: {added} added, {discarded} discarded")
+        await db.commit()
+        logger.info(f"[AI] Completed: {added} added, {discarded} discarded")
+
+
+async def _async_process_ai(user_id: UUID):
+    """Async implementation of AI email processing."""
+    from app.database import engine
+    try:
+        await _async_process_ai_internal(user_id)
     finally:
         await engine.dispose()
 

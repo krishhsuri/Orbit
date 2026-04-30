@@ -256,19 +256,23 @@ Return JSON only:
             logger.error(f"LLM action extraction failed: {e}")
             return None
 
-    async def generate_follow_up_draft(self, company: str, role: str, last_interaction_days: int, context: str = "") -> Optional[str]:
+    async def generate_follow_up_draft(self, company: str, role: str, last_interaction_days: int, context: str = "", source: Optional[str] = None) -> Optional[str]:
         """
         Generate a professional follow-up email draft.
         """
         if not self.client:
             return None
 
+        cold_email_instruction = ""
+        if source == "cold_email":
+            cold_email_instruction = "\n- Note: The initial interaction was a cold email outreach, not a standard job portal application. The follow-up should reflect this (e.g., 'following up on my previous email regarding...')."
+
         prompt = f"""You are an AI assistant helping a job seeker follow up on an application.
 Context:
 - Company: {company}
 - Role: {role}
 - Days since last contact: {last_interaction_days}
-- Additional Context: {context}
+- Additional Context: {context}{cold_email_instruction}
 
 Requirements:
 - Personalized, polite, and concise.

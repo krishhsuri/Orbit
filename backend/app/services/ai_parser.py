@@ -121,7 +121,7 @@ class AIParser:
             
             if llm_result:
                 # Map the status to our Application model
-                raw_status = llm_result.get('status', 'applied')
+                raw_status = llm_result.get('status') or 'applied'
                 mapped_status = STATUS_MAPPING.get(raw_status.lower(), 'applied')
                 llm_result['status'] = mapped_status
                 

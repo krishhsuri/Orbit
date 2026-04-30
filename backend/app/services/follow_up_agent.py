@@ -94,7 +94,8 @@ class FollowUpAgent:
             company=application.company_name,
             role=application.role_title,
             last_interaction_days=days_since_last_contact,
-            context=context
+            context=context,
+            source=application.source
         )
 
         return {

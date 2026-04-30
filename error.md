@@ -44,7 +44,7 @@ gmail_auto
 
 Priority
 
-so you see that the first thing is they had rejected me in this mail and then you said for follow uogeok
+so you see that the first thing is they had rejected me in this mail and then you said for follow uogeok 
 
 
 

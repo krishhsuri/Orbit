@@ -49,22 +49,20 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
             # Fix #5: Pass db session so refreshed OAuth tokens are persisted
             service = GmailService(user, db=db)
             
-            # Run in threadpool (fetch_recent_emails is blocking I/O)
-            # Fetch more emails (100) to find at least 10 job-related ones
+            # Fetch more emails (500) for bulk load
             import asyncio
             
             last_synced_id = user.gmail_last_synced_email_id
             emails = await asyncio.to_thread(
                 service.fetch_recent_emails, 
-                max_results=100,
+                max_results=500,
                 after_message_id=last_synced_id
             )
             
             logger.info(f"[SYNC] Fetched {len(emails)} emails from Gmail")
             
             if not emails:
-                logger.warning("[SYNC] No emails returned from Gmail API")
-                return
+                logger.warning("[SYNC] No inbox emails returned from Gmail API, proceeding to sent emails...")
 
             # Print first 5 email subjects for debugging
             for i, email in enumerate(emails[:5]):
@@ -285,7 +283,7 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                 last_synced_sent_id = user.gmail_last_synced_sent_id
                 sent_emails = await asyncio.to_thread(
                     service.fetch_sent_emails,
-                    max_results=50,
+                    max_results=500,
                     after_message_id=last_synced_sent_id
                 )
                 
@@ -558,7 +556,7 @@ async def confirm_application(
         job_url=pending.parsed_job_url,
         status=app_status,
         applied_date=pending.email_date.date() if pending.email_date else date.today(),
-        source="gmail_auto",
+        source=pending.source or "gmail_auto",
         # Preserve email context for the detail page
         email_subject=pending.email_subject,
         email_snippet=pending.email_snippet,
