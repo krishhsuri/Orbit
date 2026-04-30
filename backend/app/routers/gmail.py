@@ -510,8 +510,11 @@ async def confirm_application(
 
     # Map parsed status to Application status
     app_status = "applied"  # Default
-    if pending.parsed_status and pending.parsed_status in APPLICATION_STATUSES:
-        app_status = pending.parsed_status
+    if pending.parsed_status:
+        from app.services.ai_parser import STATUS_MAPPING
+        mapped = STATUS_MAPPING.get(pending.parsed_status.lower(), pending.parsed_status)
+        if mapped in APPLICATION_STATUSES:
+            app_status = mapped
 
     # Fix #12: Deduplicate — check if an application already exists for this company
     existing_app_stmt = select(Application).where(
