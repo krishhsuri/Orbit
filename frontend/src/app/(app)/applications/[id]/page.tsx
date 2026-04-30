@@ -1,8 +1,9 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useApplication, useUpdateApplication, useUpdateApplicationStatus, useDeleteApplication, useApplicationEvents } from '@/hooks/use-applications';
+import { useApplication, useUpdateApplication, useUpdateApplicationStatus, useDeleteApplication, useApplicationEvents, useEvaluateFollowUp } from '@/hooks/use-applications';
 import type { ApplicationStatus } from '@/stores';
+import type { FollowUpEvaluation } from '@/lib/api';
 import {
   ArrowLeft,
   ExternalLink,
@@ -27,8 +28,15 @@ import {
   Phone,
   Upload,
   Paperclip,
+  Bot,
+  Copy,
+  Zap,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  ClipboardCheck,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import styles from './page.module.css';
 
@@ -81,9 +89,12 @@ export default function ApplicationDetailPage() {
   const { mutate: updateStatus } = useUpdateApplicationStatus();
   const { mutate: deleteApplication } = useDeleteApplication();
   const { data: events = [] } = useApplicationEvents(applicationId);
+  const { mutate: evaluateFollowUp, isPending: isEvaluating } = useEvaluateFollowUp();
 
   const [isEditing, setIsEditing] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [followUpResult, setFollowUpResult] = useState<FollowUpEvaluation | null>(null);
+  const [copied, setCopied] = useState(false);
   const [editForm, setEditForm] = useState({
     company: '',
     role: '',
@@ -91,6 +102,31 @@ export default function ApplicationDetailPage() {
     location: '',
     notes: '',
   });
+
+  // Extract action_required events for the Actions panel
+  const actionEvents = useMemo(() =>
+    events.filter((e) => e.event_type === 'action_required'),
+    [events]
+  );
+
+  const handleEvaluateFollowUp = () => {
+    setFollowUpResult(null);
+    evaluateFollowUp(applicationId, {
+      onSuccess: (data) => setFollowUpResult(data),
+      onError: () => setFollowUpResult({
+        application_id: applicationId,
+        should_follow_up: false,
+        decision_reason: 'Failed to evaluate. Check API connection.',
+        error: 'Request failed',
+      }),
+    });
+  };
+
+  const handleCopyDraft = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (isLoading) {
     return (
@@ -515,6 +551,130 @@ export default function ApplicationDetailPage() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* AI Follow-Up Agent */}
+            <div className={styles.sidePanel}>
+              <div className={styles.sidePanelHeader}>
+                <h3 className={styles.sidePanelTitle}>Follow-Up Agent</h3>
+                <span className={styles.sidePanelTag}>AI AGENT</span>
+              </div>
+              <p className={styles.agentDesc}>
+                Evaluate whether a follow-up is appropriate and generate a draft email.
+              </p>
+              <button
+                id="evaluate-follow-up-btn"
+                className={styles.agentBtn}
+                onClick={handleEvaluateFollowUp}
+                disabled={isEvaluating}
+              >
+                {isEvaluating ? (
+                  <><Loader2 size={14} className={styles.spin} /> Evaluating…</>
+                ) : (
+                  <><Bot size={14} /> Evaluate Follow-Up</>
+                )}
+              </button>
+
+              {followUpResult && (
+                <div className={styles.agentResult}>
+                  {/* Verdict */}
+                  <div className={`${styles.agentVerdict} ${followUpResult.should_follow_up ? styles.verdictYes : styles.verdictNo}`}>
+                    {followUpResult.should_follow_up
+                      ? <><CheckCircle2 size={14} /> Follow-up recommended</>
+                      : <><XCircle size={14} /> No follow-up needed</>
+                    }
+                  </div>
+
+                  {/* Stats */}
+                  {followUpResult.days_since_last_contact !== undefined && (
+                    <div className={styles.agentStat}>
+                      <Clock size={12} />
+                      <span>{followUpResult.days_since_last_contact} days since last contact</span>
+                    </div>
+                  )}
+
+                  {/* Reason */}
+                  <div className={styles.agentReason}>
+                    <AlertTriangle size={12} />
+                    <span>{followUpResult.decision_reason}</span>
+                  </div>
+
+                  {/* Draft */}
+                  {followUpResult.email_draft && (
+                    <div className={styles.draftSection}>
+                      <div className={styles.draftHeader}>
+                        <span className={styles.draftLabel}>Generated Draft</span>
+                        <button
+                          className={styles.copyBtn}
+                          onClick={() => handleCopyDraft(followUpResult.email_draft!)}
+                        >
+                          {copied
+                            ? <><Check size={12} /> Copied</>
+                            : <><Copy size={12} /> Copy</>
+                          }
+                        </button>
+                      </div>
+                      <pre className={styles.draftBody}>{followUpResult.email_draft}</pre>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Extracted Actions (Agent A output) */}
+            <div className={styles.sidePanel}>
+              <div className={styles.sidePanelHeader}>
+                <h3 className={styles.sidePanelTitle}>Extracted Actions</h3>
+                <span className={styles.sidePanelTag}>AGENT A</span>
+              </div>
+              {actionEvents.length > 0 ? (
+                <div className={styles.actionsList}>
+                  {actionEvents.map((event) => {
+                    const data = event.data || {};
+                    const urgencyClass = data.urgency === 'high'
+                      ? styles.urgencyHigh
+                      : data.urgency === 'medium'
+                        ? styles.urgencyMedium
+                        : styles.urgencyLow;
+                    return (
+                      <div key={event.id} className={styles.actionItem}>
+                        <div className={styles.actionItemHeader}>
+                          <div className={styles.actionType}>
+                            <Zap size={12} />
+                            <span>{String(data.action_type || 'action').replace(/_/g, ' ')}</span>
+                          </div>
+                          <span className={`${styles.urgencyBadge} ${urgencyClass}`}>
+                            {String(data.urgency || 'low').toUpperCase()}
+                          </span>
+                        </div>
+                        {event.description && (
+                          <p className={styles.actionReasoning}>{event.description}</p>
+                        )}
+                        {Boolean(data.source_text) && (
+                          <p className={styles.actionSource}>&quot;{String(data.source_text)}&quot;</p>
+                        )}
+                        {Boolean(data.deadline) && (
+                          <div className={styles.actionDeadline}>
+                            <Calendar size={11} />
+                            <span>Deadline: {formatDate(String(data.deadline))}</span>
+                          </div>
+                        )}
+                        {data.confidence != null && (
+                          <div className={styles.confidenceBar}>
+                            <div className={styles.confidenceFill} style={{ width: `${Math.round(Number(data.confidence) * 100)}%` }} />
+                            <span className={styles.confidenceLabel}>{Math.round(Number(data.confidence) * 100)}% confidence</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className={styles.emptyNotes}>
+                  <ClipboardCheck size={16} style={{ opacity: 0.4 }} />
+                  <span>No actions extracted yet. Actions are detected automatically when emails are processed by the AI.</span>
+                </div>
+              )}
             </div>
 
             {/* Contacts */}

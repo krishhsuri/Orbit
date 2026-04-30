@@ -77,8 +77,8 @@ class GroqClient:
         self.client = None
         if self.api_key:
             try:
-                from groq import Groq
-                self.client = Groq(api_key=self.api_key)
+                from groq import AsyncGroq
+                self.client = AsyncGroq(api_key=self.api_key)
             except ImportError:
                 logger.warning("Groq library not installed")
 
@@ -90,7 +90,7 @@ class GroqClient:
             return None
 
         try:
-            chat_completion = self.client.chat.completions.create(
+            chat_completion = await self.client.chat.completions.create(
                 messages=[
                     {"role": "system", "content": EXTRACT_PROMPT},
                     {"role": "user", "content": f"Email text:\n\n{text[:1500]}"}
@@ -122,7 +122,7 @@ class GroqClient:
         email_text = f"Subject: {subject}\n\nBody:\n{body[:2000]}"
 
         try:
-            chat_completion = self.client.chat.completions.create(
+            chat_completion = await self.client.chat.completions.create(
                 messages=[
                     {"role": "system", "content": ANALYZE_PROMPT},
                     {"role": "user", "content": email_text}
@@ -177,7 +177,7 @@ Return JSON only:
         email_text = f"Subject: {subject}\n\nBody:\n{body[:2500]}"
 
         try:
-            chat_completion = self.client.chat.completions.create(
+            chat_completion = await self.client.chat.completions.create(
                 messages=[
                     {"role": "system", "content": prompt},
                     {"role": "user", "content": email_text}
@@ -196,5 +196,102 @@ Return JSON only:
             
         except Exception as e:
             logger.error(f"LLM note extraction failed: {e}")
+            return None
+
+    async def extract_actions_from_email(self, subject: str, body: str) -> Optional[Dict[str, Any]]:
+        """
+        Extract explicit/implicit applicant actions from job-related emails.
+        """
+        if not self.client:
+            return None
+
+        prompt = """You are an AI Agent that extracts actionable tasks from job-related emails.
+Identify whether the email contains any action the applicant MUST perform.
+
+Supported Action Types:
+- online_assessment
+- interview_scheduling
+- document_upload
+- coding_test
+- general_response_required
+
+Guidelines:
+- If no deadline is present, infer urgency (low, medium, high).
+- Reject false positives (newsletters, marketing, generic updates).
+- Return is_job_related = false if the email is not about a specific application.
+
+Return JSON only:
+{
+  "actions": [
+    {
+      "action_type": "online_assessment | interview_scheduling | document_upload | coding_test | general_response_required",
+      "deadline": "ISO-8601 timestamp | null",
+      "urgency": "low | medium | high",
+      "confidence": 0.0 to 1.0,
+      "source_text": "exact excerpt from email",
+      "reasoning": "short explanation"
+    }
+  ],
+  "is_job_related": true
+}"""
+
+        email_text = f"Subject: {subject}\n\nBody:\n{body[:3000]}"
+
+        try:
+            chat_completion = await self.client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": email_text}
+                ],
+                model="llama-3.1-8b-instant",
+                temperature=0.1,
+                max_tokens=800,
+                response_format={"type": "json_object"},
+            )
+            
+            result_json = chat_completion.choices[0].message.content
+            return json.loads(result_json)
+            
+        except Exception as e:
+            logger.error(f"LLM action extraction failed: {e}")
+            return None
+
+    async def generate_follow_up_draft(self, company: str, role: str, last_interaction_days: int, context: str = "") -> Optional[str]:
+        """
+        Generate a professional follow-up email draft.
+        """
+        if not self.client:
+            return None
+
+        prompt = f"""You are an AI assistant helping a job seeker follow up on an application.
+Context:
+- Company: {company}
+- Role: {role}
+- Days since last contact: {last_interaction_days}
+- Additional Context: {context}
+
+Requirements:
+- Personalized, polite, and concise.
+- Professional tone.
+- No assumptions or pressure.
+- Focus on expressing continued interest and asking for an update.
+
+Return ONLY the email draft text."""
+
+        try:
+            chat_completion = await self.client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": "You are a professional career coach."},
+                    {"role": "user", "content": prompt}
+                ],
+                model="llama-3.1-8b-instant",
+                temperature=0.7,
+                max_tokens=500,
+            )
+            
+            return chat_completion.choices[0].message.content.strip()
+            
+        except Exception as e:
+            logger.error(f"LLM follow-up drafting failed: {e}")
             return None
 

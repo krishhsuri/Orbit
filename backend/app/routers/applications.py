@@ -584,3 +584,37 @@ async def delete_note(
     
     return SuccessResponse(message="Note deleted")
 
+
+# ============== Agent Endpoints ==============
+
+@router.post("/{application_id}/evaluate-follow-up", status_code=status.HTTP_200_OK)
+async def evaluate_follow_up(
+    application_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user_id: UUID = Depends(get_current_user_id),
+):
+    """
+    Manually trigger the Follow-up Agent (Agent B) for an application.
+    """
+    from app.services.follow_up_agent import FollowUpAgent
+    
+    # Verify ownership
+    app_query = (
+        select(Application.id)
+        .where(Application.id == application_id)
+        .where(Application.user_id == user_id)
+        .where(Application.deleted_at.is_(None))
+    )
+    
+    result = await db.execute(app_query)
+    if not result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found",
+        )
+    
+    agent = FollowUpAgent()
+    evaluation = await agent.evaluate_application(db, application_id)
+    
+    return evaluation
+

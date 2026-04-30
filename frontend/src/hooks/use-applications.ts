@@ -141,6 +141,19 @@ export function useCreateEvent() {
   });
 }
 
+// Evaluate follow-up mutation (Agent B)
+export function useEvaluateFollowUp() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => applicationsApi.evaluateFollowUp(id),
+    onSuccess: (_, id) => {
+      // Refresh events in case new action_required events were created
+      queryClient.invalidateQueries({ queryKey: applicationKeys.events(id) });
+    },
+  });
+}
+
 // Analytics hooks
 export function useAnalyticsSummary() {
   return useQuery({

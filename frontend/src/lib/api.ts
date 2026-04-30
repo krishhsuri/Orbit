@@ -48,6 +48,15 @@ export interface ApplicationDetailApiResponse extends ApplicationApiResponse {
   events: EventApiResponse[];
 }
 
+export interface FollowUpEvaluation {
+  application_id: string;
+  should_follow_up: boolean;
+  days_since_last_contact?: number;
+  decision_reason: string;
+  email_draft?: string;
+  error?: string;
+}
+
 // Transform API response to frontend Application type
 function transformApplication(apiApp: ApplicationApiResponse): Application {
   return {
@@ -181,6 +190,11 @@ export const applicationsApi = {
     event: { event_type: string; title?: string; description?: string; data?: Record<string, unknown> }
   ): Promise<EventApiResponse> {
     return api.post<EventApiResponse>(`/api/v1/applications/${id}/events`, event);
+  },
+
+  // Evaluate follow-up (Agent B)
+  async evaluateFollowUp(id: string): Promise<FollowUpEvaluation> {
+    return api.post<FollowUpEvaluation>(`/api/v1/applications/${id}/evaluate-follow-up`, {});
   },
 };
 

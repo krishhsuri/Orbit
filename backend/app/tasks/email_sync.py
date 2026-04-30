@@ -27,6 +27,7 @@ async def _async_process_ai(user_id: UUID):
     from app.database import async_session_maker, engine
     from app.models import PendingApplication, Application
     from app.services.ai_parser import AIParser
+    from app.services.action_extractor import ActionExtractor
     from sqlalchemy import select
     from datetime import date
 
@@ -44,6 +45,7 @@ async def _async_process_ai(user_id: UUID):
                 return
 
             parser = AIParser()
+            action_extractor = ActionExtractor()
             added = 0
             discarded = 0
 
@@ -68,6 +70,17 @@ async def _async_process_ai(user_id: UUID):
                             source="gmail_ai"
                         )
                         db.add(new_app)
+                        await db.flush() # Ensure new_app.id is generated
+                        
+                        # Agent A: Action Extraction
+                        await action_extractor.extract_and_record(
+                            db=db,
+                            application_id=new_app.id,
+                            email_subject=pending.email_subject,
+                            email_body=pending.email_snippet or "", # Using snippet as body for now
+                            email_id=pending.email_id,
+                        )
+                        
                         pending.status = "confirmed"
                         added += 1
                         logger.info(f"[AI] Added: {new_app.company_name}")
