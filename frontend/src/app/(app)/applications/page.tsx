@@ -196,7 +196,15 @@ export default function ApplicationsPage() {
                     {(app.company || '?')[0].toUpperCase()}
                   </div>
                   <div className={styles.companyInfo}>
-                    <span className={styles.companyName}>{app.company}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className={styles.companyName}>{app.company}</span>
+                      {!['rejected', 'offer', 'accepted', 'withdrawn'].includes(app.status) &&
+                        Math.floor((new Date().getTime() - new Date(app.updatedAt || app.appliedDate).getTime()) / 86400000) >= 7 && (
+                        <span style={{ fontSize: '10px', padding: '2px 6px', background: 'rgba(255, 153, 0, 0.1)', color: '#ff9900', borderRadius: '4px', border: '1px solid rgba(255, 153, 0, 0.2)', fontWeight: 500, letterSpacing: '0.02em' }}>
+                          FOLLOW-UP
+                        </span>
+                      )}
+                    </div>
                     <span className={styles.roleName}>{app.role}</span>
                   </div>
                 </div>

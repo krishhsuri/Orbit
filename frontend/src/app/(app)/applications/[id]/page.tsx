@@ -1,9 +1,9 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useApplication, useUpdateApplication, useUpdateApplicationStatus, useDeleteApplication, useApplicationEvents, useEvaluateFollowUp } from '@/hooks/use-applications';
+import { useApplication, useUpdateApplication, useUpdateApplicationStatus, useDeleteApplication, useApplicationEvents, useEvaluateFollowUp, useExtractActions } from '@/hooks/use-applications';
 import type { ApplicationStatus } from '@/stores';
-import type { FollowUpEvaluation } from '@/lib/api';
+import type { FollowUpEvaluation, ExtractActionsResult } from '@/lib/api';
 import {
   ArrowLeft,
   ExternalLink,
@@ -90,10 +90,12 @@ export default function ApplicationDetailPage() {
   const { mutate: deleteApplication } = useDeleteApplication();
   const { data: events = [] } = useApplicationEvents(applicationId);
   const { mutate: evaluateFollowUp, isPending: isEvaluating } = useEvaluateFollowUp();
+  const { mutate: extractActions, isPending: isExtracting } = useExtractActions();
 
   const [isEditing, setIsEditing] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [followUpResult, setFollowUpResult] = useState<FollowUpEvaluation | null>(null);
+  const [extractResult, setExtractResult] = useState<ExtractActionsResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [editForm, setEditForm] = useState({
     company: '',
@@ -672,7 +674,36 @@ export default function ApplicationDetailPage() {
               ) : (
                 <div className={styles.emptyNotes}>
                   <ClipboardCheck size={16} style={{ opacity: 0.4 }} />
-                  <span>No actions extracted yet. Actions are detected automatically when emails are processed by the AI.</span>
+                  <span>No actions extracted yet.</span>
+                  <button
+                    id="extract-actions-btn"
+                    className={styles.agentBtn}
+                    onClick={() => {
+                      setExtractResult(null);
+                      extractActions(applicationId, {
+                        onSuccess: (data) => setExtractResult(data),
+                        onError: () => setExtractResult({
+                          application_id: applicationId,
+                          actions: [],
+                          message: 'Failed to extract actions. Check API connection.',
+                        }),
+                      });
+                    }}
+                    disabled={isExtracting}
+                    style={{ marginTop: '8px', width: '100%' }}
+                  >
+                    {isExtracting ? (
+                      <><Loader2 size={14} className={styles.spin} /> Extracting…</>
+                    ) : (
+                      <><Zap size={14} /> Extract Actions</>
+                    )}
+                  </button>
+                  {extractResult && (
+                    <div className={styles.agentReason} style={{ marginTop: '8px' }}>
+                      <AlertTriangle size={12} />
+                      <span>{extractResult.message}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

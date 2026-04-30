@@ -154,6 +154,19 @@ export function useEvaluateFollowUp() {
   });
 }
 
+// Extract actions mutation (Agent A)
+export function useExtractActions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => applicationsApi.extractActions(id),
+    onSuccess: (_, id) => {
+      // Refresh events to show newly extracted action_required events
+      queryClient.invalidateQueries({ queryKey: applicationKeys.events(id) });
+    },
+  });
+}
+
 // Analytics hooks
 export function useAnalyticsSummary() {
   return useQuery({

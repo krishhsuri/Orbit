@@ -57,6 +57,20 @@ export interface FollowUpEvaluation {
   error?: string;
 }
 
+export interface ExtractActionsResult {
+  application_id: string;
+  actions: Array<{
+    action_type: string;
+    deadline?: string;
+    urgency: string;
+    confidence: number;
+    source_text?: string;
+    reasoning?: string;
+    email_id?: string;
+  }>;
+  message: string;
+}
+
 // Transform API response to frontend Application type
 function transformApplication(apiApp: ApplicationApiResponse): Application {
   return {
@@ -195,6 +209,11 @@ export const applicationsApi = {
   // Evaluate follow-up (Agent B)
   async evaluateFollowUp(id: string): Promise<FollowUpEvaluation> {
     return api.post<FollowUpEvaluation>(`/api/v1/applications/${id}/evaluate-follow-up`, {});
+  },
+
+  // Extract actions (Agent A)
+  async extractActions(id: string): Promise<ExtractActionsResult> {
+    return api.post<ExtractActionsResult>(`/api/v1/applications/${id}/extract-actions`, {});
   },
 };
 

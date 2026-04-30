@@ -38,11 +38,24 @@ class FollowUpAgent:
         # 1. Deterministic Logic
 
         # Compute days since last contact (always included in response)
+        # We use the OLDER of status_updated_at and applied_date because
+        # status_updated_at defaults to record-creation time (datetime.utcnow()),
+        # which can be much later than the actual application date when emails
+        # are ingested retroactively (e.g., March email processed in April).
         now = datetime.now(timezone.utc)
+
         last_interaction = application.status_updated_at
         if last_interaction.tzinfo is None:
             last_interaction = last_interaction.replace(tzinfo=timezone.utc)
-            
+
+        # Also consider the applied_date as a potential "last contact" anchor
+        applied_dt = datetime.combine(
+            application.applied_date, datetime.min.time()
+        ).replace(tzinfo=timezone.utc)
+
+        # Use whichever is older — that reflects the true last meaningful contact
+        last_interaction = min(last_interaction, applied_dt)
+
         days_since_last_contact = (now - last_interaction).days
         
         # Check status (Do not follow up if Rejected or Offer/Accepted)

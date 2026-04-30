@@ -84,6 +84,9 @@ function DraggableCard({ app }: { app: any }) {
     zIndex: isDragging ? 10 : undefined,
   };
 
+  const needsFollowUp = !['rejected', 'offer', 'accepted', 'withdrawn'].includes(app.status) &&
+    Math.floor((new Date().getTime() - new Date(app.updatedAt || app.appliedDate).getTime()) / 86400000) >= 7;
+
   return (
     <div
       ref={setNodeRef}
@@ -101,11 +104,16 @@ function DraggableCard({ app }: { app: any }) {
       <Link href={`/applications/${app.id}`} className={styles.cardTitle} onClick={(e) => { if (isDragging) e.preventDefault(); }}>
         {app.role}
       </Link>
-      {app.tags && app.tags.length > 0 && (
+      {(app.tags?.length > 0 || needsFollowUp) && (
         <div className={styles.cardTags}>
-          {app.tags.slice(0, 2).map((tag: string) => (
+          {app.tags?.slice(0, 2).map((tag: string) => (
             <span key={tag} className={styles.tag}>{tag}</span>
           ))}
+          {needsFollowUp && (
+            <span className={styles.tag} style={{ background: 'rgba(255, 153, 0, 0.1)', color: '#ff9900', border: '1px solid rgba(255, 153, 0, 0.2)' }}>
+              Follow-up
+            </span>
+          )}
         </div>
       )}
     </div>

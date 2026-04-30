@@ -618,3 +618,60 @@ async def evaluate_follow_up(
     
     return evaluation
 
+
+@router.post("/{application_id}/extract-actions", status_code=status.HTTP_200_OK)
+async def extract_actions(
+    application_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user_id: UUID = Depends(get_current_user_id),
+):
+    """
+    Manually trigger the Action Extraction Agent (Agent A) for an application.
+    Uses the stored email context (subject + snippet) to extract actions.
+    """
+    from app.services.action_extractor import ActionExtractor
+
+    # Verify ownership and get email context
+    app_query = (
+        select(Application)
+        .where(Application.id == application_id)
+        .where(Application.user_id == user_id)
+        .where(Application.deleted_at.is_(None))
+    )
+
+    result = await db.execute(app_query)
+    application = result.scalar_one_or_none()
+
+    if not application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found",
+        )
+
+    email_subject = application.email_subject or f"Application for {application.role_title} at {application.company_name}"
+    email_body = application.email_snippet or ""
+
+    if not email_body:
+        return {
+            "application_id": str(application_id),
+            "actions": [],
+            "message": "No email content available for this application.",
+        }
+
+    extractor = ActionExtractor()
+    actions = await extractor.extract_and_record(
+        db=db,
+        application_id=application_id,
+        email_subject=email_subject,
+        email_body=email_body,
+    )
+
+    await db.commit()
+
+    return {
+        "application_id": str(application_id),
+        "actions": actions,
+        "message": f"Extracted {len(actions)} action(s)." if actions else "No actions found in this email.",
+    }
+
+

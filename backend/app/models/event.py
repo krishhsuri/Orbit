@@ -27,6 +27,7 @@ EVENT_TYPES = [
     "email_linked",     # Email linked to application
     "reminder",         # User set reminder
     "follow_up",        # Follow-up scheduled/sent
+    "action_required",  # AI-extracted action from email (Agent A)
 ]
 
 

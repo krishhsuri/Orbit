@@ -72,3 +72,35 @@ async def _async_enforce_cap():
         await db.commit()
         logger.info(f"[CLEANUP] Cap enforcement: deleted {total_deleted} excess pending emails across {len(rows)} users")
         return {"deleted": total_deleted, "users_affected": len(rows)}
+
+async def scan_for_follow_ups():
+    """Scan all active applications to evaluate if they need follow-ups."""
+    return await _async_scan_follow_ups()
+
+async def _async_scan_follow_ups():
+    from app.database import async_session_maker
+    from app.models import Application
+    from sqlalchemy import select
+    from app.services.follow_up_agent import FollowUpAgent
+
+    async with async_session_maker() as db:
+        stmt = select(Application.id).where(Application.deleted_at.is_(None))
+        result = await db.execute(stmt)
+        application_ids = result.scalars().all()
+
+        agent = FollowUpAgent()
+        evaluated = 0
+        follow_ups_needed = 0
+
+        for app_id in application_ids:
+            try:
+                evaluation = await agent.evaluate_application(db, app_id)
+                if evaluation and evaluation.get("should_follow_up"):
+                    follow_ups_needed += 1
+                evaluated += 1
+            except Exception as e:
+                logger.error(f"[FOLLOW-UP] Error evaluating application {app_id}: {e}")
+
+        logger.info(f"[FOLLOW-UP] Evaluated {evaluated} applications, {follow_ups_needed} need follow-ups")
+        return {"evaluated": evaluated, "follow_ups_needed": follow_ups_needed}
+

@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any
 from uuid import UUID
 from datetime import datetime
 
-from sqlalchemy import String, Float, DateTime, ForeignKey
+from sqlalchemy import String, Text, Float, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -32,7 +32,7 @@ class PendingApplication(Base, UUIDMixin, TimestampMixin):
     
     # Original email data for reference
     email_subject: Mapped[str] = mapped_column(String(500), nullable=False)
-    email_snippet: Mapped[str] = mapped_column(String(1000), nullable=True)
+    email_snippet: Mapped[str] = mapped_column(Text, nullable=True)
     email_from: Mapped[str | None] = mapped_column(String(500), nullable=True)  # Sender info for leads
     email_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     

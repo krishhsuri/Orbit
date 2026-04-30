@@ -60,42 +60,35 @@ def _extract_body_from_payload(payload: dict) -> str:
     """
     Walk the MIME structure of a Gmail message payload and extract plain text.
     Prefers text/plain, falls back to text/html (stripped).
+    Handles deeply nested multipart structures (multipart/alternative inside
+    multipart/mixed, etc.) via recursive DFS.
     Returns empty string if no body found.
     """
-    mime_type = payload.get('mimeType', '')
-    body_data = payload.get('body', {}).get('data', '')
+    plain_parts: list[str] = []
+    html_parts: list[str] = []
 
-    # Leaf node with direct body
-    if body_data:
-        text = _decode_base64(body_data)
-        if 'text/plain' in mime_type:
-            return text
-        elif 'text/html' in mime_type:
-            return _strip_html(text)
+    def _walk(node: dict) -> None:
+        mime_type = node.get('mimeType', '')
+        body_data = node.get('body', {}).get('data', '')
 
-    # Multipart — recurse into parts
-    parts = payload.get('parts', [])
-    plain_text = ''
-    html_text = ''
+        # Leaf node with body data
+        if body_data:
+            decoded = _decode_base64(body_data)
+            if decoded.strip():
+                if 'text/plain' in mime_type:
+                    plain_parts.append(decoded)
+                elif 'text/html' in mime_type:
+                    html_parts.append(_strip_html(decoded))
+            return
 
-    for part in parts:
-        part_mime = part.get('mimeType', '')
-        part_data = part.get('body', {}).get('data', '')
+        # Multipart container — recurse into child parts
+        for part in node.get('parts', []):
+            _walk(part)
 
-        if part_data:
-            decoded = _decode_base64(part_data)
-            if 'text/plain' in part_mime:
-                plain_text += decoded
-            elif 'text/html' in part_mime:
-                html_text += _strip_html(decoded)
-        elif part.get('parts'):
-            # Nested multipart — recurse
-            nested = _extract_body_from_payload(part)
-            if nested:
-                plain_text += nested
+    _walk(payload)
 
     # Prefer plain text, fall back to stripped HTML
-    return plain_text or html_text
+    return '\n'.join(plain_parts) if plain_parts else '\n'.join(html_parts)
 
 
 class GmailService:

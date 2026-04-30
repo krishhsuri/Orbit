@@ -30,5 +30,9 @@ celery_app.conf.update(
             "task": "cleanup.enforce_pending_cap",
             "schedule": crontab(hour="*/6", minute=30),  # Every 6 hours
         },
+        "daily-follow-up-scan": {
+            "task": "cleanup.scan_for_follow_ups",
+            "schedule": crontab(hour=8, minute=0),  # Daily at 8 AM UTC
+        },
     },
 )
