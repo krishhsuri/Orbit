@@ -27,13 +27,17 @@ async def _async_email_sync(user_id: UUID):
 async def _async_process_ai_internal(user_id: UUID):
     """Internal implementation of AI email processing (no engine disposal)."""
     from app.database import async_session_maker
-    from app.models import PendingApplication, Application
+    from app.models import PendingApplication, Application, User
     from app.services.ai_parser import AIParser
     from app.services.action_extractor import ActionExtractor
     from sqlalchemy import select
     from datetime import date
 
     async with async_session_maker() as db:
+        user_stmt = select(User).where(User.id == user_id)
+        user = (await db.execute(user_stmt)).scalars().first()
+        user_email = user.email if user else None
+
         query = select(PendingApplication).where(
             PendingApplication.user_id == user_id,
             PendingApplication.status == "pending"
@@ -44,6 +48,13 @@ async def _async_process_ai_internal(user_id: UUID):
         if not pending_apps:
             logger.info(f"[AI] No pending apps for user {user_id}")
             return
+
+        # Lock these pending apps by marking them as processing
+        for pending in pending_apps:
+            pending.status = "processing"
+        await db.commit()
+        
+        logger.info(f"[AI] Locked {len(pending_apps)} apps for processing")
 
         parser = AIParser()
         action_extractor = ActionExtractor()
@@ -61,7 +72,7 @@ async def _async_process_ai_internal(user_id: UUID):
                 llm_result = await parser.process_with_llm(email_data)
 
                 if llm_result and llm_result.get('action') == 'add_to_tracker':
-                    company_name = llm_result.get('company') or pending.parsed_company or "Unknown Company"
+                    company_name = (llm_result.get('company') or pending.parsed_company or "Unknown Company").strip()
                     app_status = llm_result.get('status', 'applied')
                     
                     # Deduplicate: check if an application already exists for this company
@@ -101,25 +112,37 @@ async def _async_process_ai_internal(user_id: UUID):
                         logger.info(f"[AI] Added new: {company_name}")
                     
                     # Agent A: Action Extraction
-                    await action_extractor.extract_and_record(
-                        db=db,
-                        application_id=app_to_use.id,
-                        email_subject=pending.email_subject,
-                        email_body=pending.email_snippet or "",
-                        email_id=pending.email_id,
-                        company=company_name,
-                        role=llm_result.get('role') or pending.parsed_role,
-                        email_timestamp=str(pending.email_date) if pending.email_date else None,
-                    )
+                    is_sent_by_user = False
+                    if user_email and pending.email_from and user_email.lower() in pending.email_from.lower():
+                        is_sent_by_user = True
+
+                    if not is_sent_by_user:
+                        await action_extractor.extract_and_record(
+                            db=db,
+                            application_id=app_to_use.id,
+                            email_subject=pending.email_subject,
+                            email_body=pending.email_snippet or "",
+                            email_id=pending.email_id,
+                            company=company_name,
+                            role=llm_result.get('role') or pending.parsed_role,
+                            email_timestamp=str(pending.email_date) if pending.email_date else None,
+                        )
+                    else:
+                        logger.info(f"[AI] Skipping action extraction: email sent by user ({user_email})")
                     
                     pending.status = "confirmed"
 
                 elif llm_result and llm_result.get('action') == 'discard':
                     pending.status = "rejected"
                     discarded += 1
+                else:
+                    # If llm_result is None (e.g. rate limit exhausted), revert to pending for next batch
+                    pending.status = "pending"
+                    logger.warning(f"[AI] Reverting {pending.id} to pending due to LLM failure")
 
             except Exception as e:
                 logger.error(f"[AI] Error processing {pending.id}: {e}")
+                pending.status = "pending"
                 continue
 
         await db.commit()

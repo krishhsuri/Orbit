@@ -112,7 +112,7 @@ class GroqClient:
         """Wrapper around chat.completions.create with rate limit retry logic."""
         import asyncio
         import re
-        max_retries = 3
+        max_retries = 6
         for attempt in range(max_retries):
             try:
                 return await self.client.chat.completions.create(**kwargs)
@@ -235,7 +235,10 @@ Return JSON only:
         if not self.client:
             return None
 
-        prompt = """You are an AI Agent that extracts actionable tasks from job-related emails.
+        from datetime import datetime
+        current_date_str = datetime.now().strftime('%Y-%m-%d')
+
+        prompt = f"""You are an AI Agent that extracts actionable tasks from job-related emails.
 Your job is to find actions that a COMPANY or RECRUITER is asking the APPLICANT to perform.
 
 CRITICAL: This email may be part of a thread with multiple messages. You MUST distinguish between:
@@ -272,21 +275,22 @@ Rules:
    - Below 0.5: Weak signal, likely false positive
 8. source_text MUST be an exact excerpt from the COMPANY'S message, not the applicant's.
 9. If the email is not job-related, return is_job_related: false.
+10. The current date is {current_date_str}. If an action or its deadline (like an interview date or test deadline) has already occurred in the past relative to the current date, DO NOT extract it. We only want pending, future actions.
 
 Return JSON only:
-{
+{{
   "actions": [
-    {
+    {{
       "action_type": "online_assessment | interview_scheduling | document_upload | coding_test | general_response_required",
       "deadline": "ISO-8601 timestamp | null",
       "urgency": "low | medium | high",
       "confidence": 0.0 to 1.0,
       "source_text": "exact excerpt from the COMPANY's message",
       "reasoning": "short explanation"
-    }
+    }}
   ],
   "is_job_related": true
-}"""
+}}"""
 
         # Build user message with optional metadata context
         parts = [f"Subject: {subject}"]

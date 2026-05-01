@@ -415,6 +415,8 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
             traceback.print_exc()
             await db.rollback()
 
+SYNC_LOCKS = set()
+
 @router.post("/sync")
 async def trigger_sync(
     background_tasks: BackgroundTasks,
@@ -425,8 +427,21 @@ async def trigger_sync(
     if not user.gmail_sync_enabled:
         raise HTTPException(status_code=400, detail="Gmail sync is not enabled")
         
+    user_key = str(user.id)
+    if user_key in SYNC_LOCKS:
+        return {"status": "request_ignored", "message": "Sync is already in progress"}
+        
+    SYNC_LOCKS.add(user_key)
+        
     from app.tasks.email_sync import _async_email_sync
-    background_tasks.add_task(_async_email_sync, user.id)
+    
+    async def _safe_sync():
+        try:
+            await _async_email_sync(user.id)
+        finally:
+            SYNC_LOCKS.discard(user_key)
+            
+    background_tasks.add_task(_safe_sync)
     
     return {"status": "request_accepted", "message": "Email sync started in background"}
 
