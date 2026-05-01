@@ -664,6 +664,9 @@ async def extract_actions(
         application_id=application_id,
         email_subject=email_subject,
         email_body=email_body,
+        company=application.company_name,
+        role=application.role_title,
+        email_timestamp=str(application.applied_date) if application.applied_date else None,
     )
 
     await db.commit()

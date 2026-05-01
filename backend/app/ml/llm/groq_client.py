@@ -108,6 +108,31 @@ class GroqClient:
             logger.error(f"LLM extraction failed: {e}")
             return None
 
+    async def _call_with_retry(self, **kwargs):
+        """Wrapper around chat.completions.create with rate limit retry logic."""
+        import asyncio
+        import re
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                return await self.client.chat.completions.create(**kwargs)
+            except Exception as e:
+                err_str = str(e)
+                if "429" in err_str or "rate limit" in err_str.lower():
+                    if attempt < max_retries - 1:
+                        wait_time = 10.0
+                        match = re.search(r'Please try again in ([0-9.]+)s', err_str)
+                        if match:
+                            wait_time = float(match.group(1)) + 1.0
+                        else:
+                            wait_time = (2 ** attempt) * 5.0
+                        logger.warning(f"[GROQ] Rate limit hit. Retrying in {wait_time:.2f}s (Attempt {attempt+1}/{max_retries})...")
+                        await asyncio.sleep(wait_time)
+                        continue
+                logger.error(f"[GROQ] API call failed on attempt {attempt+1}: {e}")
+                if attempt == max_retries - 1:
+                    raise e
+
     async def analyze_email_for_tracking(self, subject: str, body: str) -> Optional[Dict[str, Any]]:
         """
         Analyze an email and decide whether to add it to the job tracker.
@@ -120,9 +145,9 @@ class GroqClient:
             return None
 
         email_text = f"Subject: {subject}\n\nBody:\n{body[:2000]}"
-
+        
         try:
-            chat_completion = await self.client.chat.completions.create(
+            chat_completion = await self._call_with_retry(
                 messages=[
                     {"role": "system", "content": ANALYZE_PROMPT},
                     {"role": "user", "content": email_text}
@@ -140,7 +165,7 @@ class GroqClient:
             return result
             
         except Exception as e:
-            logger.error(f"LLM analysis failed: {e}")
+            logger.error(f"LLM analysis failed completely: {e}")
             return None
 
     async def extract_note_from_email(self, subject: str, body: str) -> Optional[Dict[str, Any]]:
@@ -198,27 +223,55 @@ Return JSON only:
             logger.error(f"LLM note extraction failed: {e}")
             return None
 
-    async def extract_actions_from_email(self, subject: str, body: str) -> Optional[Dict[str, Any]]:
+    async def extract_actions_from_email(
+        self, subject: str, body: str,
+        company: str | None = None, role: str | None = None,
+        email_timestamp: str | None = None
+    ) -> Optional[Dict[str, Any]]:
         """
         Extract explicit/implicit applicant actions from job-related emails.
+        Accepts optional metadata (company, role, timestamp) for better context.
         """
         if not self.client:
             return None
 
         prompt = """You are an AI Agent that extracts actionable tasks from job-related emails.
-Identify whether the email contains any action the applicant MUST perform.
+Your job is to find actions that a COMPANY or RECRUITER is asking the APPLICANT to perform.
+
+CRITICAL: This email may be part of a thread with multiple messages. You MUST distinguish between:
+- Messages FROM the company/recruiter TO the applicant → THESE contain actions to extract
+- Messages FROM the applicant TO the company → IGNORE these completely, they are NOT actions
+
+How to tell the difference:
+- If the text says "I wanted to apply", "I came across your role", "Resume attached", "Happy to connect", 
+  "I'll have it ready" → This is the APPLICANT speaking. DO NOT extract this as an action.
+- If the text says "Please complete", "We'd like to schedule", "You have been shortlisted",
+  "Find attached your assignment" → This is the COMPANY speaking. Extract this.
 
 Supported Action Types:
-- online_assessment
-- interview_scheduling
-- document_upload
-- coding_test
-- general_response_required
+- online_assessment: The COMPANY asks the applicant to complete an online test or assessment.
+- interview_scheduling: The COMPANY asks the applicant to schedule, confirm, or attend an interview.
+- document_upload: The COMPANY asks the applicant to submit documents.
+- coding_test: The COMPANY asks the applicant to complete a coding challenge or take-home assignment.
+- general_response_required: The COMPANY asks the applicant to reply or confirm something.
 
-Guidelines:
-- If no deadline is present, infer urgency (low, medium, high).
-- Reject false positives (newsletters, marketing, generic updates).
-- Return is_job_related = false if the email is not about a specific application.
+Rules:
+1. ONLY extract actions where the COMPANY/RECRUITER is requesting something from the applicant.
+2. NEVER extract the applicant's own statements, promises, or self-introductions as actions.
+3. If the email is just a confirmation ("Thank you for applying", "We received your application"), return actions: [].
+4. If "Feel free to contact us for questions" is the only ask, return actions: [] — this is a courtesy line, not a real action.
+5. Maximum 2 actions per email. Pick the most important ones.
+6. If no deadline is present, infer urgency:
+   - "high": words like "ASAP", "immediately", "within 24 hours"
+   - "medium": "this week", "at your earliest convenience"
+   - "low": general update with a soft ask
+7. Confidence scores:
+   - 0.9-1.0: Explicit, unambiguous action from the company
+   - 0.7-0.89: Likely action but slightly ambiguous
+   - 0.5-0.69: Possible action, needs interpretation
+   - Below 0.5: Weak signal, likely false positive
+8. source_text MUST be an exact excerpt from the COMPANY'S message, not the applicant's.
+9. If the email is not job-related, return is_job_related: false.
 
 Return JSON only:
 {
@@ -228,17 +281,29 @@ Return JSON only:
       "deadline": "ISO-8601 timestamp | null",
       "urgency": "low | medium | high",
       "confidence": 0.0 to 1.0,
-      "source_text": "exact excerpt from email",
+      "source_text": "exact excerpt from the COMPANY's message",
       "reasoning": "short explanation"
     }
   ],
   "is_job_related": true
 }"""
 
-        email_text = f"Subject: {subject}\n\nBody:\n{body[:3000]}"
+        # Build user message with optional metadata context
+        parts = [f"Subject: {subject}"]
+        if company or role:
+            meta = []
+            if company:
+                meta.append(f"Company: {company}")
+            if role:
+                meta.append(f"Role: {role}")
+            if email_timestamp:
+                meta.append(f"Email Date: {email_timestamp}")
+            parts.append(f"Metadata: {', '.join(meta)}")
+        parts.append(f"\nBody:\n{body[:3000]}")
+        email_text = '\n'.join(parts)
 
         try:
-            chat_completion = await self.client.chat.completions.create(
+            chat_completion = await self._call_with_retry(
                 messages=[
                     {"role": "system", "content": prompt},
                     {"role": "user", "content": email_text}
@@ -253,7 +318,7 @@ Return JSON only:
             return json.loads(result_json)
             
         except Exception as e:
-            logger.error(f"LLM action extraction failed: {e}")
+            logger.error(f"LLM action extraction failed completely: {e}")
             return None
 
     async def generate_follow_up_draft(self, company: str, role: str, last_interaction_days: int, context: str = "", source: Optional[str] = None) -> Optional[str]:

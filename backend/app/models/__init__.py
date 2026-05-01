@@ -13,6 +13,7 @@ from app.models.email import Email, application_emails
 from app.models.pending_application import PendingApplication
 from app.models.lead import Lead
 from app.models.training_example import TrainingExample
+from app.models.follow_up_result import FollowUpResult
 
 __all__ = [
     # Base
@@ -30,6 +31,7 @@ __all__ = [
     "PendingApplication",
     "Lead",
     "TrainingExample",
+    "FollowUpResult",
     # Junction tables
     "application_tags",
     "application_emails",

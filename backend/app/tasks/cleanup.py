@@ -5,7 +5,7 @@ Runs via Celery Beat to maintain data hygiene.
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -74,33 +74,106 @@ async def _async_enforce_cap():
         return {"deleted": total_deleted, "users_affected": len(rows)}
 
 async def scan_for_follow_ups():
-    """Scan all active applications to evaluate if they need follow-ups."""
+    """Scan all active applications and persist Agent B evaluations."""
     return await _async_scan_follow_ups()
 
 async def _async_scan_follow_ups():
+    """
+    Scheduled Agent B trigger (per whiteboard architecture).
+    
+    Flow:
+    1. Fetch all active applications across all users
+    2. Skip recently evaluated ones (< 6 hours ago)
+    3. Run FollowUpAgent.evaluate_application() on each
+    4. Upsert results into follow_up_results table
+    
+    The /agents page then simply reads from this table — no LLM calls on page load.
+    """
     from app.database import async_session_maker
     from app.models import Application
+    from app.models.follow_up_result import FollowUpResult
     from sqlalchemy import select
     from app.services.follow_up_agent import FollowUpAgent
 
     async with async_session_maker() as db:
-        stmt = select(Application.id).where(Application.deleted_at.is_(None))
+        # Only evaluate active applications (not deleted, not terminal status)
+        stmt = (
+            select(Application)
+            .where(Application.deleted_at.is_(None))
+            .where(Application.status.notin_(["rejected", "offer", "accepted", "withdrawn"]))
+        )
         result = await db.execute(stmt)
-        application_ids = result.scalars().all()
+        applications = result.scalars().all()
+
+        if not applications:
+            logger.info("[FOLLOW-UP] No eligible applications to scan")
+            return {"evaluated": 0, "follow_ups_needed": 0}
+
+        # Skip apps that were evaluated recently (< 6 hours)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=6)
+        existing_results_stmt = (
+            select(FollowUpResult.application_id, FollowUpResult.evaluated_at)
+            .where(FollowUpResult.evaluated_at > cutoff)
+        )
+        recent_evals = {
+            row.application_id: row.evaluated_at
+            for row in (await db.execute(existing_results_stmt)).all()
+        }
 
         agent = FollowUpAgent()
         evaluated = 0
         follow_ups_needed = 0
 
-        for app_id in application_ids:
+        for app in applications:
+            # Skip recently evaluated
+            if app.id in recent_evals:
+                continue
+
             try:
-                evaluation = await agent.evaluate_application(db, app_id)
-                if evaluation and evaluation.get("should_follow_up"):
+                evaluation = await agent.evaluate_application(db, app.id)
+                if not evaluation:
+                    continue
+
+                now = datetime.now(timezone.utc)
+
+                # Upsert: check if result already exists for this application
+                existing_stmt = select(FollowUpResult).where(
+                    FollowUpResult.application_id == app.id
+                )
+                existing = (await db.execute(existing_stmt)).scalar_one_or_none()
+
+                if existing:
+                    # Update existing result
+                    existing.should_follow_up = evaluation.get("should_follow_up", False)
+                    existing.days_since_last_contact = evaluation.get("days_since_last_contact", 0)
+                    existing.decision_reason = evaluation.get("decision_reason", "")
+                    existing.email_draft = evaluation.get("email_draft")
+                    existing.evaluated_at = now
+                    # Don't reset dismissed — if user dismissed it, respect that
+                    # unless the evaluation changed from False to True
+                    if not existing.should_follow_up:
+                        existing.dismissed = False
+                else:
+                    # Create new result
+                    new_result = FollowUpResult(
+                        application_id=app.id,
+                        user_id=app.user_id,
+                        should_follow_up=evaluation.get("should_follow_up", False),
+                        days_since_last_contact=evaluation.get("days_since_last_contact", 0),
+                        decision_reason=evaluation.get("decision_reason", ""),
+                        email_draft=evaluation.get("email_draft"),
+                        evaluated_at=now,
+                        dismissed=False,
+                    )
+                    db.add(new_result)
+
+                if evaluation.get("should_follow_up"):
                     follow_ups_needed += 1
                 evaluated += 1
-            except Exception as e:
-                logger.error(f"[FOLLOW-UP] Error evaluating application {app_id}: {e}")
 
+            except Exception as e:
+                logger.error(f"[FOLLOW-UP] Error evaluating application {app.id}: {e}")
+
+        await db.commit()
         logger.info(f"[FOLLOW-UP] Evaluated {evaluated} applications, {follow_ups_needed} need follow-ups")
         return {"evaluated": evaluated, "follow_ups_needed": follow_ups_needed}
-

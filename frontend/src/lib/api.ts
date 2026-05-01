@@ -409,3 +409,68 @@ export const leadsApi = {
     return api.get('/api/v1/leads/count');
   },
 };
+
+// ── Agents API (AI Agents page) ───────────────────────
+
+export interface AgentAction {
+  id: string;
+  application_id: string;
+  company: string;
+  role: string;
+  title: string;
+  description: string;
+  action_type: string;
+  deadline: string | null;
+  urgency: 'low' | 'medium' | 'high';
+  confidence: number;
+  source_text: string | null;
+  needs_review: boolean;
+  created_at: string;
+  scheduled_at: string | null;
+}
+
+export interface AgentActionsResponse {
+  actions: AgentAction[];
+  total: number;
+  confirmed: number;
+  needs_review: number;
+}
+
+export interface AgentFollowUp {
+  id: string;
+  application_id: string;
+  company: string;
+  role: string;
+  status: string;
+  applied_date: string;
+  source: string;
+  should_follow_up: boolean;
+  days_since_last_contact: number;
+  decision_reason: string;
+  email_draft: string | null;
+  evaluated_at: string;
+}
+
+export interface AgentFollowUpsResponse {
+  follow_ups: AgentFollowUp[];
+  total: number;
+  last_scan: string | null;
+}
+
+export const agentsApi = {
+  async getActions(): Promise<AgentActionsResponse> {
+    return api.get<AgentActionsResponse>('/api/v1/agents/actions');
+  },
+
+  async getFollowUps(): Promise<AgentFollowUpsResponse> {
+    return api.get<AgentFollowUpsResponse>('/api/v1/agents/follow-ups');
+  },
+
+  async dismissFollowUp(id: string): Promise<{ message: string }> {
+    return api.post<{ message: string }>(`/api/v1/agents/follow-ups/${id}/dismiss`, {});
+  },
+
+  async triggerScan(): Promise<{ evaluated: number; follow_ups_needed: number }> {
+    return api.post<{ evaluated: number; follow_ups_needed: number }>('/api/v1/agents/scan-now', {});
+  },
+};

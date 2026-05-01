@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import init_db, close_db
-from app.routers import health, applications, tags, analytics, auth, gmail, leads
+from app.routers import health, applications, tags, analytics, auth, gmail, leads, agents
 
 settings = get_settings()
 
@@ -109,6 +109,10 @@ app.include_router(
     leads.router,
     prefix="/api/v1/leads",
     tags=["Leads"],
+)
+app.include_router(
+    agents.router,
+    tags=["AI Agents"],
 )
 
 # Dev-only routes (only in debug mode)

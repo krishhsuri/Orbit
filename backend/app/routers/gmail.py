@@ -99,7 +99,13 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
             # Also filter 'not_for_user' - emails where user wasn't in the candidate list
             NON_JOB_STATUSES = {'not_job_related', 'not_for_user'}
             
+            seen_batch_ids = set()
+            
             for email_data in emails:
+                if email_data['id'] in seen_batch_ids:
+                    continue
+                seen_batch_ids.add(email_data['id'])
+                
                 # Check if already processed (by email_id)
                 stmt = select(PendingApplication).where(PendingApplication.email_id == email_data['id'])
                 existing = await db.execute(stmt)
@@ -295,8 +301,13 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                     
                     cold_app_count = 0
                     skipped_sent = 0
+                    seen_sent_ids = set()
                     
                     for sent_email in sent_emails:
+                        if sent_email['id'] in seen_batch_ids or sent_email['id'] in seen_sent_ids:
+                            continue
+                        seen_sent_ids.add(sent_email['id'])
+                        
                         # Check if already processed
                         stmt = select(PendingApplication).where(PendingApplication.email_id == sent_email['id'])
                         existing = await db.execute(stmt)

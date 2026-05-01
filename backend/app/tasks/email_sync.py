@@ -89,7 +89,10 @@ async def _async_process_ai_internal(user_id: UUID):
                             job_url=pending.parsed_job_url,
                             status=app_status,
                             applied_date=pending.email_date.date() if pending.email_date else date.today(),
-                            source="gmail_ai"
+                            source="gmail_ai",
+                            email_subject=pending.email_subject,
+                            email_snippet=pending.email_snippet,
+                            email_from=pending.email_from
                         )
                         db.add(new_app)
                         await db.flush() # Ensure new_app.id is generated
@@ -102,8 +105,11 @@ async def _async_process_ai_internal(user_id: UUID):
                         db=db,
                         application_id=app_to_use.id,
                         email_subject=pending.email_subject,
-                        email_body=pending.email_snippet or "", # Using snippet as body for now
+                        email_body=pending.email_snippet or "",
                         email_id=pending.email_id,
+                        company=company_name,
+                        role=llm_result.get('role') or pending.parsed_role,
+                        email_timestamp=str(pending.email_date) if pending.email_date else None,
                     )
                     
                     pending.status = "confirmed"

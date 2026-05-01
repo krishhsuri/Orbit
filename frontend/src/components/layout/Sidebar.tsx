@@ -11,6 +11,7 @@ import {
   Kanban,
   Mail,
   Users,
+  Bot,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -61,6 +62,12 @@ const navItems: NavItem[] = [
     href: '/leads', 
     icon: <Users size={18} />,
     shortcut: 'G L',
+  },
+  { 
+    label: 'AI Agents', 
+    href: '/agents', 
+    icon: <Bot size={18} />,
+    shortcut: 'G I',
   },
   { 
     label: 'Analytics', 
