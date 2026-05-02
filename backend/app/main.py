@@ -115,13 +115,12 @@ app.include_router(
     tags=["AI Agents"],
 )
 
-# Dev-only routes (only in debug mode)
-if settings.debug:
-    app.include_router(
-        auth.dev_router,
-        prefix="/auth",
-        tags=["Dev Auth"],
-    )
+# Dev-only routes (always included for demo purposes)
+app.include_router(
+    auth.dev_router,
+    prefix="/auth",
+    tags=["Dev Auth"],
+)
 
 
 @app.get("/")

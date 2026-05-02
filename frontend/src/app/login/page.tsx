@@ -11,8 +11,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, setAuth } = useAuthStore();
   const [mounted, setMounted] = useState(false);
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
   const error = searchParams.get('error');
 
@@ -28,6 +30,35 @@ function LoginContent() {
 
   const handleGoogleLogin = () => {
     window.location.href = `${API_URL}/auth/login`;
+  };
+
+  const handleDemoLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/dev-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to login');
+      }
+
+      const data = await response.json();
+      setAuth(data.user, data.access_token);
+      router.push('/');
+    } catch (err) {
+      console.error(err);
+      alert('Login failed. Please check the backend connection.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!mounted) {
@@ -173,7 +204,7 @@ function LoginContent() {
           </div>
 
           {/* Email/Password Form (visual only) */}
-          <form className={styles.form} onSubmit={(e) => { e.preventDefault(); handleGoogleLogin(); }}>
+          <form className={styles.form} onSubmit={handleDemoLogin}>
             <div className={styles.fieldGroup}>
               <label htmlFor="email" className={styles.label}>Email</label>
               <input
@@ -181,6 +212,9 @@ function LoginContent() {
                 type="email"
                 className={styles.input}
                 placeholder="alex@university.edu"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
             <div className={styles.fieldGroup}>
@@ -189,6 +223,7 @@ function LoginContent() {
                 id="password"
                 type="password"
                 className={styles.input}
+                placeholder="(Any password works for demo)"
               />
             </div>
             <div className={styles.formOptions}>
@@ -198,8 +233,8 @@ function LoginContent() {
               </label>
               <a href="#" className={styles.forgotLink}>Forgot password?</a>
             </div>
-            <button type="submit" className={styles.signInButton}>
-              Sign in
+            <button type="submit" className={styles.signInButton} disabled={isLoading}>
+              {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
 
