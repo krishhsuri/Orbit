@@ -1,0 +1,35 @@
+[
+  {
+    "id": "sent_cold_001",
+    "threadId": "thread_cold_001",
+    "subject": "Application for Software Engineer – Ramp",
+    "from_address": "test@orbit.com",
+    "to_address": "recruiting@ramp.com",
+    "date": "Sun, 19 Apr 2026 15:00:00 +0000",
+    "direction": "sent",
+    "snippet": "Applying for Software Engineer at Ramp. Excited about the fintech space.",
+    "body_preview": "Hi Ramp Recruiting,\n\nI'm applying for the Software Engineer role at Ramp. I'm particularly excited about Ramp's focus on helping companies spend less.\n\nMy experience: 4 years building fintech products with high transaction volumes.\n\nResume attached.\n\nTest User"
+  },
+  {
+    "id": "sent_cold_005",
+    "threadId": "thread_cold_005",
+    "subject": "Application – Developer Advocate, Vercel",
+    "from_address": "test@orbit.com",
+    "to_address": "talent@vercel.com",
+    "date": "Wed, 22 Apr 2026 14:00:00 +0000",
+    "direction": "sent",
+    "snippet": "Applying for Developer Advocate at Vercel. Long-time user and community contributor.",
+    "body_preview": "Hi Vercel Talent,\n\nI'm applying for the Developer Advocate role. I've been building on Next.js for 3 years and have given 5 conference talks about the Vercel ecosystem.\n\nCommunity contributions:\n- 1,200 followers on Twitter talking about Next.js\n- Maintain a popular Next.js starter template (2k stars)\n- Local meetup organizer\n\nWould love to join the team!\n\nTest User"
+  },
+  {
+    "id": "sent_followup_001",
+    "threadId": "thread_followup_001",
+    "subject": "Following up – Software Engineer Application at Plaid",
+    "from_address": "test@orbit.com",
+    "to_address": "careers@plaid.com",
+    "date": "Fri, 01 May 2026 10:00:00 +0000",
+    "direction": "sent",
+    "snippet": "Hi, I wanted to follow up on my application for the Software Engineer role I submitted on April 10.",
+    "body_preview": "Hi Plaid Careers Team,\n\nI hope this finds you well. I'm following up on my application for the Full Stack Engineer role, which I submitted on April 10, 2026.\n\nI remain very excited about the opportunity and wanted to reiterate my interest. I've been working on a personal project using the Plaid API in the meantime, which has only deepened my enthusiasm.\n\nPlease let me know if you need any additional information.\n\nBest regards,\nTest User"
+  }
+]

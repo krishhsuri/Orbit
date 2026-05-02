@@ -1,0 +1,35 @@
+[
+  {
+    "id": "sent_ghost_001",
+    "threadId": "thread_ghost_001",
+    "subject": "Application for Software Engineer – Stripe",
+    "from_address": "test@orbit.com",
+    "to_address": "recruiting@stripe.com",
+    "date": "Wed, 15 Apr 2026 11:00:00 +0000",
+    "direction": "sent",
+    "snippet": "I am writing to express my interest in the Software Engineer role at Stripe.",
+    "body_preview": "Dear Stripe Recruiting Team,\n\nI am writing to express my strong interest in the Software Engineer position at Stripe. I have 3 years of experience in distributed systems and payment infrastructure.\n\nI have attached my resume for your consideration. I would love the opportunity to discuss how my background aligns with Stripe's engineering challenges.\n\nThank you for your time.\n\nBest regards,\nTest User"
+  },
+  {
+    "id": "sent_ghost_002",
+    "threadId": "thread_ghost_002",
+    "subject": "Application for Backend Engineer – Notion",
+    "from_address": "test@orbit.com",
+    "to_address": "careers@notion.so",
+    "date": "Thu, 16 Apr 2026 10:00:00 +0000",
+    "direction": "sent",
+    "snippet": "Applying for the Backend Engineer role at Notion. Resume attached.",
+    "body_preview": "Hi Notion Careers Team,\n\nI'm applying for the Backend Engineer role at Notion. I'm a big fan of the product and use it daily.\n\nMy background: 4 years of backend experience in Node.js and Go, with a focus on real-time collaboration systems. I think my work on operational transformation algorithms would be directly relevant.\n\nPlease find my resume attached.\n\nLooking forward to hearing from you!\n\nBest,\nTest User"
+  },
+  {
+    "id": "sent_wait_001",
+    "threadId": "thread_wait_001",
+    "subject": "Application – Research Engineer, Anthropic",
+    "from_address": "test@orbit.com",
+    "to_address": "recruiting@anthropic.com",
+    "date": "Mon, 28 Apr 2026 13:00:00 +0000",
+    "direction": "sent",
+    "snippet": "Applying for Research Engineer at Anthropic. Excited about AI safety work.",
+    "body_preview": "Dear Anthropic Recruiting,\n\nI'm applying for the Research Engineer role. I'm deeply interested in AI safety and interpretability research.\n\nI hold an MS in CS with a focus on ML, and have published work on neural network interpretability.\n\nTest User"
+  }
+]

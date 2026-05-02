@@ -1,0 +1,92 @@
+[
+  {
+    "id": "ghost_001",
+    "threadId": "thread_ghost_001",
+    "subject": "Re: Application for Software Engineer at Stripe",
+    "from_name": "Stripe Recruiting",
+    "from_address": "recruiting@stripe.com",
+    "date": "Thu, 16 Apr 2026 09:12:00 +0000",
+    "snippet": "Thank you for applying to Stripe. We have received your application for the Software Engineer role.",
+    "body_preview": "Hi,\n\nThank you for your interest in Stripe and for applying to the Software Engineer position. We have received your application and our team will review it shortly.\n\nWe receive a high volume of applications and will reach out if your profile matches our requirements.\n\nBest,\nStripe Recruiting Team"
+  },
+  {
+    "id": "ghost_002",
+    "threadId": "thread_ghost_002",
+    "subject": "Application Received – Backend Engineer, Notion",
+    "from_name": "Notion Careers",
+    "from_address": "careers@notion.so",
+    "date": "Fri, 17 Apr 2026 14:33:00 +0000",
+    "snippet": "We've received your application for Backend Engineer. Our team will be in touch.",
+    "body_preview": "Hi there,\n\nThank you for applying to Notion for the Backend Engineer role. We've received your application and will review it carefully.\n\nOur team will reach out if we'd like to move forward.\n\nThanks,\nNotion Hiring Team"
+  },
+  {
+    "id": "ghost_003",
+    "threadId": "thread_ghost_003",
+    "subject": "Your application to Figma – Product Engineer",
+    "from_name": "Figma Jobs",
+    "from_address": "jobs@figma.com",
+    "date": "Mon, 14 Apr 2026 10:00:00 +0000",
+    "snippet": "Thanks for applying! We'll review your application and be in touch soon.",
+    "body_preview": "Hey,\n\nWe got your application for the Product Engineer role at Figma. Our recruiting team is reviewing applications and we'll let you know if we'd like to set up a call.\n\nThanks for your interest!\nFigma Recruiting"
+  },
+  {
+    "id": "ghost_004",
+    "threadId": "thread_ghost_004",
+    "subject": "Application Confirmation – SDE II, Amazon",
+    "from_name": "Amazon Jobs",
+    "from_address": "no-reply@amazon.jobs",
+    "date": "Wed, 15 Apr 2026 08:20:00 +0000",
+    "snippet": "Your application for SDE II at Amazon has been submitted successfully.",
+    "body_preview": "Hello,\n\nYour application for the position of SDE II at Amazon has been successfully submitted. Application ID: AMZ-2026-884721.\n\nOur team will review your application and contact you if we decide to move forward.\n\nAmazon Recruiting Team"
+  },
+  {
+    "id": "ghost_005",
+    "threadId": "thread_ghost_005",
+    "subject": "We received your application – Coinbase",
+    "from_name": "Coinbase Recruiting",
+    "from_address": "recruiting@coinbase.com",
+    "date": "Tue, 14 Apr 2026 16:45:00 +0000",
+    "snippet": "Application received for the Full Stack Engineer role at Coinbase.",
+    "body_preview": "Hi,\n\nThank you for applying to Coinbase! We have received your application for the Full Stack Engineer position.\n\nWe'll be in touch if your background is a match.\n\nCheers,\nCoinbase Talent Team"
+  },
+  {
+    "id": "wait_001",
+    "threadId": "thread_wait_001",
+    "subject": "Application Received – Anthropic Research Engineer",
+    "from_name": "Anthropic Recruiting",
+    "from_address": "recruiting@anthropic.com",
+    "date": "Mon, 29 Apr 2026 12:00:00 +0000",
+    "snippet": "We've received your application for the Research Engineer role at Anthropic.",
+    "body_preview": "Hi,\n\nThank you for applying to Anthropic for the Research Engineer position. We've received your application.\n\nOur team reviews applications on a rolling basis and we'll reach out if we'd like to learn more.\n\nBest,\nAnthropic Recruiting"
+  },
+  {
+    "id": "wait_002",
+    "threadId": "thread_wait_002",
+    "subject": "Thanks for applying – OpenAI",
+    "from_name": "OpenAI Jobs",
+    "from_address": "jobs@openai.com",
+    "date": "Sun, 28 Apr 2026 10:00:00 +0000",
+    "snippet": "Your application for the Software Engineer role at OpenAI has been received.",
+    "body_preview": "Hello,\n\nThank you for applying to OpenAI. We have received your application for the Software Engineer role.\n\nWe receive a high volume of applications and will only reach out to candidates we'd like to interview. Response time is typically 2–4 weeks.\n\nOpenAI Recruiting"
+  },
+  {
+    "id": "noise_001",
+    "threadId": "thread_noise_001",
+    "subject": "47 new jobs match your profile on LinkedIn",
+    "from_name": "LinkedIn Jobs",
+    "from_address": "jobalerts-noreply@linkedin.com",
+    "date": "Thu, 01 May 2026 07:00:00 +0000",
+    "snippet": "Software Engineer at Google, Data Scientist at Amazon, and 45 more new jobs.",
+    "body_preview": "Based on your profile, we found 47 new jobs that match your skills.\n\nTop picks:\n- Software Engineer at Google – $180k\n- Data Scientist at Amazon – $165k\n- Frontend Developer at Meta – $170k\n\nPlus 44 more matches.\n\nView all jobs: linkedin.com/jobs\n\nUnsubscribe from job alerts"
+  },
+  {
+    "id": "noise_002",
+    "threadId": "thread_noise_002",
+    "subject": "Companies are looking for someone like you!",
+    "from_name": "LinkedIn",
+    "from_address": "jobs-noreply@linkedin.com",
+    "date": "Wed, 29 Apr 2026 08:00:00 +0000",
+    "snippet": "Your profile was viewed by 12 recruiters this week. Upgrade to Premium to see who.",
+    "body_preview": "Your profile was viewed by 12 recruiters in the past 7 days!\n\nUpgrade to LinkedIn Premium to:\n- See exactly who viewed your profile\n- Message any recruiter directly\n- Get InMail credits\n\nTry Premium free for 1 month.\n\nLinkedIn"
+  }
+]

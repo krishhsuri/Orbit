@@ -1,0 +1,52 @@
+[
+  {
+    "id": "offer_001",
+    "threadId": "thread_offer_001",
+    "subject": "Offer Letter – Twitch Software Engineer",
+    "from_name": "Twitch HR",
+    "from_address": "hr@twitch.tv",
+    "date": "Thu, 23 Apr 2026 15:00:00 +0000",
+    "snippet": "Congratulations! We are pleased to extend an offer for the Software Engineer role at Twitch.",
+    "body_preview": "Dear Candidate,\n\nCongratulations! We are thrilled to extend an offer of employment for the Software Engineer role at Twitch.\n\nPlease find the offer letter attached. Key details:\n- Role: Software Engineer\n- Start Date: June 2, 2026\n- Compensation: $155,000 base + RSUs + bonus\n\nPlease review the offer and sign it by April 30, 2026.\n\nWelcome to Twitch!\nHR Team"
+  },
+  {
+    "id": "reject_001",
+    "threadId": "thread_reject_001",
+    "subject": "Update on your Apple application",
+    "from_name": "Apple Jobs",
+    "from_address": "no-reply@apple.com",
+    "date": "Thu, 01 May 2026 14:00:00 +0000",
+    "snippet": "After careful review, we have decided not to move forward with your application at this time.",
+    "body_preview": "Dear Applicant,\n\nThank you for your interest in Apple and for taking the time to apply for the Software Engineer position.\n\nAfter careful consideration, we have decided to pursue other candidates whose experience more closely matches our current needs. This was a difficult decision, as we received many strong applications.\n\nWe appreciate your interest in Apple and encourage you to apply again in the future.\n\nBest regards,\nApple Recruiting Team"
+  },
+  {
+    "id": "doc_upload_001",
+    "threadId": "thread_doc_001",
+    "subject": "Document Request – Snowflake Offer Process",
+    "from_name": "Snowflake HR",
+    "from_address": "hr@snowflake.com",
+    "date": "Tue, 28 Apr 2026 09:30:00 +0000",
+    "snippet": "Please upload your government ID and education certificates by May 5, 2026.",
+    "body_preview": "Hi,\n\nCongratulations on receiving an offer from Snowflake! As part of our onboarding process, we need you to upload the following documents by May 5, 2026:\n\n1. Government-issued photo ID (passport or national ID)\n2. University degree certificate or transcript\n3. Previous employment letter (if applicable)\n\nPlease upload them here: https://snowflake.workday.com/docs/upload/xyz\n\nIf you have any questions, please don't hesitate to reach out.\n\nSnowflake HR Team"
+  },
+  {
+    "id": "edge_002",
+    "threadId": "thread_edge_002",
+    "subject": "We'd love to refer you – Brex",
+    "from_name": "John Smith",
+    "from_address": "john.smith@brex.com",
+    "date": "Thu, 23 Apr 2026 11:00:00 +0000",
+    "snippet": "Hey! I work at Brex and saw your profile. I'd love to refer you for an engineering role.",
+    "body_preview": "Hey,\n\nHope you're doing well! I came across your profile on LinkedIn and was really impressed.\n\nI work as an engineer at Brex and we're currently hiring for several engineering roles. I'd love to refer you – internal referrals get priority review.\n\nWould you be open to having a quick 15-minute call this week?\n\nBest,\nJohn"
+  },
+  {
+    "id": "noise_007",
+    "threadId": "thread_noise_007",
+    "subject": "GitHub Copilot: Your April usage summary",
+    "from_name": "GitHub",
+    "from_address": "noreply@github.com",
+    "date": "Wed, 01 May 2026 08:00:00 +0000",
+    "snippet": "You used GitHub Copilot for 47 hours in April. Here's what you built.",
+    "body_preview": "Your GitHub Copilot Summary – April 2026\n\nYou used Copilot for 47 hours this month.\n\nTop languages:\n1. TypeScript – 18 hours\n2. Python – 14 hours\n3. Go – 8 hours\n\nCode suggestions accepted: 1,847\n\nManage your subscription: github.com/settings/copilot\n\nGitHub Team"
+  }
+]

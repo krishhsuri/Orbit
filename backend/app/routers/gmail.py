@@ -30,8 +30,10 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
     """
     Background task to sync emails.
     Fetches emails, auto-filters non-job emails, only stores job-related ones.
+    Processes in batches for better UI feedback and lower memory impact.
     """
     from app.database import async_session_maker
+    import asyncio
     
     logger.info(f"[SYNC] Starting sync for user {user_id}")
     
@@ -53,15 +55,26 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
             # Fix #5: Pass db session so refreshed OAuth tokens are persisted
             service = GmailService(user, db=db)
             
-            # Fetch more emails (500) for bulk load
-            import asyncio
-            
-            if settings.demo_email and user.email.lower() == settings.demo_email.lower():
+            if is_demo:
                 import json, os
+                emails = []
                 try:
-                    path = os.path.join(os.path.dirname(__file__), "..", "data", "mock_inbox.json")
-                    with open(path, "r", encoding="utf-8") as f:
-                        emails = json.load(f)
+                    # Load from batches folder if exists, otherwise fallback to main mock file
+                    batch_dir = os.path.join(os.path.dirname(__file__), "..", "data", "batches")
+                    if os.path.exists(batch_dir):
+                        # Load all inbox batches
+                        for i in range(1, 4):
+                            batch_path = os.path.join(batch_dir, f"inbox_{i}.json")
+                            if os.path.exists(batch_path):
+                                with open(batch_path, "r", encoding="utf-8") as f:
+                                    batch_data = json.load(f)
+                                    logger.info(f"[SYNC] Loading demo batch {i} ({len(batch_data)} emails)")
+                                    emails.extend(batch_data)
+                    
+                    if not emails:
+                        path = os.path.join(os.path.dirname(__file__), "..", "data", "mock_inbox.json")
+                        with open(path, "r", encoding="utf-8") as f:
+                            emails = json.load(f)
                 except Exception as e:
                     logger.error(f"[SYNC] Failed to load mock inbox: {e}")
                     emails = []
@@ -78,13 +91,9 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
             if not emails:
                 logger.warning("[SYNC] No inbox emails returned from Gmail API, proceeding to sent emails...")
 
-            # Print first 5 email subjects for debugging
-            for i, email in enumerate(emails[:5]):
-                logger.debug(f"[SYNC] Email {i+1}: {email.get('subject', 'NO SUBJECT')[:60]}")
-
             # 2. Process with AI Parser (Quick local ML, no LLM)
             parser = AIParser()
-            matcher = EmailMatcher()  # Fix #11: wire up matcher
+            matcher = EmailMatcher()
             
             from app.ml.parsers.digest_parser import DigestParser
             digest_parser = DigestParser()
@@ -106,21 +115,19 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
             filtered_out = 0
             matched_as_update = 0
             digest_leads_count = 0
-            parsed_email_date = None  # Will be set per-email in the loop
             
-            # Non-job statuses to auto-filter (ONLY truly non-job emails)
-            # Keep general_hr and unknown - better to show uncertain emails than miss them
-            # Also filter 'not_for_user' - emails where user wasn't in the candidate list
             NON_JOB_STATUSES = {'not_job_related', 'not_for_user'}
-            
             seen_batch_ids = set()
             
-            for email_data in emails:
+            # Process in small batches to show progress
+            PROCESS_BATCH_SIZE = 5
+            
+            for idx, email_data in enumerate(emails):
                 if email_data['id'] in seen_batch_ids:
                     continue
                 seen_batch_ids.add(email_data['id'])
                 
-                # Check if already processed (by email_id)
+                # Check if already processed
                 stmt = select(PendingApplication).where(PendingApplication.email_id == email_data['id'])
                 existing = await db.execute(stmt)
                 if existing.scalar_one_or_none():
@@ -128,8 +135,6 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                     continue
 
                 # --- DIGEST BRANCH ---
-                # Check if this is a job digest email (Unstop, Hirist, etc.)
-                # Parse date first so it's available for digest lead creation
                 email_date_str = email_data.get('date', '')
                 try:
                     parsed_email_date = parsedate_to_datetime(email_date_str)
@@ -141,7 +146,6 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                     email_data.get('subject', ''),
                     email_data.get('body_preview', '')
                 ):
-                    logger.info(f"[SYNC] DIGEST detected: {email_data.get('subject', '')[:50]}")
                     listings = await digest_parser.extract_leads(
                         email_id=email_data['id'],
                         sender=email_data.get('from_address', ''),
@@ -149,7 +153,6 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                         email_date=parsed_email_date,
                     )
                     for listing in listings:
-                        # on_conflict_do_nothing for composite unique (source_email_id, company, role)
                         from sqlalchemy.dialects.postgresql import insert as pg_insert
                         stmt_lead = pg_insert(Lead).values(
                             company=listing['company'],
@@ -166,32 +169,23 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                         result_lead = await db.execute(stmt_lead)
                         if result_lead.rowcount:
                             digest_leads_count += 1
-                    filtered_out += 1  # Don't create PendingApplication for digest emails
-                    continue  # Skip the normal ML pipeline
+                    filtered_out += 1
+                    continue
 
-                # Quick parse - local ML only, no LLM (fast)
-                # Pass user email to detect multi-candidate emails where user isn't listed
                 parsed = await parser.quick_parse(email_data, user_email=user.email)
-                
-                # Auto-filter: Skip if not parsed or not job-related
                 if not parsed:
                     filtered_out += 1
                     continue
                     
-                # Auto-cleanup: Skip non-job-related emails entirely
                 parsed_status = parsed.get('status', 'unknown')
                 if parsed_status in NON_JOB_STATUSES:
-                    logger.debug(f"[SYNC] FILTERED: {email_data.get('subject', '')[:40]} (status: {parsed_status})")
                     filtered_out += 1
                     continue
 
-                # Fix #11: Try to match this email to an existing application
-                # If matched, update that app's status instead of creating a new pending entry
                 nlp_result = {'entities': {'organizations': []}, 'company': parsed.get('company')}
                 matched_app_id, match_confidence = matcher.match(email_data, existing_apps, nlp_result)
                 
                 if matched_app_id and match_confidence >= 0.80:
-                    # Map the local ML status to an Application status
                     from app.services.ai_parser import STATUS_MAPPING
                     new_status = STATUS_MAPPING.get(parsed_status, None)
                     if new_status and new_status in APPLICATION_STATUSES:
@@ -201,19 +195,9 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                             .values(status=new_status, status_updated_at=datetime.utcnow())
                         )
                         matched_as_update += 1
-                        logger.info(f"[SYNC] MATCHED+UPDATED app {matched_app_id} status → {new_status}")
-                    continue  # Don't create a duplicate pending entry
+                    continue
                 
-                # Parse actual email date from Date header (if not already done in digest branch)
-                if parsed_email_date is None:
-                    email_date_str = email_data.get('date', '')
-                    try:
-                        parsed_email_date = parsedate_to_datetime(email_date_str)
-                    except Exception:
-                        parsed_email_date = datetime.now()
-                
-                # This is a job-related email - add to pending queue
-                logger.info(f"[SYNC] JOB FOUND: {parsed.get('company')} - {parsed_status}")
+                # This is a job-related email
                 pending = PendingApplication(
                     user_id=user.id,
                     email_id=email_data['id'],
@@ -231,15 +215,12 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                 db.add(pending)
                 job_related_count += 1
                 
-                # Auto-create global Lead for the shared job board
                 if parsed.get('company'):
                     from app.models import Lead
-                    # Check if lead already exists for this email
                     lead_exists = await db.execute(
                         select(Lead).where(Lead.source_email_id == email_data['id'])
                     )
                     if not lead_exists.scalar_one_or_none():
-                        # Detect job site from URL
                         job_site = None
                         job_url = parsed.get('job_url')
                         if job_url:
@@ -248,66 +229,63 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                                 domain = urlparse(job_url).hostname or ""
                                 domain = domain.replace("www.", "")
                                 site_map = {
-                                    "linkedin.com": "LinkedIn",
-                                    "wellfound.com": "Wellfound",
-                                    "indeed.com": "Indeed",
-                                    "glassdoor.com": "Glassdoor",
-                                    "lever.co": "Lever",
-                                    "greenhouse.io": "Greenhouse",
-                                    "ziprecruiter.com": "ZipRecruiter",
-                                    "monster.com": "Monster",
-                                    "dice.com": "Dice",
+                                    'linkedin.com': 'LinkedIn',
+                                    'indeed.com': 'Indeed',
+                                    'wellfound.com': 'Wellfound',
+                                    'internshala.com': 'Internshala',
                                 }
-                                job_site = site_map.get(domain, domain)
-                            except Exception:
-                                pass
-                        
-                        # Extract recruiter info from raw from_address (includes display name)
-                        from_addr_raw = email_data.get('from_address_raw', email_data.get('from_address', ''))
-                        import re as _re
-                        name_match = _re.match(r'^([^<]+)\s*<', from_addr_raw)
-                        email_match = _re.search(r'<([^>]+)>', from_addr_raw) or _re.search(r'([^\s]+@[^\s]+)', from_addr_raw)
+                                for d, name in site_map.items():
+                                    if d in domain:
+                                        job_site = name
+                                        break
+                            except Exception: pass
                         
                         lead = Lead(
                             company=parsed.get('company'),
-                            role=parsed.get('role'),
-                            job_site=job_site,
+                            role=parsed.get('role') or "Unknown Role",
+                            job_site=job_site or "Email",
                             job_url=job_url,
-                            recruiter_name=name_match.group(1).strip() if name_match else None,
-                            recruiter_email=email_match.group(1) if email_match else None,
                             source_email_id=email_data['id'],
                             date=parsed_email_date,
                         )
                         db.add(lead)
-            
-            logger.info(f"[SYNC] Summary: {job_related_count} job-related, {digest_leads_count} digest leads, {matched_as_update} status-updates, {skipped_existing} skipped, {filtered_out} filtered out")
-            
-            if job_related_count > 0:
-                user.gmail_last_sync_at = datetime.now()
-                # Track the newest email ID for incremental sync
-                if emails:
-                    user.gmail_last_synced_email_id = emails[0]['id']
-                await db.commit()
-                logger.info(f"[SYNC] Committed: {job_related_count} job-related emails")
-            else:
-                # Still update last sync time and newest ID even if no job emails found
-                user.gmail_last_sync_at = datetime.now()
-                if emails:
-                    user.gmail_last_synced_email_id = emails[0]['id']
-                await db.commit()
-                logger.info("[SYNC] No job-related emails found")
 
-            # --- SENT EMAILS BRANCH (Cold Application Tracking) ---
+                # Commit in batches for UI visibility
+                if (idx + 1) % PROCESS_BATCH_SIZE == 0:
+                    await db.commit()
+                    if is_demo: await asyncio.sleep(0.5)
+
+            # Final inbox commit
+            await db.commit()
+            logger.info(f"[SYNC] Inbox Summary: {job_related_count} job-related, {digest_leads_count} digest leads")
+            
+            if emails:
+                user.gmail_last_sync_at = datetime.now()
+                user.gmail_last_synced_email_id = emails[0]['id']
+                await db.commit()
+
+            # --- SENT EMAILS BRANCH ---
             try:
                 logger.info(f"[SYNC] Fetching sent emails for cold application detection")
-                if settings.demo_email and user.email.lower() == settings.demo_email.lower():
-                    import json, os
+                if is_demo:
+                    sent_emails = []
                     try:
-                        path = os.path.join(os.path.dirname(__file__), "..", "data", "mock_sent.json")
-                        with open(path, "r", encoding="utf-8") as f:
-                            sent_emails = json.load(f)
+                        batch_dir = os.path.join(os.path.dirname(__file__), "..", "data", "batches")
+                        if os.path.exists(batch_dir):
+                            for i in range(1, 4):
+                                batch_path = os.path.join(batch_dir, f"sent_{i}.json")
+                                if os.path.exists(batch_path):
+                                    with open(batch_path, "r", encoding="utf-8") as f:
+                                        batch_data = json.load(f)
+                                        logger.info(f"[SYNC] Loading demo sent batch {i} ({len(batch_data)} emails)")
+                                        sent_emails.extend(batch_data)
+                        
+                        if not sent_emails:
+                            path = os.path.join(os.path.dirname(__file__), "..", "data", "mock_sent.json")
+                            with open(path, "r", encoding="utf-8") as f:
+                                sent_emails = json.load(f)
                     except Exception as e:
-                        logger.error(f"[SYNC] Failed to load mock sent emails: {e}")
+                        logger.error(f"[SYNC] Failed to load mock sent: {e}")
                         sent_emails = []
                 else:
                     last_synced_sent_id = user.gmail_last_synced_sent_id
@@ -317,53 +295,38 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                         after_message_id=last_synced_sent_id
                     )
                 
-                logger.info(f"[SYNC] Fetched {len(sent_emails)} sent emails from Gmail")
+                logger.info(f"[SYNC] Fetched {len(sent_emails)} sent emails")
                 
                 if sent_emails:
                     from app.ml.classifiers.cold_email_detector import ColdEmailDetector
                     cold_detector = ColdEmailDetector()
-                    
                     cold_app_count = 0
-                    skipped_sent = 0
-                    seen_sent_ids = set()
                     
-                    for sent_email in sent_emails:
-                        if sent_email['id'] in seen_batch_ids or sent_email['id'] in seen_sent_ids:
-                            continue
-                        seen_sent_ids.add(sent_email['id'])
+                    for s_idx, sent_email in enumerate(sent_emails):
+                        if sent_email['id'] in seen_batch_ids: continue
                         
-                        # Check if already processed
                         stmt = select(PendingApplication).where(PendingApplication.email_id == sent_email['id'])
-                        existing = await db.execute(stmt)
-                        if existing.scalar_one_or_none():
-                            skipped_sent += 1
+                        if (await db.execute(stmt)).scalar_one_or_none():
                             continue
                             
-                        # Detect cold application
                         detection = cold_detector.detect(sent_email)
-                        
                         if detection['is_cold_email']:
-                            logger.info(f"[SYNC] COLD EMAIL DETECTED: {sent_email.get('subject')[:50]} (conf: {detection['confidence']:.2f})")
-                            
-                            # Parse date
                             email_date_str = sent_email.get('date', '')
                             try:
                                 parsed_sent_date = parsedate_to_datetime(email_date_str)
                             except Exception:
                                 parsed_sent_date = datetime.now()
                                 
-                            # Create PendingApplication
                             pending = PendingApplication(
                                 user_id=user.id,
                                 email_id=sent_email['id'],
                                 email_subject=sent_email['subject'],
                                 email_snippet=sent_email.get('body_preview', ''),
-                                email_from=sent_email.get('to_address'),  # We use 'to' for the company contact in sent emails
+                                email_from=sent_email.get('to_address'),
                                 email_date=parsed_sent_date,
                                 parsed_company=detection['company'],
                                 parsed_role=detection['role'],
-                                parsed_status='applied',  # Sent cold emails always map to applied
-                                parsed_job_url=None,
+                                parsed_status='applied',
                                 confidence_score=detection['confidence'],
                                 source='cold_email',
                                 status="pending"
@@ -371,7 +334,6 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                             db.add(pending)
                             cold_app_count += 1
                             
-                            # Also add global Lead if company extracted
                             if detection['company']:
                                 from app.models import Lead
                                 lead_exists = await db.execute(
@@ -387,25 +349,38 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                                         company=detection['company'],
                                         role=detection['role'] or "Unknown Role",
                                         job_site="Cold Email",
-                                        job_url=None,
                                         recruiter_name=name_match.group(1).strip() if name_match else None,
                                         recruiter_email=email_match.group(1) if email_match else None,
                                         source_email_id=sent_email['id'],
                                         date=parsed_sent_date,
                                     )
                                     db.add(lead)
-                    
-                    # Update sync tracking for sent emails
+                        
+                        if (s_idx + 1) % PROCESS_BATCH_SIZE == 0:
+                            await db.commit()
+                            if is_demo: await asyncio.sleep(0.5)
+
                     user.gmail_last_synced_sent_id = sent_emails[0]['id']
-                    if cold_app_count > 0:
-                        await db.commit()
-                        logger.info(f"[SYNC] Committed {cold_app_count} cold application emails")
-                    else:
-                        await db.commit()
-                        logger.info(f"[SYNC] Processed sent emails, skipped {skipped_sent}")
+                    await db.commit()
+                    logger.info(f"[SYNC] Sent Summary: {cold_app_count} cold applications")
 
             except Exception as e:
                 logger.error(f"[SYNC] Error processing sent emails: {e}")
+
+            # Enforce cap
+            from sqlalchemy import func
+            total = (await db.execute(select(func.count()).select_from(PendingApplication).where(PendingApplication.user_id == user_id))).scalar() or 0
+            if total > MAX_PENDING_PER_USER:
+                excess = total - MAX_PENDING_PER_USER
+                oldest_q = select(PendingApplication.id).where(PendingApplication.user_id == user_id).order_by(PendingApplication.email_date.asc()).limit(excess)
+                oldest_ids = (await db.execute(oldest_q)).scalars().all()
+                if oldest_ids:
+                    await db.execute(delete(PendingApplication).where(PendingApplication.id.in_(oldest_ids)))
+                    await db.commit()
+                
+        except Exception as e:
+            logger.error(f"[SYNC] Error: {e}")
+            await db.rollback()
                 # We don't rollback the entire transaction here, 
                 # we just skip the sent email portion if it fails
 

@@ -1,0 +1,24 @@
+[
+  {
+    "id": "sent_oa_response_001",
+    "threadId": "thread_oa_001",
+    "subject": "Re: Online Assessment Invitation – Google SWE Internship",
+    "from_address": "test@orbit.com",
+    "to_address": "recruiting@google.com",
+    "date": "Thu, 30 Apr 2026 12:00:00 +0000",
+    "direction": "sent",
+    "snippet": "Thank you for the assessment invitation! I will complete it by the deadline.",
+    "body_preview": "Hi,\n\nThank you for the invitation to complete the HackerRank assessment for the Google SWE Internship.\n\nI confirm I will complete it by the deadline (May 3, 2026 at 11:59 PM PST).\n\nLooking forward to it!\n\nBest,\nTest User"
+  },
+  {
+    "id": "sent_interview_response_001",
+    "threadId": "thread_interview_001",
+    "subject": "Re: Interview Invitation – Microsoft SWE",
+    "from_address": "test@orbit.com",
+    "to_address": "recruiting@microsoft.com",
+    "date": "Wed, 29 Apr 2026 10:00:00 +0000",
+    "direction": "sent",
+    "snippet": "Thank you for the invitation! I've scheduled my interview for May 7 via Calendly.",
+    "body_preview": "Hi,\n\nThank you so much for the interview invitation for the Software Engineer role at Microsoft!\n\nI've just scheduled my slot for May 7, 2026 at 10 AM PST via the Calendly link.\n\nIs there anything I should prepare in advance beyond the standard system design and coding topics?\n\nLooking forward to it!\n\nBest,\nTest User"
+  }
+]

@@ -11,12 +11,12 @@ class ColdEmailDetector:
     SUBJECT_APP_PATTERNS = [
         r'application\s+for',
         r'applying\s+for',
-        r'interest\s+in\s+(?:the\s+)?(?:position|role|opening|opportunity)',
+        r'interest\s+in\s+.*?(?:position|role|opening|opportunity)',
         r'job\s+application',
         r'candidature\s+for',
         r'application\s+[-:–]', # Added en-dash
         r'inquiry\s+about',
-        r'regarding\s+(?:the\s+)?(?:position|role|opening|opportunity)',
+        r'regarding\s+.*?(?:position|role|opening|opportunity)',
         r'following\s+up\s+on\s+my\s+application',
         r'application\b',
     ]
