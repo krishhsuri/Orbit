@@ -7,6 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 
+from app.config import get_settings
+
+settings = get_settings()
 from app.database import get_db
 from app.models import User, PendingApplication, Application, APPLICATION_STATUSES
 from app.schemas.pending_application import PendingApplicationResponse, PendingApplicationUpdate
@@ -40,7 +43,8 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
             if not user:
                 logger.error(f"[SYNC] User {user_id} not found")
                 return
-            if not user.gmail_sync_enabled:
+            is_demo = settings.demo_email and user.email.lower() == settings.demo_email.lower()
+            if not user.gmail_sync_enabled and not is_demo:
                 logger.error(f"[SYNC] Gmail sync not enabled for user {user.email}")
                 return
 
@@ -52,12 +56,22 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
             # Fetch more emails (500) for bulk load
             import asyncio
             
-            last_synced_id = user.gmail_last_synced_email_id
-            emails = await asyncio.to_thread(
-                service.fetch_recent_emails, 
-                max_results=500,
-                after_message_id=last_synced_id
-            )
+            if settings.demo_email and user.email.lower() == settings.demo_email.lower():
+                import json, os
+                try:
+                    path = os.path.join(os.path.dirname(__file__), "..", "data", "mock_inbox.json")
+                    with open(path, "r", encoding="utf-8") as f:
+                        emails = json.load(f)
+                except Exception as e:
+                    logger.error(f"[SYNC] Failed to load mock inbox: {e}")
+                    emails = []
+            else:
+                last_synced_id = user.gmail_last_synced_email_id
+                emails = await asyncio.to_thread(
+                    service.fetch_recent_emails, 
+                    max_results=500,
+                    after_message_id=last_synced_id
+                )
             
             logger.info(f"[SYNC] Fetched {len(emails)} emails from Gmail")
             
@@ -286,12 +300,22 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
             # --- SENT EMAILS BRANCH (Cold Application Tracking) ---
             try:
                 logger.info(f"[SYNC] Fetching sent emails for cold application detection")
-                last_synced_sent_id = user.gmail_last_synced_sent_id
-                sent_emails = await asyncio.to_thread(
-                    service.fetch_sent_emails,
-                    max_results=500,
-                    after_message_id=last_synced_sent_id
-                )
+                if settings.demo_email and user.email.lower() == settings.demo_email.lower():
+                    import json, os
+                    try:
+                        path = os.path.join(os.path.dirname(__file__), "..", "data", "mock_sent.json")
+                        with open(path, "r", encoding="utf-8") as f:
+                            sent_emails = json.load(f)
+                    except Exception as e:
+                        logger.error(f"[SYNC] Failed to load mock sent emails: {e}")
+                        sent_emails = []
+                else:
+                    last_synced_sent_id = user.gmail_last_synced_sent_id
+                    sent_emails = await asyncio.to_thread(
+                        service.fetch_sent_emails,
+                        max_results=500,
+                        after_message_id=last_synced_sent_id
+                    )
                 
                 logger.info(f"[SYNC] Fetched {len(sent_emails)} sent emails from Gmail")
                 
@@ -424,7 +448,8 @@ async def trigger_sync(
     db: AsyncSession = Depends(get_db)
 ):
     """Trigger manual email sync in the background (non-blocking)"""
-    if not user.gmail_sync_enabled:
+    is_demo = settings.demo_email and user.email.lower() == settings.demo_email.lower()
+    if not user.gmail_sync_enabled and not is_demo:
         raise HTTPException(status_code=400, detail="Gmail sync is not enabled")
         
     user_key = str(user.id)

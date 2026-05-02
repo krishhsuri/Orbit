@@ -48,6 +48,10 @@ class Settings(BaseSettings):
         )
     )
     
+    # Demo/Test Account (Environment Variables)
+    demo_email: str = "test@orbit.com"
+    demo_password: str = "orbitdemo2026"
+    
     @property
     def google_scopes(self) -> List[str]:
         return [

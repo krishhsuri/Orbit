@@ -23,7 +23,7 @@ Use null for fields not found."""
 ANALYZE_PROMPT = """You are an AI that helps track job applications. Analyze this email and decide what to do.
 
 Your task:
-1. Determine if this email is related to a job application (interview invites, application confirmations, rejections, assessments, offers, etc.)
+1. Determine if this email is related to a job application (interview invites, application confirmations, rejections, assessments, offers, OR outbound cold emails where the candidate is applying/sending their resume).
 2. If job-related, extract company name, role, and current status
 3. Decide: "add_to_tracker" for job-related emails, "discard" for non-job emails
 
@@ -34,12 +34,18 @@ IMPORTANT RULES:
 - Emails listing multiple candidates (e.g. "list of shortlisted students") should be discarded unless they are specifically addressed to the recipient
 - Job platform notification emails like "X new jobs match your profile" are NOT applications — discard them
 - Only track emails about a SPECIFIC application the user submitted or a SPECIFIC interview/offer
+- Outbound cold emails (where the sender is expressing interest, applying, or attaching their resume to recruiters) MUST be tracked with status "applied".
 
 Here are examples:
 
 Example 1 - TRACK (application confirmation):
 Subject: "Thank you for applying to Software Engineer at Google"
 → {"action": "add_to_tracker", "company": "Google", "role": "Software Engineer", "status": "applied", "reason": "Application confirmation email"}
+
+Example 2 - TRACK (cold email application):
+Subject: "Application for Data Scientist role"
+Body: "Hi recruiting team, I am writing to express my interest in the Data Scientist role..."
+→ {"action": "add_to_tracker", "company": "Unknown", "role": "Data Scientist", "status": "applied", "reason": "Outbound cold application email"}
 
 Example 2 - TRACK (interview invite):
 Subject: "Interview Invitation - Data Analyst Position"

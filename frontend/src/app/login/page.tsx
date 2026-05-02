@@ -14,6 +14,7 @@ function LoginContent() {
   const { isAuthenticated, setAuth } = useAuthStore();
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
   const error = searchParams.get('error');
@@ -43,7 +44,7 @@ function LoginContent() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, password }),
       });
 
       if (!response.ok) {
@@ -223,7 +224,9 @@ function LoginContent() {
                 id="password"
                 type="password"
                 className={styles.input}
-                placeholder="(Any password works for demo)"
+                placeholder="Enter test password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             <div className={styles.formOptions}>

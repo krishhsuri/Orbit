@@ -357,6 +357,7 @@ dev_router = APIRouter()
 
 class DevLoginRequest(BaseModel):
     email: str
+    password: Optional[str] = None
 
 
 @dev_router.post("/dev-login", response_model=AuthResponse)
@@ -367,8 +368,16 @@ async def dev_login(
     """
     Development-only login endpoint.
     Logs in or creates user by email without OAuth.
-    This router is only included when DEBUG=true.
+    This router is always included for demo purposes.
     """
+    # Secure the test account
+    if settings.demo_email and data.email.lower() == settings.demo_email.lower():
+        if data.password != settings.demo_password:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials for test account",
+            )
+
     # Find or create user
     result = await db.execute(
         select(User).where(User.email == data.email)
