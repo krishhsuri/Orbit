@@ -88,15 +88,16 @@ class ActionExtractor:
         )
         existing_events = (await db.execute(existing_stmt)).scalars().all()
 
-        # Build a set of (action_type, source_text_fingerprint) for fast lookup
-        existing_fingerprints: set[tuple[str, str]] = set()
+        # Build a set of source_text_fingerprints for fast lookup
+        existing_source_fingerprints: set[str] = set()
         for evt in existing_events:
             d = evt.data or {}
-            src = (d.get("source_text") or "").strip().lower()[:80]
-            existing_fingerprints.add((d.get("action_type", ""), src))
+            src = (d.get("source_text") or "").strip().lower()[:100]
+            if src:
+                existing_source_fingerprints.add(src)
 
         # Track within-batch duplicates too
-        batch_fingerprints: set[tuple[str, str]] = set()
+        batch_source_fingerprints: set[str] = set()
 
         for action in extracted_actions:
             confidence = action.get("confidence", 0)
@@ -112,22 +113,30 @@ class ActionExtractor:
                 )
                 continue
 
-            # Dedup check: skip if this action already exists
-            action_type = action.get("action_type", "unknown")
-            source_fp = (action.get("source_text") or "").strip().lower()[:80]
-            fingerprint = (action_type, source_fp)
+            # Dedup check: skip if this source text already exists
+            source_fp = (action.get("source_text") or "").strip().lower()[:100]
 
-            if fingerprint in existing_fingerprints or fingerprint in batch_fingerprints:
+            if source_fp and (source_fp in existing_source_fingerprints or source_fp in batch_source_fingerprints):
                 logger.info(
-                    f"Skipping duplicate action: {action_type} "
+                    f"Skipping duplicate action: {action.get('action_type')} "
                     f"(source_text already recorded for application {application_id})"
                 )
                 continue
 
-            batch_fingerprints.add(fingerprint)
+            if source_fp:
+                batch_source_fingerprints.add(source_fp)
             needs_review = confidence < CONFIDENCE_THRESHOLD
 
+            event_created_at = None
+            if email_timestamp:
+                try:
+                    event_created_at = datetime.fromisoformat(email_timestamp.replace('Z', '+00:00'))
+                except (ValueError, TypeError):
+                    pass
+
             # Create a timeline event for each qualifying action
+            event_created_at = self._parse_iso_date(email_timestamp) or datetime.utcnow()
+            
             event = Event(
                 application_id=application_id,
                 event_type="action_required",
@@ -142,8 +151,11 @@ class ActionExtractor:
                     "source_text": action.get("source_text"),
                     "needs_review": needs_review,
                 },
-                scheduled_at=self._parse_deadline(action.get("deadline"))
+                scheduled_at=self._parse_deadline(action.get("deadline")),
+                created_at=event_created_at
             )
+            if event_created_at:
+                event.created_at = event_created_at
             db.add(event)
             recorded_actions.append({**action, "email_id": email_id})
         
@@ -157,5 +169,17 @@ class ActionExtractor:
             return None
         try:
             return datetime.fromisoformat(deadline_str.replace('Z', '+00:00'))
+        except (ValueError, TypeError):
+            return None
+
+    def _parse_iso_date(self, date_str: Optional[str]) -> Optional[datetime]:
+        if not date_str:
+            return None
+        try:
+            # Handle various formats, including space instead of T
+            d = date_str.replace('Z', '+00:00')
+            if ' ' in d and 'T' not in d:
+                return datetime.fromisoformat(d)
+            return datetime.fromisoformat(d)
         except (ValueError, TypeError):
             return None

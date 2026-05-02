@@ -79,6 +79,27 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+function CollapsibleText({ text, maxLength = 300 }: { text: string; maxLength?: number }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const shouldTruncate = text.length > maxLength;
+
+  if (!shouldTruncate) return <p className={styles.timelineCardDesc}>{text}</p>;
+
+  return (
+    <div className={styles.collapsibleTextContainer}>
+      <p className={styles.timelineCardDesc}>
+        {isExpanded ? text : `${text.slice(0, maxLength)}...`}
+      </p>
+      <button 
+        className={styles.toggleTextBtn} 
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        {isExpanded ? 'Show less' : 'Show more'}
+      </button>
+    </div>
+  );
+}
+
 export default function ApplicationDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -94,6 +115,7 @@ export default function ApplicationDetailPage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [showEmailSource, setShowEmailSource] = useState(false);
   const [followUpResult, setFollowUpResult] = useState<FollowUpEvaluation | null>(null);
   const [extractResult, setExtractResult] = useState<ExtractActionsResult | null>(null);
   const [copied, setCopied] = useState(false);
@@ -391,6 +413,31 @@ export default function ApplicationDetailPage() {
               </div>
             </div>
 
+            {/* Moved Notes from sidebar to here */}
+            <div className={styles.mainNotesPanel}>
+              <div className={styles.sidePanelHeader}>
+                <h3 className={styles.sidePanelTitle}>Notes</h3>
+                <span className={styles.sidePanelTag}>PRIVATE</span>
+              </div>
+              {isEditing ? (
+                <textarea
+                  value={editForm.notes}
+                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                  className={styles.notesTextarea}
+                  placeholder="Jot down quick thoughts..."
+                  rows={5}
+                />
+              ) : (
+                <div className={styles.notesContent}>
+                  {application.notes || (
+                    <span className={styles.emptyNotes}>
+                      No notes yet. Click Edit to add notes.
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Timeline */}
             <div className={styles.timelineSection}>
               <div className={styles.timelineSectionHeader}>
@@ -413,7 +460,9 @@ export default function ApplicationDetailPage() {
                         </span>
                       </div>
                       {event.description && (
-                        <p className={styles.timelineCardDesc}>{event.description}</p>
+                        <div className={styles.timelineCardDescWrapper}>
+                          <CollapsibleText text={event.description} />
+                        </div>
                       )}
                     </div>
                   </div>
@@ -461,30 +510,6 @@ export default function ApplicationDetailPage() {
 
           {/* ── Right Column ────────────────── */}
           <div className={styles.rightColumn}>
-            {/* Notes */}
-            <div className={styles.sidePanel}>
-              <div className={styles.sidePanelHeader}>
-                <h3 className={styles.sidePanelTitle}>Notes</h3>
-                <span className={styles.sidePanelTag}>PRIVATE</span>
-              </div>
-              {isEditing ? (
-                <textarea
-                  value={editForm.notes}
-                  onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                  className={styles.notesTextarea}
-                  placeholder="Jot down quick thoughts..."
-                  rows={5}
-                />
-              ) : (
-                <div className={styles.notesContent}>
-                  {application.notes || (
-                    <span className={styles.emptyNotes}>
-                      No notes yet. Click Edit to add notes.
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
 
             {/* Email Source — shows original email context */}
             {(application.email_subject || application.email_snippet) && (
@@ -513,8 +538,13 @@ export default function ApplicationDetailPage() {
                       opacity: 0.6,
                       margin: '4px 0 0 0',
                       padding: '0 4px',
+                      overflowWrap: 'anywhere',
+                      wordBreak: 'break-word',
                     }}>
-                      {application.email_snippet}
+                      {application.email_snippet.length > 300 
+                        ? application.email_snippet.slice(0, 300) + '...'
+                        : application.email_snippet
+                      }
                     </p>
                   )}
                 </div>

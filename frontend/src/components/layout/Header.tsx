@@ -41,7 +41,7 @@ export function Header({
         
         {/* Search Button */}
         <button className={styles.searchButton} onClick={openCommandPalette}>
-          <Search size={14} />
+          {/* <Search size={14} /> */}
           <span>Search...</span>
           <kbd className={styles.kbd}>
             <Command size={10} />K

@@ -563,6 +563,8 @@
   color: var(--text-muted);
   margin: 0;
   line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .timelineSimple {
@@ -613,20 +615,96 @@
   font-family: var(--font-mono, monospace);
 }
 
+/* ── Main Notes Panel ───────────────────────── */
+.mainNotesPanel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 20px;
+  border-left: 3px solid var(--accent-primary);
+}
+
+.timelineCardDescWrapper {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 8px;
+  padding-right: 8px;
+}
+
+/* Custom scrollbar for timeline desc */
+.timelineCardDescWrapper::-webkit-scrollbar {
+  width: 4px;
+}
+.timelineCardDescWrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+.timelineCardDescWrapper::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 10px;
+}
+
+.collapsibleTextContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toggleTextBtn {
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  color: var(--accent-primary);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 150ms ease;
+}
+
+.toggleTextBtn:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
 /* ── Notes ──────────────────────────────────── */
+
+.notesWorkspace {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.notesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notesTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
 
 .notesTextarea {
   width: 100%;
   background: var(--bg-base);
   border: 1px solid var(--border-subtle);
-  border-radius: 4px;
-  padding: 12px;
-  font-size: 12px;
-  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 16px;
+  font-size: 13px;
+  color: var(--text-primary);
   outline: none;
-  resize: none;
+  resize: vertical;
   font-family: var(--font-sans);
   transition: all 150ms ease;
+  min-height: 120px;
 }
 
 .notesTextarea:focus {
@@ -643,6 +721,8 @@
   color: var(--text-muted);
   line-height: 1.6;
   white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .emptyNotes {

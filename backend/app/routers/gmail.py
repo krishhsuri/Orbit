@@ -17,6 +17,7 @@ from app.services.gmail_service import GmailService
 from app.services.ai_parser import AIParser
 from app.middleware.auth import get_current_user
 from app.ml.matching.email_matcher import EmailMatcher
+from app.utils.email_utils import strip_email_thread
 from email.utils import parsedate_to_datetime
 import logging
 
@@ -202,7 +203,7 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                     user_id=user.id,
                     email_id=email_data['id'],
                     email_subject=email_data['subject'],
-                    email_snippet=email_data.get('body_preview', ''),
+                    email_snippet=strip_email_thread(email_data.get('body_preview', '')),
                     email_from=email_data.get('from_address'),
                     email_date=parsed_email_date,
                     parsed_company=parsed.get('company'),
@@ -321,7 +322,7 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                                 user_id=user.id,
                                 email_id=sent_email['id'],
                                 email_subject=sent_email['subject'],
-                                email_snippet=sent_email.get('body_preview', ''),
+                                email_snippet=strip_email_thread(sent_email.get('body_preview', '')),
                                 email_from=sent_email.get('to_address'),
                                 email_date=parsed_sent_date,
                                 parsed_company=detection['company'],

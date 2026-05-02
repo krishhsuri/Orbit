@@ -32,8 +32,11 @@ async def _async_process_ai_internal(user_id: UUID):
     from app.models import PendingApplication, Application, User
     from app.services.ai_parser import AIParser
     from app.services.action_extractor import ActionExtractor
+    from app.utils.email_utils import strip_email_thread
     from sqlalchemy import select
     from datetime import date
+    from app.models.event import Event
+    from datetime import datetime
 
     async with async_session_maker() as db:
         user_stmt = select(User).where(User.id == user_id)
@@ -63,12 +66,14 @@ async def _async_process_ai_internal(user_id: UUID):
         added = 0
         discarded = 0
 
+
         for pending in pending_apps:
             try:
+                snippet = strip_email_thread(pending.email_snippet or '')
                 email_data = {
                     'subject': pending.email_subject,
-                    'snippet': pending.email_snippet or '',
-                    'body_preview': pending.email_snippet or ''
+                    'snippet': snippet,
+                    'body_preview': snippet
                 }
 
                 llm_result = await parser.process_with_llm(email_data)
@@ -90,7 +95,6 @@ async def _async_process_ai_internal(user_id: UUID):
                         # Update existing application's status instead of creating duplicate
                         # Upgrade status if needed
                         if app_status != 'applied':
-                            from datetime import datetime
                             existing_app.status = app_status
                             existing_app.status_updated_at = datetime.utcnow()
                         
@@ -122,9 +126,12 @@ async def _async_process_ai_internal(user_id: UUID):
                         added += 1
                         logger.info(f"[AI] Added new: {company_name}")
                     
+                    # Batch commit for visibility (e.g. every 5 new/updated apps)
+                    if (added + discarded) % 5 == 0:
+                        await db.commit()
+                        logger.info(f"[AI] Batch commit at {added + discarded} processed items")
+                    
                     # Always record an 'email_linked' event for history (if not already recorded)
-                    from app.models.event import Event
-                    from datetime import datetime
                     
                     # Check if this email was already linked as an event
                     existing_event_stmt = select(Event).where(
