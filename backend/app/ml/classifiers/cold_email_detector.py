@@ -14,10 +14,11 @@ class ColdEmailDetector:
         r'interest\s+in\s+(?:the\s+)?(?:position|role|opening|opportunity)',
         r'job\s+application',
         r'candidature\s+for',
-        r'application\s+[-:]',
+        r'application\s+[-:–]', # Added en-dash
         r'inquiry\s+about',
         r'regarding\s+(?:the\s+)?(?:position|role|opening|opportunity)',
         r'following\s+up\s+on\s+my\s+application',
+        r'application\b',
     ]
 
     # Additional signals to boost confidence
@@ -33,6 +34,8 @@ class ColdEmailDetector:
         r'designer',
         r'manager',
         r'analyst',
+        r'associate',
+        r'quantitative',
     ]
 
     # Common recruiter/HR email prefixes or domains
@@ -42,8 +45,10 @@ class ColdEmailDetector:
         r'^jobs@',
         r'^hiring@',
         r'^recruitment@',
+        r'^recruiting@',
         r'^talent@',
         r'^people@',
+        r'^apply@',
         r'greenhouse\.io',
         r'lever\.co',
         r'workable\.com',
@@ -60,6 +65,7 @@ class ColdEmailDetector:
         r'would\s+love\s+to\s+join',
         r'looking\s+for\s+new\s+opportunities',
         r'reach(?:ing)?\s+out\s+regarding',
+        r'expressing\s+interest',
     ]
 
     # Patterns that indicate this is NOT a new cold email
@@ -157,19 +163,21 @@ class ColdEmailDetector:
         # "Application for [Role] at [Company]"
         # "Application: [Role] - [Company]"
         
-        # Try finding role BEFORE "at | - | |" and company AFTER
-        at_match = re.search(r'(?i)application\s+for\s+(.*?)\s+(?:at|@|-|\|)\s+(.*)', subject)
+        # Try finding role BEFORE "at | - | | | –" and company AFTER
+        at_match = re.search(r'(?i)(?:application\s+for\s+)?(.*?)\s+(?:at|@|-|\||–)\s+(.*)', subject)
         if at_match:
             role = at_match.group(1).strip()
+            # Clean up role (remove "Application for" if it was captured)
+            role = re.sub(r'(?i)^application\s+for\s+', '', role).strip()
             company = at_match.group(2).strip()
             return company, role
 
         # Try colon separator
-        colon_match = re.search(r'(?i)application(?:\s+for)?\s*:\s*(.*?)(?:\s+(?:at|@|-|\|)\s+(.*))', subject)
+        colon_match = re.search(r'(?i)(?:application\s+for\s+)?(.*?)\s*:\s*(.*)', subject)
         if colon_match:
             role = colon_match.group(1).strip()
-            if colon_match.group(2):
-                company = colon_match.group(2).strip()
+            role = re.sub(r'(?i)^application\s+for\s+', '', role).strip()
+            company = colon_match.group(2).strip()
             return company, role
 
         # Fallback 1: Just extract role if "application for [Role]"

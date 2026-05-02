@@ -41,6 +41,7 @@ google-api-python-client==2.116.0
 
 # ML/NLP
 spacy==3.7.4
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
 scikit-learn==1.4.0
 rapidfuzz==3.6.1
 

@@ -17,6 +17,8 @@ async def _async_email_sync(user_id: UUID):
         await sync_emails_task(user_id, None)
         # Auto-trigger AI processing immediately after sync finishes
         await _async_process_ai_internal(user_id)
+        # Auto-trigger Ghost Detection (Agent B) after AI processing
+        await _async_detect_ghosted(user_id)
     finally:
         # CRITICAL: Dispose engine before asyncio.run() closes the loop.
         # Without this, asyncpg connections from this loop stay in the pool
@@ -86,12 +88,20 @@ async def _async_process_ai_internal(user_id: UUID):
 
                     if existing_app:
                         # Update existing application's status instead of creating duplicate
-                        if app_status != 'applied':  # Only upgrade status, don't downgrade
+                        # Upgrade status if needed
+                        if app_status != 'applied':
                             from datetime import datetime
                             existing_app.status = app_status
                             existing_app.status_updated_at = datetime.utcnow()
+                        
+                        # Update applied_date if this email is older than current applied_date
+                        new_applied_date = pending.email_date.date() if pending.email_date else date.today()
+                        if existing_app.applied_date > new_applied_date:
+                            existing_app.applied_date = new_applied_date
+                            logger.info(f"[AI] Backdated applied_date for {company_name} to {new_applied_date}")
+
                         app_to_use = existing_app
-                        logger.info(f"[AI] Updated existing: {company_name} to {app_status}")
+                        logger.info(f"[AI] Linked to existing: {company_name} (status: {app_status})")
                     else:
                         new_app = Application(
                             user_id=user_id,
@@ -100,6 +110,7 @@ async def _async_process_ai_internal(user_id: UUID):
                             job_url=pending.parsed_job_url,
                             status=app_status,
                             applied_date=pending.email_date.date() if pending.email_date else date.today(),
+                            status_updated_at=pending.email_date or datetime.utcnow(),
                             source="gmail_ai",
                             email_subject=pending.email_subject,
                             email_snippet=pending.email_snippet,
@@ -110,6 +121,34 @@ async def _async_process_ai_internal(user_id: UUID):
                         app_to_use = new_app
                         added += 1
                         logger.info(f"[AI] Added new: {company_name}")
+                    
+                    # Always record an 'email_linked' event for history (if not already recorded)
+                    from app.models.event import Event
+                    from datetime import datetime
+                    
+                    # Check if this email was already linked as an event
+                    existing_event_stmt = select(Event).where(
+                        Event.application_id == app_to_use.id,
+                        Event.data['email_id'].astext == pending.email_id
+                    )
+                    existing_event = (await db.execute(existing_event_stmt)).scalars().first()
+                    
+                    if not existing_event:
+                        email_event = Event(
+                            application_id=app_to_use.id,
+                            event_type="email_linked",
+                            title=f"{'Sent' if pending.source == 'cold_email' else 'Received'}: {pending.email_subject}",
+                            description=pending.email_snippet,
+                            data={
+                                "email_id": pending.email_id,
+                                "from": pending.email_from,
+                                "date": str(pending.email_date),
+                                "source": pending.source or "gmail_sync"
+                            },
+                            created_at=pending.email_date or datetime.utcnow()
+                        )
+                        db.add(email_event)
+                        logger.info(f"[AI] Recorded event for email: {pending.email_subject[:30]}")
                     
                     # Agent A: Action Extraction
                     is_sent_by_user = False
