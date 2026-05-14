@@ -380,3 +380,63 @@
   letter-spacing: 0.05em;
   margin: 0;
 }
+
+/* ─────────────────────────────────────────────────
+   DEMO CREDENTIALS — Left Panel
+   ───────────────────────────────────────────────── */
+
+.demoCredentials {
+  margin-top: 48px;
+  padding: 14px 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.demoLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  margin: 0 0 4px 0;
+}
+
+.demoRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.demoKey {
+  font-size: 11px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  color: rgba(255, 255, 255, 0.25);
+  width: 62px;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+}
+
+.demoValue {
+  font-size: 12px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: all 150ms ease;
+  letter-spacing: 0.03em;
+  line-height: 1.6;
+}
+
+.demoValue:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}

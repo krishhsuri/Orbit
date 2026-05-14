@@ -134,6 +134,35 @@ function LoginContent() {
               <span>Automated insights</span>
             </div>
           </motion.div>
+
+          <motion.div
+            className={styles.demoCredentials}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+          >
+            <p className={styles.demoLabel}>✦ Try a demo account</p>
+            <div className={styles.demoRow}>
+              <span className={styles.demoKey}>email</span>
+              <button
+                className={styles.demoValue}
+                onClick={() => setEmail('test@orbit.com')}
+                title="Click to autofill"
+              >
+                test@orbit.com
+              </button>
+            </div>
+            <div className={styles.demoRow}>
+              <span className={styles.demoKey}>password</span>
+              <button
+                className={styles.demoValue}
+                onClick={() => setPassword('orbitdemo2026')}
+                title="Click to autofill"
+              >
+                orbitdemo2026
+              </button>
+            </div>
+          </motion.div>
         </div>
       </div>
 

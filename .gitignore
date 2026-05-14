@@ -35,7 +35,7 @@ htmlcov/
 .coverage
 .coverage.*
 *.cover
-
+interview.md
 # MyPy
 .mypy_cache/
 
