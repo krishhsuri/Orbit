@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import styles from './login.module.css';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const SHOW_DEMO_CREDS = process.env.NEXT_PUBLIC_SHOW_DEMO_CREDS === 'true';
 
 function LoginContent() {
   const router = useRouter();
@@ -135,6 +136,7 @@ function LoginContent() {
             </div>
           </motion.div>
 
+          {SHOW_DEMO_CREDS && (
           <motion.div
             className={styles.demoCredentials}
             initial={{ opacity: 0, y: 20 }}
@@ -163,6 +165,7 @@ function LoginContent() {
               </button>
             </div>
           </motion.div>
+          )}
         </div>
       </div>
 

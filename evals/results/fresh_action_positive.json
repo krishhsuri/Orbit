@@ -1,0 +1,180 @@
+{
+  "corpus": "evals\\data\\corpus.json",
+  "emails_evaluated": 23,
+  "completed_ids": [
+    "coding_test_001",
+    "doc_upload_001",
+    "doc_upload_002",
+    "edge_002",
+    "edge_003",
+    "edge_004",
+    "edge_005",
+    "general_response_001",
+    "interview_001",
+    "interview_002",
+    "interview_003",
+    "oa_001",
+    "oa_002",
+    "oa_003",
+    "oa_004",
+    "offer_001",
+    "offer_002",
+    "thread1_inbox_001",
+    "thread1_inbox_002",
+    "thread2_inbox_001",
+    "thread2_inbox_002",
+    "thread3_inbox_001",
+    "thread3_inbox_002"
+  ],
+  "elapsed_seconds": 403.51,
+  "micro_precision": 0.7273,
+  "micro_recall": 0.6957,
+  "micro_f1": 0.7111,
+  "job_related_errors": 0,
+  "per_type": {
+    "coding_test": {
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1": 0.5,
+      "tp": 1,
+      "fp": 1,
+      "fn": 1
+    },
+    "document_upload": {
+      "precision": 0.8333,
+      "recall": 1.0,
+      "f1": 0.9091,
+      "tp": 5,
+      "fp": 1,
+      "fn": 0
+    },
+    "general_response_required": {
+      "precision": 0.6,
+      "recall": 0.6,
+      "f1": 0.6,
+      "tp": 3,
+      "fp": 2,
+      "fn": 2
+    },
+    "interview_scheduling": {
+      "precision": 0.6667,
+      "recall": 0.5714,
+      "f1": 0.6154,
+      "tp": 4,
+      "fp": 2,
+      "fn": 3
+    },
+    "online_assessment": {
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.8571,
+      "tp": 3,
+      "fp": 0,
+      "fn": 1
+    }
+  },
+  "confusion": {
+    "coding_test": {
+      "coding_test": 1,
+      "__miss__": 1,
+      "document_upload": 1
+    },
+    "document_upload": {
+      "document_upload": 5
+    },
+    "general_response_required": {
+      "general_response_required": 3,
+      "__miss__": 2,
+      "interview_scheduling": 2
+    },
+    "interview_scheduling": {
+      "interview_scheduling": 4,
+      "general_response_required": 1,
+      "__miss__": 3
+    },
+    "online_assessment": {
+      "online_assessment": 3,
+      "coding_test": 1,
+      "__miss__": 1
+    }
+  },
+  "failures": [
+    {
+      "email_id": "oa_002",
+      "kind": "action_mismatch",
+      "expected": [
+        "online_assessment"
+      ],
+      "predicted": [
+        "coding_test"
+      ]
+    },
+    {
+      "email_id": "interview_003",
+      "kind": "action_mismatch",
+      "expected": [
+        "interview_scheduling"
+      ],
+      "predicted": [
+        "general_response_required"
+      ]
+    },
+    {
+      "email_id": "doc_upload_002",
+      "kind": "action_mismatch",
+      "expected": [
+        "document_upload"
+      ],
+      "predicted": [
+        "document_upload",
+        "general_response_required"
+      ]
+    },
+    {
+      "email_id": "thread2_inbox_002",
+      "kind": "action_mismatch",
+      "expected": [
+        "coding_test"
+      ],
+      "predicted": [
+        "document_upload"
+      ]
+    },
+    {
+      "email_id": "thread3_inbox_002",
+      "kind": "action_mismatch",
+      "expected": [
+        "interview_scheduling"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "edge_002",
+      "kind": "action_mismatch",
+      "expected": [
+        "general_response_required"
+      ],
+      "predicted": [
+        "interview_scheduling"
+      ]
+    },
+    {
+      "email_id": "edge_004",
+      "kind": "action_mismatch",
+      "expected": [
+        "interview_scheduling"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "edge_005",
+      "kind": "action_mismatch",
+      "expected": [
+        "general_response_required"
+      ],
+      "predicted": [
+        "interview_scheduling"
+      ]
+    }
+  ]
+}

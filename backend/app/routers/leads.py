@@ -1,6 +1,5 @@
 """
-Leads router — global shared job board.
-All leads are visible to all authenticated users.
+Leads router — per-user job discovery board.
 """
 
 from typing import List, Optional
@@ -29,8 +28,8 @@ async def list_leads(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all leads globally with optional filters."""
-    query = select(Lead).where(Lead.status == status)
+    """List leads for the current user only."""
+    query = select(Lead).where(Lead.status == status, Lead.user_id == user.id)
 
     if role:
         query = query.where(Lead.role.ilike(f"%{role}%"))
@@ -51,10 +50,14 @@ async def lead_count(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get total lead count."""
-    count = (await db.execute(
-        select(func.count()).select_from(Lead).where(Lead.status == "active")
-    )).scalar() or 0
+    """Get active lead count for the current user."""
+    count = (
+        await db.execute(
+            select(func.count())
+            .select_from(Lead)
+            .where(Lead.status == "active", Lead.user_id == user.id)
+        )
+    ).scalar() or 0
     return {"count": count}
 
 
@@ -64,8 +67,10 @@ async def get_lead(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get a single lead by ID."""
-    result = await db.execute(select(Lead).where(Lead.id == lead_id))
+    """Get a single lead by ID (must belong to current user)."""
+    result = await db.execute(
+        select(Lead).where(Lead.id == lead_id, Lead.user_id == user.id)
+    )
     lead = result.scalar_one_or_none()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
@@ -78,8 +83,9 @@ async def create_lead(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Manually create a lead."""
+    """Manually create a lead for the current user."""
     lead = Lead(
+        user_id=user.id,
         company=data.company,
         role=data.role,
         job_site=data.job_site,
@@ -101,8 +107,10 @@ async def delete_lead(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Archive a lead (soft delete)."""
-    result = await db.execute(select(Lead).where(Lead.id == lead_id))
+    """Archive a lead (must belong to current user)."""
+    result = await db.execute(
+        select(Lead).where(Lead.id == lead_id, Lead.user_id == user.id)
+    )
     lead = result.scalar_one_or_none()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")

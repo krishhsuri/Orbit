@@ -3,7 +3,7 @@ Application Model
 Core model for tracking job applications
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import TYPE_CHECKING, List
 from uuid import UUID
 
@@ -113,12 +113,18 @@ class Application(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     email_subject: Mapped[str | None] = mapped_column(String(500), nullable=True)
     email_snippet: Mapped[str | None] = mapped_column(Text, nullable=True)
     email_from: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    
+    email_thread_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        index=True,
+        doc="Gmail thread id used for dedup across messages in one conversation",
+    )
+
     # Status tracking
     status_updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
     )
     
     # Relationships

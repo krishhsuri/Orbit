@@ -1,0 +1,223 @@
+{
+  "corpus": "evals\\data\\corpus_stale.json",
+  "emails_evaluated": 23,
+  "elapsed_seconds": 89.76,
+  "micro_precision": 0.7143,
+  "micro_recall": 0.2174,
+  "micro_f1": 0.3333,
+  "job_related_errors": 0,
+  "per_type": {
+    "coding_test": {
+      "precision": 1.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 2
+    },
+    "document_upload": {
+      "precision": 1.0,
+      "recall": 0.2,
+      "f1": 0.3333,
+      "tp": 1,
+      "fp": 0,
+      "fn": 4
+    },
+    "general_response_required": {
+      "precision": 0.6667,
+      "recall": 0.4,
+      "f1": 0.5,
+      "tp": 2,
+      "fp": 1,
+      "fn": 3
+    },
+    "interview_scheduling": {
+      "precision": 0.6667,
+      "recall": 0.2857,
+      "f1": 0.4,
+      "tp": 2,
+      "fp": 1,
+      "fn": 5
+    },
+    "online_assessment": {
+      "precision": 1.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 4
+    }
+  },
+  "confusion": {
+    "coding_test": {
+      "__miss__": 2
+    },
+    "document_upload": {
+      "__miss__": 4,
+      "document_upload": 1
+    },
+    "general_response_required": {
+      "general_response_required": 2,
+      "__miss__": 3,
+      "interview_scheduling": 1
+    },
+    "interview_scheduling": {
+      "__miss__": 5,
+      "general_response_required": 1,
+      "interview_scheduling": 2
+    },
+    "online_assessment": {
+      "__miss__": 4
+    }
+  },
+  "failures": [
+    {
+      "email_id": "oa_001",
+      "kind": "action_mismatch",
+      "expected": [
+        "online_assessment"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "oa_002",
+      "kind": "action_mismatch",
+      "expected": [
+        "online_assessment"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "oa_003",
+      "kind": "action_mismatch",
+      "expected": [
+        "online_assessment"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "oa_004",
+      "kind": "action_mismatch",
+      "expected": [
+        "online_assessment"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "interview_001",
+      "kind": "action_mismatch",
+      "expected": [
+        "interview_scheduling"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "interview_002",
+      "kind": "action_mismatch",
+      "expected": [
+        "interview_scheduling"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "interview_003",
+      "kind": "action_mismatch",
+      "expected": [
+        "interview_scheduling"
+      ],
+      "predicted": [
+        "general_response_required"
+      ]
+    },
+    {
+      "email_id": "doc_upload_001",
+      "kind": "action_mismatch",
+      "expected": [
+        "document_upload"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "doc_upload_002",
+      "kind": "action_mismatch",
+      "expected": [
+        "document_upload"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "coding_test_001",
+      "kind": "action_mismatch",
+      "expected": [
+        "coding_test"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "thread1_inbox_002",
+      "kind": "action_mismatch",
+      "expected": [
+        "interview_scheduling"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "thread2_inbox_002",
+      "kind": "action_mismatch",
+      "expected": [
+        "coding_test"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "thread3_inbox_002",
+      "kind": "action_mismatch",
+      "expected": [
+        "interview_scheduling"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "offer_001",
+      "kind": "action_mismatch",
+      "expected": [
+        "document_upload"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "offer_002",
+      "kind": "action_mismatch",
+      "expected": [
+        "document_upload"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "edge_002",
+      "kind": "action_mismatch",
+      "expected": [
+        "general_response_required"
+      ],
+      "predicted": [
+        "interview_scheduling"
+      ]
+    },
+    {
+      "email_id": "edge_003",
+      "kind": "action_mismatch",
+      "expected": [
+        "general_response_required"
+      ],
+      "predicted": []
+    },
+    {
+      "email_id": "edge_005",
+      "kind": "action_mismatch",
+      "expected": [
+        "general_response_required"
+      ],
+      "predicted": []
+    }
+  ]
+}

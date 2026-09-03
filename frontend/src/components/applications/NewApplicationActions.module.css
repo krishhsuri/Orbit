@@ -1,0 +1,134 @@
+.headerGroup,
+.emptyGroup,
+.compactGroup,
+.sidebarGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pastePrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-muted));
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(94, 106, 210, 0.35);
+  transition: opacity 150ms ease;
+}
+
+.pastePrimary:hover {
+  opacity: 0.92;
+}
+
+.manualSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.manualSecondary:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.emptyGroup {
+  flex-direction: column;
+  width: 100%;
+  max-width: 280px;
+}
+
+.emptyGroup .pastePrimary,
+.emptyGroup .manualSecondary {
+  width: 100%;
+  justify-content: center;
+  padding: 10px 16px;
+}
+
+.pasteCompact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent-primary);
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.manualCompact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.manualCompact:hover {
+  background: var(--bg-hover);
+}
+
+.sidebarGroup {
+  width: 100%;
+}
+
+.pasteSidebar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(94, 106, 210, 0.35);
+  background: rgba(94, 106, 210, 0.12);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+
+.pasteSidebar:hover {
+  background: rgba(94, 106, 210, 0.2);
+  color: var(--text-primary);
+}
+
+.manualSidebar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.manualSidebar:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}

@@ -1,6 +1,6 @@
 """
 Periodic cleanup tasks for Orbit.
-Runs via Celery Beat to maintain data hygiene.
+Invoked by the ARQ worker / scheduled jobs — not Celery.
 """
 
 import asyncio
@@ -136,26 +136,9 @@ async def _async_scan_follow_ups():
 
                 now = datetime.now(timezone.utc)
 
-                # Upsert: check if result already exists for this application
-                existing_stmt = select(FollowUpResult).where(
-                    FollowUpResult.application_id == app.id
-                )
-                existing = (await db.execute(existing_stmt)).scalar_one_or_none()
-
-                if existing:
-                    # Update existing result
-                    existing.should_follow_up = evaluation.get("should_follow_up", False)
-                    existing.days_since_last_contact = evaluation.get("days_since_last_contact", 0)
-                    existing.decision_reason = evaluation.get("decision_reason", "")
-                    existing.email_draft = evaluation.get("email_draft")
-                    existing.evaluated_at = now
-                    # Don't reset dismissed — if user dismissed it, respect that
-                    # unless the evaluation changed from False to True
-                    if not existing.should_follow_up:
-                        existing.dismissed = False
-                else:
-                    # Create new result
-                    new_result = FollowUpResult(
+                # Append-only decision history.
+                db.add(
+                    FollowUpResult(
                         application_id=app.id,
                         user_id=app.user_id,
                         should_follow_up=evaluation.get("should_follow_up", False),
@@ -165,7 +148,7 @@ async def _async_scan_follow_ups():
                         evaluated_at=now,
                         dismissed=False,
                     )
-                    db.add(new_result)
+                )
 
                 if evaluation.get("should_follow_up"):
                     follow_ups_needed += 1

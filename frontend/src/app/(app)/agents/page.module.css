@@ -2,7 +2,7 @@
 
 .page {
   min-height: 100vh;
-  background: var(--bg-primary);
+  background: var(--bg-base);
   padding: 0;
 }
 
@@ -16,7 +16,7 @@
   border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
-  background: var(--bg-primary);
+  background: var(--bg-base);
   z-index: 10;
   backdrop-filter: blur(12px);
 }
@@ -78,13 +78,236 @@
 }
 
 .scanBtn:hover {
-  background: var(--bg-tertiary);
+  background: var(--bg-elevated);
   color: var(--text-primary);
 }
 
 .scanBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.killSwitchBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.killSwitchOn {
+  background: rgba(230, 106, 106, 0.15);
+  border-color: rgba(230, 106, 106, 0.4);
+  color: #e66a6a;
+}
+
+.killSwitchActive {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #e66a6a;
+  padding: 4px 10px;
+  background: rgba(230, 106, 106, 0.1);
+  border-radius: 999px;
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tabBar {
+  display: flex;
+  gap: 4px;
+  padding: 12px 32px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.tab, .tabActive {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tabActive {
+  color: var(--text-primary);
+  border-bottom-color: #5e6ad2;
+}
+
+.tabCount, .tabCountWarn {
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tabCount {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+}
+
+.tabCountWarn {
+  background: rgba(242, 153, 74, 0.2);
+  color: #f2994a;
+}
+
+.runStatusOk { color: #22c55e; }
+.runStatusDegraded { color: #f2994a; }
+.runStatusFailed { color: #e66a6a; }
+
+.runVeto {
+  font-size: 10px;
+  color: #f2994a;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.queuedHint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #5e6ad2;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  background: rgba(94, 106, 210, 0.1);
+  border-radius: 6px;
+}
+
+.queueBtn, .traceLinkBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.queueBtn {
+  background: rgba(94, 106, 210, 0.1);
+  border-color: rgba(94, 106, 210, 0.3);
+  color: #5e6ad2;
+}
+
+.traceLinkBtn:hover, .queueBtn:hover {
+  opacity: 0.85;
+}
+
+.actionDesc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 4px 0 6px;
+  line-height: 1.4;
+}
+
+.traceLayout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  max-width: 1200px;
+}
+
+.runList {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 16px;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+}
+
+.runItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+
+.runItem:hover {
+  background: var(--bg-elevated);
+}
+
+.runItemActive {
+  background: var(--bg-elevated);
+  border-color: #5e6ad2;
+}
+
+.runItemTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.runItemMeta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.traceOverlay {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 480px;
+  max-height: 70vh;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  z-index: 100;
+}
+
+.traceOverlayHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-weight: 600;
+}
+
+.traceOverlayHeader button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
 }
 
 /* ── Content Grid ────────────────────────────────── */
@@ -111,7 +334,7 @@
 /* ── Panel ───────────────────────────────────────── */
 
 .panel {
-  background: var(--bg-secondary);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
   overflow: hidden;
@@ -192,7 +415,7 @@
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: var(--bg-tertiary);
+  background: var(--bg-elevated);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -225,7 +448,7 @@
 }
 
 .actionCard:hover {
-  background: var(--bg-tertiary);
+  background: var(--bg-elevated);
 }
 
 .actionCard:last-child {
@@ -319,7 +542,7 @@
   font-style: italic;
   line-height: 1.5;
   padding: 8px 10px;
-  background: var(--bg-primary);
+  background: var(--bg-base);
   border-radius: 6px;
   border-left: 2px solid var(--accent-primary);
   margin-bottom: 8px;
@@ -342,7 +565,7 @@
 .confidenceBar {
   width: 40px;
   height: 3px;
-  background: var(--bg-tertiary);
+  background: var(--bg-elevated);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -419,7 +642,7 @@
 }
 
 .emailDraft {
-  background: var(--bg-primary);
+  background: var(--bg-base);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 12px 14px;
@@ -533,7 +756,7 @@
   letter-spacing: 1.2px;
   color: var(--text-muted);
   padding: 10px 20px 6px;
-  background: var(--bg-secondary);
+  background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
 }
 

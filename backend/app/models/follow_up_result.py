@@ -1,7 +1,8 @@
 """
 Follow-Up Result Model
-Stores pre-computed follow-up evaluations from Agent B's scheduled scan.
-The /agents page reads from this table — no on-the-fly computation needed.
+Stores pre-computed follow-up evaluations from Agent B.
+Populated by ARQ cron (all users, 6h skip) or POST /agents/scan-now (current user).
+The /agents page reads from this table — no on-the-fly LLM on page load.
 """
 
 from uuid import UUID
@@ -18,7 +19,7 @@ from app.models.base import UUIDMixin, TimestampMixin
 class FollowUpResult(Base, UUIDMixin, TimestampMixin):
     """
     Persisted output of Agent B (Follow-up Decision & Drafting Agent).
-    One row per application — upserted on each scheduled scan.
+    Append-only history — one evaluation row per scan.
     """
     __tablename__ = "follow_up_results"
 
@@ -26,7 +27,6 @@ class FollowUpResult(Base, UUIDMixin, TimestampMixin):
         PGUUID(as_uuid=True),
         ForeignKey("applications.id", ondelete="CASCADE"),
         nullable=False,
-        unique=True,
         index=True,
     )
     user_id: Mapped[UUID] = mapped_column(

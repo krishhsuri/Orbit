@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUIStore } from '@/stores';
+import { NewApplicationActions } from '@/components/applications';
 import { useApplications, useUpdateApplicationStatus, useDeleteApplication } from '@/hooks/use-applications';
 import type { ApplicationStatus } from '@/stores';
 import {
@@ -60,7 +60,6 @@ function getTimeAgo(dateString: string): string {
 type TabFilter = 'all' | 'active' | 'archived';
 
 export default function ApplicationsPage() {
-  const { openAddModal } = useUIStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<TabFilter>('all');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -116,10 +115,7 @@ export default function ApplicationsPage() {
             <Filter size={14} />
             Display
           </button>
-          <button className={styles.newButton} onClick={openAddModal}>
-            <Plus size={14} />
-            New
-          </button>
+          <NewApplicationActions variant="compact" />
         </div>
       </header>
 
@@ -172,10 +168,7 @@ export default function ApplicationsPage() {
                 : 'Try adjusting your search or filters.'}
             </p>
             {!searchQuery && activeTab === 'all' && (
-              <button className={styles.newButton} onClick={openAddModal}>
-                <Plus size={14} />
-                Add Application
-              </button>
+              <NewApplicationActions variant="empty" />
             )}
           </div>
         ) : (

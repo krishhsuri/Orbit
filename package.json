@@ -1,0 +1,19 @@
+{
+  "name": "orbit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Orbit dev orchestration — one command to run the full stack locally",
+  "scripts": {
+    "infra": "docker compose up postgres redis -d",
+    "wait:infra": "npx --yes wait-on@8.0.1 tcp:localhost:5433 tcp:localhost:6380 -t 90000",
+    "db:migrate": "cd backend && npx --yes cross-env@7.0.3 DATABASE_URL=postgresql+asyncpg://orbit:orbit_dev_2024@localhost:5433/orbit alembic upgrade head",
+    "backend": "cd backend && npx --yes cross-env@7.0.3 DATABASE_URL=postgresql+asyncpg://orbit:orbit_dev_2024@localhost:5433/orbit REDIS_URL=redis://localhost:6380/0 python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "worker": "cd backend && npx --yes cross-env@7.0.3 DATABASE_URL=postgresql+asyncpg://orbit:orbit_dev_2024@localhost:5433/orbit REDIS_URL=redis://localhost:6380/0 arq app.worker.settings.WorkerSettings",
+    "frontend": "cd frontend && npm run dev",
+    "dev": "npx --yes concurrently@9.1.2 -k -n backend,worker,frontend -c blue,magenta,green \"npm run backend\" \"npm run worker\" \"npm run frontend\"",
+    "predev": "npm run infra && npm run wait:infra && npm run db:migrate",
+    "all": "npm run dev",
+    "all:docker": "docker compose up --build",
+    "stop": "docker compose stop postgres redis"
+  }
+}

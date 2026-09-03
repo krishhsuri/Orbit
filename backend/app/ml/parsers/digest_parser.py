@@ -100,36 +100,19 @@ class DigestParser:
         truncated_body = body[:3000]
 
         try:
-            if not self.llm.client:
-                logger.warning("[DIGEST] Groq client not initialized, skipping digest extraction")
-                return []
-
-            chat_completion = self.llm.client.chat.completions.create(
+            listings = await self.llm.complete_raw_json_array(
                 messages=[
-                    {"role": "system", "content": DIGEST_EXTRACT_PROMPT.format(body=truncated_body)},
-                    {"role": "user", "content": "Extract all job listings from the email above."}
+                    {
+                        "role": "system",
+                        "content": DIGEST_EXTRACT_PROMPT.format(body=truncated_body),
+                    },
+                    {
+                        "role": "user",
+                        "content": "Extract all job listings from the email above.",
+                    },
                 ],
-                model="llama-3.1-8b-instant",
-                temperature=0.1,
                 max_tokens=1500,
-                # NOTE: Can't use json_object format here because the response is an array not object
             )
-
-            raw_response = chat_completion.choices[0].message.content
-            if not raw_response:
-                return []
-
-            # Strip any accidental markdown
-            cleaned = raw_response.strip()
-            if cleaned.startswith("```"):
-                cleaned = re.sub(r'^```(?:json)?\n?', '', cleaned)
-                cleaned = re.sub(r'\n?```$', '', cleaned)
-
-            listings = json.loads(cleaned)
-
-            if not isinstance(listings, list):
-                logger.warning(f"[DIGEST] LLM returned non-list for email {email_id}")
-                return []
 
             results = []
             for item in listings:
@@ -159,6 +142,11 @@ class DigestParser:
             logger.error(f"[DIGEST] JSON parse error for email {email_id}: {e}")
             return []
         except Exception as e:
+            from app.llm.errors import LLMUnavailable, LLMSchemaError
+
+            if isinstance(e, (LLMUnavailable, LLMSchemaError)):
+                logger.warning("[DIGEST] LLM unavailable for email %s: %s", email_id, e)
+                return []
             logger.error(f"[DIGEST] Extraction failed for email {email_id}: {e}")
             return []
 

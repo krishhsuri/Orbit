@@ -1,15 +1,21 @@
 """
-LLM Client (Groq)
-Handles email analysis using Groq LLM for job application tracking.
+Domain-specific Groq LLM helpers built on app.llm.client.LLMClient.
 """
+
+from __future__ import annotations
 
 import json
 import logging
-from typing import Dict, Any, Optional
+import re
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+from app.llm.client import LLMClient, ModelTier
+from app.llm.errors import LLMSchemaError, LLMUnavailable
 
 logger = logging.getLogger(__name__)
 
-# Prompt for extracting job details from email
 EXTRACT_PROMPT = """You are an AI that extracts job application information from emails.
 Extract the following from the email text if present:
 - company: The company name
@@ -19,7 +25,6 @@ Extract the following from the email text if present:
 Return JSON only: {"company": "...", "role": "...", "job_url": "..."}
 Use null for fields not found."""
 
-# Prompt for deciding what to do with an email
 ANALYZE_PROMPT = """You are an AI that helps track job applications. Analyze this email and decide what to do.
 
 Your task:
@@ -36,37 +41,6 @@ IMPORTANT RULES:
 - Only track emails about a SPECIFIC application the user submitted or a SPECIFIC interview/offer
 - Outbound cold emails (where the sender is expressing interest, applying, or attaching their resume to recruiters) MUST be tracked with status "applied".
 
-Here are examples:
-
-Example 1 - TRACK (application confirmation):
-Subject: "Thank you for applying to Software Engineer at Google"
-→ {"action": "add_to_tracker", "company": "Google", "role": "Software Engineer", "status": "applied", "reason": "Application confirmation email"}
-
-Example 2 - TRACK (cold email application):
-Subject: "Application for Data Scientist role"
-Body: "Hi recruiting team, I am writing to express my interest in the Data Scientist role..."
-→ {"action": "add_to_tracker", "company": "Unknown", "role": "Data Scientist", "status": "applied", "reason": "Outbound cold application email"}
-
-Example 2 - TRACK (interview invite):
-Subject: "Interview Invitation - Data Analyst Position"
-Body: "We'd like to schedule a technical interview for the Data Analyst role at Meta..."
-→ {"action": "add_to_tracker", "company": "Meta", "role": "Data Analyst", "status": "interview", "reason": "Interview invitation"}
-
-Example 3 - DISCARD (newsletter):
-Subject: "This week's top jobs in tech"
-Body: "Check out 50 new openings matching your profile..."
-→ {"action": "discard", "company": null, "role": null, "status": null, "reason": "Newsletter/digest, not a specific application"}
-
-Example 4 - DISCARD (marketing from job platform):
-Subject: "Companies are looking for people like you!"
-Body: "Your profile was viewed by 5 recruiters. Upgrade to Premium..."
-→ {"action": "discard", "company": null, "role": null, "status": null, "reason": "Marketing/promotional email from job platform"}
-
-Example 5 - DISCARD (mass candidate list):
-Subject: "List of shortlisted candidates for Summer Internship 2025"
-Body: "Please find below the names of selected aspirants..."
-→ {"action": "discard", "company": null, "role": null, "status": null, "reason": "Mass email listing multiple candidates, not a personal application update"}
-
 Return JSON only:
 {
   "action": "add_to_tracker" or "discard",
@@ -77,114 +51,97 @@ Return JSON only:
 }"""
 
 
+class JobDetails(BaseModel):
+    company: str | None = None
+    role: str | None = None
+    job_url: str | None = None
+
+
+class EmailTrackingDecision(BaseModel):
+    action: str
+    company: str | None = None
+    role: str | None = None
+    status: str | None = None
+    reason: str | None = None
+
+
+class NoteExtraction(BaseModel):
+    key_dates: list[str] = Field(default_factory=list)
+    requirements: list[str] = Field(default_factory=list)
+    action_items: list[str] = Field(default_factory=list)
+    salary_info: str | None = None
+    contact_info: str | None = None
+    summary: str | None = None
+
+
+class ExtractedAction(BaseModel):
+    action_type: str
+    deadline: str | None = None
+    urgency: str | None = None
+    confidence: float = 0.0
+    source_text: str | None = None
+    reasoning: str | None = None
+
+
+class ActionExtractionResult(BaseModel):
+    actions: list[ExtractedAction] = Field(default_factory=list)
+    is_job_related: bool = True
+
+
 class GroqClient:
+    """Backward-compatible facade over LLMClient for existing services."""
+
     def __init__(self, api_key: str):
         self.api_key = api_key
-        self.client = None
-        if self.api_key:
-            try:
-                from groq import AsyncGroq
-                self.client = AsyncGroq(api_key=self.api_key)
-            except ImportError:
-                logger.warning("Groq library not installed")
+        self._llm: LLMClient | None = None
+        if api_key:
+            self._llm = LLMClient(api_key=api_key)
 
-    async def extract_job_details(self, text: str) -> Optional[Dict[str, Any]]:
-        """
-        Extract structured job details from text using Groq LLM.
-        """
-        if not self.client:
-            return None
+    @property
+    def client(self):
+        """Legacy accessor used by digest_parser — returns underlying AsyncGroq or None."""
+        if self._llm and self._llm._client:
+            return self._llm._client
+        return None
 
-        try:
-            chat_completion = await self.client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": EXTRACT_PROMPT},
-                    {"role": "user", "content": f"Email text:\n\n{text[:1500]}"}
-                ],
-                model="llama-3.1-8b-instant",
-                temperature=0.1,
-                max_tokens=200,
-                response_format={"type": "json_object"},
-            )
-            
-            result_json = chat_completion.choices[0].message.content
-            return json.loads(result_json)
-            
-        except Exception as e:
-            logger.error(f"LLM extraction failed: {e}")
-            return None
+    def _require_llm(self) -> LLMClient:
+        if not self._llm or not self._llm.is_configured:
+            raise LLMUnavailable("Groq API key not configured")
+        return self._llm
 
-    async def _call_with_retry(self, **kwargs):
-        """Wrapper around chat.completions.create with rate limit retry logic."""
-        import asyncio
-        import re
-        max_retries = 6
-        for attempt in range(max_retries):
-            try:
-                return await self.client.chat.completions.create(**kwargs)
-            except Exception as e:
-                err_str = str(e)
-                if "429" in err_str or "rate limit" in err_str.lower():
-                    if attempt < max_retries - 1:
-                        wait_time = 10.0
-                        match = re.search(r'Please try again in ([0-9.]+)s', err_str)
-                        if match:
-                            wait_time = float(match.group(1)) + 1.0
-                        else:
-                            wait_time = (2 ** attempt) * 5.0
-                        logger.warning(f"[GROQ] Rate limit hit. Retrying in {wait_time:.2f}s (Attempt {attempt+1}/{max_retries})...")
-                        await asyncio.sleep(wait_time)
-                        continue
-                logger.error(f"[GROQ] API call failed on attempt {attempt+1}: {e}")
-                if attempt == max_retries - 1:
-                    raise e
+    async def extract_job_details(self, text: str) -> dict[str, Any]:
+        llm = self._require_llm()
+        result = await llm.structured_output(
+            [
+                {"role": "system", "content": EXTRACT_PROMPT},
+                {"role": "user", "content": f"Email text:\n\n{text[:1500]}"},
+            ],
+            JobDetails,
+            purpose="extract_job_details",
+            tier=ModelTier.FAST,
+            max_tokens=200,
+        )
+        return result.model_dump()
 
-    async def analyze_email_for_tracking(self, subject: str, body: str) -> Optional[Dict[str, Any]]:
-        """
-        Analyze an email and decide whether to add it to the job tracker.
-        
-        Returns:
-            Dict with action ('add_to_tracker' or 'discard'), company, role, status, reason
-        """
-        if not self.client:
-            logger.warning("Groq client not initialized")
-            return None
-
+    async def analyze_email_for_tracking(self, subject: str, body: str) -> dict[str, Any]:
+        llm = self._require_llm()
         email_text = f"Subject: {subject}\n\nBody:\n{body[:2000]}"
-        
-        try:
-            chat_completion = await self._call_with_retry(
-                messages=[
-                    {"role": "system", "content": ANALYZE_PROMPT},
-                    {"role": "user", "content": email_text}
-                ],
-                model="llama-3.1-8b-instant",
-                temperature=0.1,
-                max_tokens=300,
-                response_format={"type": "json_object"},
-            )
-            
-            result_json = chat_completion.choices[0].message.content
-            result = json.loads(result_json)
-            
-            logger.info(f"[GROQ] Decision: {result.get('action')}")
-            return result
-            
-        except Exception as e:
-            logger.error(f"LLM analysis failed completely: {e}")
-            return None
+        result = await llm.structured_output(
+            [
+                {"role": "system", "content": ANALYZE_PROMPT},
+                {"role": "user", "content": email_text},
+            ],
+            EmailTrackingDecision,
+            purpose="analyze_email_for_tracking",
+            tier=ModelTier.FAST,
+            max_tokens=300,
+        )
+        payload = result.model_dump()
+        logger.info("[GROQ] Decision: %s", payload.get("action"))
+        return payload
 
-    async def extract_note_from_email(self, subject: str, body: str) -> Optional[Dict[str, Any]]:
-        """
-        Extract key information from an email for populating notes.
-        
-        Returns:
-            Dict with key_dates, requirements, action_items, salary_info, summary
-        """
-        if not self.client:
-            logger.warning("Groq client not initialized")
-            return None
-
+    async def extract_note_from_email(self, subject: str, body: str) -> dict[str, Any]:
+        llm = self._require_llm()
         prompt = """You are an AI that extracts key information from job-related emails for note-taking.
 
 Extract the following information if present:
@@ -204,45 +161,32 @@ Return JSON only:
   "contact_info": "contact details or null",
   "summary": "brief summary"
 }"""
-
         email_text = f"Subject: {subject}\n\nBody:\n{body[:2500]}"
-
-        try:
-            chat_completion = await self.client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": prompt},
-                    {"role": "user", "content": email_text}
-                ],
-                model="llama-3.1-8b-instant",
-                temperature=0.1,
-                max_tokens=500,
-                response_format={"type": "json_object"},
-            )
-            
-            result_json = chat_completion.choices[0].message.content
-            result = json.loads(result_json)
-            
-            logger.debug("[GROQ] Note extracted successfully")
-            return result
-            
-        except Exception as e:
-            logger.error(f"LLM note extraction failed: {e}")
-            return None
+        result = await llm.structured_output(
+            [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": email_text},
+            ],
+            NoteExtraction,
+            purpose="extract_note_from_email",
+            tier=ModelTier.FAST,
+            max_tokens=500,
+        )
+        logger.debug("[GROQ] Note extracted successfully")
+        return result.model_dump()
 
     async def extract_actions_from_email(
-        self, subject: str, body: str,
-        company: str | None = None, role: str | None = None,
-        email_timestamp: str | None = None
-    ) -> Optional[Dict[str, Any]]:
-        """
-        Extract explicit/implicit applicant actions from job-related emails.
-        Accepts optional metadata (company, role, timestamp) for better context.
-        """
-        if not self.client:
-            return None
-
+        self,
+        subject: str,
+        body: str,
+        company: str | None = None,
+        role: str | None = None,
+        email_timestamp: str | None = None,
+    ) -> dict[str, Any]:
+        llm = self._require_llm()
         from datetime import datetime
-        current_date_str = datetime.now().strftime('%Y-%m-%d')
+
+        current_date_str = datetime.now().strftime("%Y-%m-%d")
 
         prompt = f"""You are an AI Agent that extracts actionable tasks from job-related emails.
 Your job is to find actions that a COMPANY or RECRUITER is asking the APPLICANT to perform.
@@ -251,37 +195,20 @@ CRITICAL: This email may be part of a thread with multiple messages. You MUST di
 - Messages FROM the company/recruiter TO the applicant → THESE contain actions to extract
 - Messages FROM the applicant TO the company → IGNORE these completely, they are NOT actions
 
-How to tell the difference:
-- If the text says "I wanted to apply", "I came across your role", "Resume attached", "Happy to connect", 
-  "I'll have it ready" → This is the APPLICANT speaking. DO NOT extract this as an action.
-- If the text says "Please complete", "We'd like to schedule", "You have been shortlisted",
-  "Find attached your assignment" → This is the COMPANY speaking. Extract this.
-
 Supported Action Types:
-- online_assessment: The COMPANY asks the applicant to complete an online test or assessment.
-- interview_scheduling: The COMPANY asks the applicant to schedule, confirm, or attend an interview.
-- document_upload: The COMPANY asks the applicant to submit documents.
-- coding_test: The COMPANY asks the applicant to complete a coding challenge or take-home assignment.
-- general_response_required: The COMPANY asks the applicant to reply or confirm something.
+- online_assessment
+- interview_scheduling
+- document_upload
+- coding_test
+- general_response_required
 
 Rules:
 1. ONLY extract actions where the COMPANY/RECRUITER is requesting something from the applicant.
-2. NEVER extract the applicant's own statements, promises, or self-introductions as actions.
-3. If the email is just a confirmation ("Thank you for applying", "We received your application"), return actions: [].
-4. If "Feel free to contact us for questions" is the only ask, return actions: [] — this is a courtesy line, not a real action.
-5. Maximum 2 actions per email. Pick the most important ones.
-6. If no deadline is present, infer urgency:
-   - "high": words like "ASAP", "immediately", "within 24 hours"
-   - "medium": "this week", "at your earliest convenience"
-   - "low": general update with a soft ask
-7. Confidence scores:
-   - 0.9-1.0: Explicit, unambiguous action from the company
-   - 0.7-0.89: Likely action but slightly ambiguous
-   - 0.5-0.69: Possible action, needs interpretation
-   - Below 0.5: Weak signal, likely false positive
-8. source_text MUST be an exact excerpt from the COMPANY'S message, not the applicant's.
-9. If the email is not job-related, return is_job_related: false.
-10. The current date is {current_date_str}. If an action or its deadline (like an interview date or test deadline) has already occurred in the past relative to the current date, DO NOT extract it. We only want pending, future actions.
+2. NEVER extract the applicant's own statements as actions.
+3. If the email is just a confirmation, return actions: [].
+4. Maximum 2 actions per email.
+5. The current date is {current_date_str}. Do not extract actions whose deadlines are already in the past.
+6. If the email is not job-related, return is_job_related: false.
 
 Return JSON only:
 {{
@@ -298,7 +225,6 @@ Return JSON only:
   "is_job_related": true
 }}"""
 
-        # Build user message with optional metadata context
         parts = [f"Subject: {subject}"]
         if company or role:
             meta = []
@@ -310,37 +236,35 @@ Return JSON only:
                 meta.append(f"Email Date: {email_timestamp}")
             parts.append(f"Metadata: {', '.join(meta)}")
         parts.append(f"\nBody:\n{body[:3000]}")
-        email_text = '\n'.join(parts)
+        email_text = "\n".join(parts)
 
-        try:
-            chat_completion = await self._call_with_retry(
-                messages=[
-                    {"role": "system", "content": prompt},
-                    {"role": "user", "content": email_text}
-                ],
-                model="llama-3.1-8b-instant",
-                temperature=0.1,
-                max_tokens=800,
-                response_format={"type": "json_object"},
-            )
-            
-            result_json = chat_completion.choices[0].message.content
-            return json.loads(result_json)
-            
-        except Exception as e:
-            logger.error(f"LLM action extraction failed completely: {e}")
-            return None
+        result = await llm.structured_output(
+            [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": email_text},
+            ],
+            ActionExtractionResult,
+            purpose="extract_actions_from_email",
+            tier=ModelTier.FAST,
+            max_tokens=800,
+        )
+        return result.model_dump()
 
-    async def generate_follow_up_draft(self, company: str, role: str, last_interaction_days: int, context: str = "", source: Optional[str] = None) -> Optional[str]:
-        """
-        Generate a professional follow-up email draft.
-        """
-        if not self.client:
-            return None
-
+    async def generate_follow_up_draft(
+        self,
+        company: str,
+        role: str,
+        last_interaction_days: int,
+        context: str = "",
+        source: str | None = None,
+    ) -> str:
+        llm = self._require_llm()
         cold_email_instruction = ""
         if source == "cold_email":
-            cold_email_instruction = "\n- Note: The initial interaction was a cold email outreach, not a standard job portal application. The follow-up should reflect this (e.g., 'following up on my previous email regarding...')."
+            cold_email_instruction = (
+                "\n- Note: The initial interaction was a cold email outreach. "
+                "The follow-up should reflect this."
+            )
 
         prompt = f"""You are an AI assistant helping a job seeker follow up on an application.
 Context:
@@ -357,20 +281,45 @@ Requirements:
 
 Return ONLY the email draft text."""
 
-        try:
-            chat_completion = await self.client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": "You are a professional career coach."},
-                    {"role": "user", "content": prompt}
-                ],
-                model="llama-3.1-8b-instant",
-                temperature=0.7,
-                max_tokens=500,
-            )
-            
-            return chat_completion.choices[0].message.content.strip()
-            
-        except Exception as e:
-            logger.error(f"LLM follow-up drafting failed: {e}")
-            return None
+        return await llm.complete_text(
+            [
+                {"role": "system", "content": "You are a professional career coach."},
+                {"role": "user", "content": prompt},
+            ],
+            purpose="generate_follow_up_draft",
+            tier=ModelTier.REASONING,
+            temperature=0.7,
+            max_tokens=500,
+        )
 
+    async def complete_raw_json_array(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        tier: ModelTier = ModelTier.FAST,
+        max_tokens: int = 1500,
+    ) -> list[dict[str, Any]]:
+        """For digest parsing where the model returns a JSON array, not an object."""
+        llm = self._require_llm()
+        response = await llm.chat(
+            messages,
+            purpose="digest_extract_leads",
+            tier=tier,
+            temperature=0.1,
+            max_tokens=max_tokens,
+        )
+        raw = response.content
+        if not raw:
+            raise LLMSchemaError("LLM returned empty content for JSON array")
+
+        cleaned = raw.strip()
+        if cleaned.startswith("```"):
+            cleaned = re.sub(r"^```(?:json)?\n?", "", cleaned)
+            cleaned = re.sub(r"\n?```$", "", cleaned)
+
+        parsed = json.loads(cleaned)
+        if not isinstance(parsed, list):
+            raise LLMSchemaError(
+                f"Expected JSON array, got {type(parsed).__name__}", raw_content=raw
+            )
+        return parsed

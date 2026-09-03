@@ -11,7 +11,7 @@ from app.config import get_settings
 
 settings = get_settings()
 from app.database import get_db
-from app.models import User, PendingApplication, Application, APPLICATION_STATUSES
+from app.models import User, PendingApplication, Application, APPLICATION_STATUSES, Lead
 from app.schemas.pending_application import PendingApplicationResponse, PendingApplicationUpdate
 from app.services.gmail_service import GmailService
 from app.services.ai_parser import AIParser
@@ -156,6 +156,7 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                     for listing in listings:
                         from sqlalchemy.dialects.postgresql import insert as pg_insert
                         stmt_lead = pg_insert(Lead).values(
+                            user_id=user.id,
                             company=listing['company'],
                             role=listing['role'],
                             stipend=listing.get('stipend'),
@@ -166,7 +167,7 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                             source_email_id=listing['source_email_id'],
                             date=listing['date'],
                             is_from_digest=True,
-                        ).on_conflict_do_nothing(constraint='uq_lead_email_company_role')
+                        ).on_conflict_do_nothing(constraint='uq_lead_user_email_company_role')
                         result_lead = await db.execute(stmt_lead)
                         if result_lead.rowcount:
                             digest_leads_count += 1
@@ -242,6 +243,7 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                             except Exception: pass
                         
                         lead = Lead(
+                            user_id=user.id,
                             company=parsed.get('company'),
                             role=parsed.get('role') or "Unknown Role",
                             job_site=job_site or "Email",
@@ -338,15 +340,19 @@ async def sync_emails_task(user_id: UUID, db_session_maker):
                             if detection['company']:
                                 from app.models import Lead
                                 lead_exists = await db.execute(
-                                    select(Lead).where(Lead.source_email_id == sent_email['id'])
+                                    select(Lead).where(
+                                        Lead.source_email_id == sent_email['id'],
+                                        Lead.user_id == user.id,
+                                    )
                                 )
                                 if not lead_exists.scalar_one_or_none():
                                     raw_to = sent_email.get('to_address_raw', sent_email.get('to_address', ''))
                                     import re as _re
                                     name_match = _re.match(r'^([^<]+)\s*<', raw_to)
                                     email_match = _re.search(r'<([^>]+)>', raw_to) or _re.search(r'([^\s]+@[^\s]+)', raw_to)
-                                    
+
                                     lead = Lead(
+                                        user_id=user.id,
                                         company=detection['company'],
                                         role=detection['role'] or "Unknown Role",
                                         job_site="Cold Email",

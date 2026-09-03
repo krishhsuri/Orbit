@@ -7,6 +7,7 @@ from app.ml.analyzers.nlp_analyzer import NLPAnalyzer
 from app.ml.classifiers.email_classifier import EmailClassifier
 from app.ml.llm.groq_client import GroqClient
 from app.config import get_settings
+from app.llm.errors import LLMUnavailable, LLMSchemaError
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +129,7 @@ class AIParser:
                 print(f"[LLM_PROCESS] Decision: {llm_result.get('action')} - {llm_result.get('company')}")
                 return llm_result
                 
-        except Exception as e:
+        except (LLMUnavailable, LLMSchemaError) as e:
             print(f"[LLM_PROCESS] Error: {e}")
         
         # Fallback if LLM fails

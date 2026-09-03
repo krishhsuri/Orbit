@@ -1,92 +1,113 @@
-# Orbit 🪐
+# Orbit
 
-**Intelligent Job Application Tracker & Automation Platform**
+**Agentic job application tracker** — extracts actions from Gmail, decides follow-ups with a bounded tool-calling agent, sends with policy guardrails, and measures outcomes.
 
-Orbit is a full-stack automated job search assistant that turns the chaotic process of applying to jobs into a data-driven pipeline. It combines a robust **FastAPI** backend with a modern **Next.js** frontend to track applications, visualize progress on a Kanban board, and—most importantly—uses a **multi-stage AI pipeline** to automatically parse recruiter emails and update application statuses in real-time.
+## What it does
 
----
+1. **Agent A** — extracts deadlines, OAs, and interview requests from recruiter emails
+2. **Agent B** — tool-calling orchestrator decides whether/when to follow up and drafts email
+3. **Policy engine** — vetoes unsafe sends (caps, quiet hours, terminal status)
+4. **ARQ queue** — durable sends with 60s undo window and idempotency
+5. **Outcome loop** — detects thread replies, classifies them, feeds back into priors
 
-## 🚀 Key Features
+## Tech stack
 
-### 🤖 **AI-Powered Automation**
+| Layer | Stack |
+|-------|-------|
+| Frontend | Next.js **16.1.4**, React 19, TypeScript, Zustand, TanStack Query, CSS Modules |
+| Backend | FastAPI, PostgreSQL (async SQLAlchemy), Redis, ARQ |
+| AI | Groq (`gpt-oss-20b` fast with 2 fallbacks, `qwen3.8-27b` reasoning), native tool calling with JSON fallback |
+| Integrations | Gmail (read + send), Google Calendar |
 
-Orbit doesn't just store data; it actively manages it.
+## Quick start
 
-* **Zero-Click Updates**: Integrates with Gmail to fetch and analyze recruiter emails.
-* **4-Layer Intelligence Engine**:
-1. **QuickFilter**: Instantly discards spam and non-job emails.
-2. **NLP Analyzer**: Extracts entities like Company Name and Role locally.
-3. **Pattern Classifier**: High-precision Regex engine (5ms latency) to detect statuses like "Interview Invite," "OA," or "Rejection."
-4. **LLM Fallback (Groq)**: Uses Large Language Models to handle complex, ambiguous emails that local models miss.
+### Docker (recommended)
 
+```bash
+cp backend/.env.example backend/.env   # set GROQ_API_KEY (+ Google OAuth if needed)
+cp frontend/.env.local.example frontend/.env.local
+docker compose up --build
+# Frontend: http://localhost:3000
+# API:      http://localhost:8000/docs
+```
 
+Compose loads `backend/.env` for API and worker (Groq / Google). Without that file the API boots but the AI is inert.
 
-### 📊 **Visual Dashboard & Kanban**
+### One command (local dev with hot reload)
 
-* **Smart Kanban Board**: Drag-and-drop interface that auto-organizes applications by status (Applied → Screening → Interview → Offer).
-* **Weekly Goals**: Set application targets and track your momentum with progress bars.
-* **Upcoming Deadlines**: specialized widget for tracking scheduled Interviews and Online Assessments (OAs).
+```bash
+npm install          # once, from repo root
+npm run all          # postgres + redis (docker), backend, worker, frontend
+```
 
-### 📈 **Deep Analytics**
+- **App:** http://localhost:3000  
+- **API:** http://localhost:8000/docs  
+- Uses Docker for Postgres/Redis only (ports **5433** / **6380**); Python + Next run locally with your `backend/.env` (Groq key, etc.)
 
-* **Conversion Funnel**: Visualize where you are dropping off in the hiring process.
-* **Source Effectiveness**: Track which platforms (LinkedIn, Indeed, Referrals) yield the best response rates.
-* **AI Insights**: Auto-generated tips based on your application data (e.g., "Your response rate is low on Tuesdays").
+```bash
+npm run all:docker   # everything in Docker (slower rebuild loop)
+npm run stop         # stop postgres + redis containers
+```
 
----
+### Manual
 
-## 🛠️ Tech Stack
+```bash
+# Infrastructure
+docker compose up postgres redis -d
 
-### **Frontend**
+# Backend
+cd backend
+cp .env.example .env   # set GROQ_API_KEY, GOOGLE creds
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn app.main:app --reload
 
-* **Framework**: Next.js 14 (App Router)
-* **Language**: TypeScript
-* **Styling**: CSS Modules (Scoped styling)
-* **Icons**: Lucide React
-* **State Management**: React Hooks + Context
+# ARQ worker (separate terminal)
+arq app.worker.settings.WorkerSettings
 
-### **Backend**
+# Frontend
+cd frontend
+npm install
+npm run dev
+```
 
-* **Framework**: FastAPI (Python)
-* **Database**: PostgreSQL (Async SQLAlchemy)
-* **Validation**: Pydantic
-* **AI/ML**:
-* `Groq` (LLM Inference)
-* `spaCy` / Custom NLP (Local Entity Extraction)
-* `Regex` (Pattern Classification)
+### Demo seed (date-relative, never expires)
 
+```bash
+cd backend
+python scripts/seed_demo.py --user-email your@email.com
+```
 
+## Agent safety defaults
 
----
+```env
+AGENT_SEND_ENABLED=false          # must opt in for real sends
+AGENT_SEND_TEST_INBOX=test@gmail.com  # redirect all sends in dev
+AGENT_KILL_SWITCH_GLOBAL=false
+```
 
-## 🧠 The AI Pipeline Architecture
+## Evaluation
 
-Orbit uses a "Waterfall" AI approach to balance cost and speed:
+See [EVALUATION.md](EVALUATION.md) for committed extraction metrics, failure taxonomy, and ablation results.
 
-| Layer | Component | Speed | Cost | Purpose |
-| --- | --- | --- | --- | --- |
-| **L1** | **QuickFilter** | ⚡️ <1ms | Free | Heuristic check to block newsletters/spam. |
-| **L2** | **NLP Analyzer** | 🚀 ~20ms | Free | Extracts metadata (Company, Role) using local NLP. |
-| **L3** | **Pattern Classifier** | 🚀 ~5ms | Free | Regex-based classification for standard emails (Rejections, OAs). |
-| **L4** | **LLM (Groq)** | 🐢 ~1.5s | Low | Deep semantic understanding for ambiguous emails. |
+```bash
+python evals/eval_extraction.py --corpus evals/data/corpus.json --offline
+python evals/eval_decision.py --offline
+python evals/adversarial/run.py
+```
 
----
+## Architecture
 
-## ⚡️ Getting Started
+See [ARCHITECTURE.md](ARCHITECTURE.md) for component justifications, deleted-code rationale, and the agent design story.
 
-### Prerequisites
+## Demo script
 
-* Node.js 18+
-* Python 3.10+
-* PostgreSQL
-* Groq API Key (for LLM features)
-* Google Cloud Console Project (for Gmail API)
+See [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for a rehearsed 5-minute walkthrough.
 
-## 🔮 Features To Add
+## Tests
 
-* [ ] **Chrome Extension**: Auto-clip jobs from LinkedIn/Lever/Greenhouse.
-* [ ] **Resume Tailoring**: AI-suggested resume edits based on job descriptions.
-* [ ] **Salary Predictor**: Aggregated salary data for tracked roles.
-* [ ] **Calendar Sync**: Two-way sync with Google Calendar for interviews.
+```bash
+cd backend && pytest tests/ -q
+```
 
----
+77 tests covering the LLM client, policy engine, tool registry, orchestrator loop (fake LLM), rules baseline, outreach classifiers, and metrics.

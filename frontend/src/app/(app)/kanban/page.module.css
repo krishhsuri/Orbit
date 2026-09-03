@@ -315,6 +315,43 @@
   cursor: grabbing;
 }
 
+.cardHighlighted {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(94, 106, 210, 0.2);
+  animation: cardPulse 1.5s ease-in-out 2;
+}
+
+@keyframes cardPulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(94, 106, 210, 0.2); }
+  50% { box-shadow: 0 0 0 8px rgba(94, 106, 210, 0.12); }
+}
+
+.signalAction {
+  background: rgba(242, 153, 74, 0.12) !important;
+  color: #f2994a !important;
+  border: 1px solid rgba(242, 153, 74, 0.25) !important;
+}
+
+.signalSend {
+  background: rgba(94, 106, 210, 0.12) !important;
+  color: #5e6ad2 !important;
+  border: 1px solid rgba(94, 106, 210, 0.25) !important;
+}
+
+.signalFollow {
+  background: rgba(255, 153, 0, 0.1) !important;
+  color: #ff9900 !important;
+  border: 1px solid rgba(255, 153, 0, 0.2) !important;
+}
+
+.deadlineActionType {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
 .kanbanCard.overlayCard {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.12);

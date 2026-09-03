@@ -1,14 +1,15 @@
 """
 Lead Model
-Global job discovery entries extracted from emails.
-Shared across all users — not scoped to a single user.
+Job discovery entries extracted from a user's email sync.
+Scoped per user — not a global board of other users' Gmail data.
 """
 
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
+from uuid import UUID
 
-from sqlalchemy import String, Text, DateTime, Index, UniqueConstraint
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import String, Text, DateTime, Index, UniqueConstraint, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID as PGUUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -16,19 +17,27 @@ from app.models.base import UUIDMixin, TimestampMixin
 
 
 class Lead(Base, UUIDMixin, TimestampMixin):
-    """
-    A job opportunity discovered from a user's email sync.
-    Visible to ALL users (global shared job board).
-    """
+    """A job opportunity discovered from a user's email sync."""
 
     __tablename__ = "leads"
     __table_args__ = (
         Index("idx_leads_company", "company"),
         Index("idx_leads_role", "role"),
         Index("idx_leads_status", "status"),
-        # Composite unique: one digest email can produce many leads, but not duplicate
-        # the same (email_id + company + role) combination.
-        UniqueConstraint("source_email_id", "company", "role", name="uq_lead_email_company_role"),
+        UniqueConstraint(
+            "user_id",
+            "source_email_id",
+            "company",
+            "role",
+            name="uq_lead_user_email_company_role",
+        ),
+    )
+
+    user_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
     )
 
     # Core fields
@@ -59,7 +68,9 @@ class Lead(Base, UUIDMixin, TimestampMixin):
 
     # When the job was originally found
     date: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=datetime.utcnow
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
     )
 
     # Status

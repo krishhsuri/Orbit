@@ -1,120 +1,107 @@
 import logging
-from typing import Dict, Any, Optional
+from typing import Any
 from uuid import UUID
-from datetime import datetime, timezone
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
-from app.ml.llm.groq_client import GroqClient
-from app.config import get_settings
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.agents.orchestrator import AgentOrchestrator
+from app.agents.schemas import AgentRunResult
+from app.models.agent_run import AgentRun
 from app.models.application import Application
 
 logger = logging.getLogger(__name__)
 
-class FollowUpAgent:
-    """
-    Agent B: Decides if a follow-up is appropriate and drafts the email.
-    """
-    
-    def __init__(self):
-        settings = get_settings()
-        self.llm = GroqClient(api_key=settings.groq_api_key)
 
-    async def evaluate_application(self, db: AsyncSession, application_id: UUID) -> Dict[str, Any]:
-        """
-        Evaluate application state and decide on follow-up.
-        """
-        application = await db.get(
-            Application, 
-            application_id,
-            options=[
-                selectinload(Application.events),
-                selectinload(Application.notes)
-            ]
-        )
-        if not application:
+def default_follow_up_draft(app: Application) -> str:
+    role = app.role_title or "the role"
+    return (
+        f"Hi {app.company_name} team,\n\n"
+        f"I wanted to follow up on my application for {role}. "
+        f"I'm still very interested and happy to share any additional materials.\n\n"
+        f"Best regards"
+    )
+
+
+class FollowUpAgent:
+    """Decides if a follow-up is appropriate, drafts it, and queues a send for review."""
+
+    def __init__(self, orchestrator: AgentOrchestrator | None = None):
+        self.orchestrator = orchestrator or AgentOrchestrator()
+
+    async def evaluate_application(
+        self, db: AsyncSession, application_id: UUID
+    ) -> dict[str, Any]:
+        app = await db.get(Application, application_id)
+        if not app:
             return {"error": "Application not found"}
 
-        # 1. Deterministic Logic
-
-        # Compute days since last contact (always included in response)
-        # We use the OLDER of status_updated_at and applied_date because
-        # status_updated_at defaults to record-creation time (datetime.utcnow()),
-        # which can be much later than the actual application date when emails
-        # are ingested retroactively (e.g., March email processed in April).
-        now = datetime.now(timezone.utc)
-
-        last_interaction = application.status_updated_at
-        if last_interaction.tzinfo is None:
-            last_interaction = last_interaction.replace(tzinfo=timezone.utc)
-
-        # Also consider the applied_date as a potential "last contact" anchor
-        applied_dt = datetime.combine(
-            application.applied_date, datetime.min.time()
-        ).replace(tzinfo=timezone.utc)
-
-        # Use whichever is older — that reflects the true last meaningful contact
-        last_interaction = min(last_interaction, applied_dt)
-
-        days_since_last_contact = (now - last_interaction).days
-        
-        # Check status (Do not follow up if Rejected or Offer/Accepted)
-        if application.status in ["rejected", "offer", "accepted", "withdrawn"]:
-            return {
-                "application_id": str(application_id),
-                "should_follow_up": False,
-                "days_since_last_contact": days_since_last_contact,
-                "decision_reason": f"Application is in '{application.status}' stage."
-            }
-
-        if days_since_last_contact < 7:
-            return {
-                "application_id": str(application_id),
-                "should_follow_up": False,
-                "days_since_last_contact": days_since_last_contact,
-                "decision_reason": f"Only {days_since_last_contact} days since last interaction (threshold: 7)."
-            }
-
-        # Check for pending actions
-        has_pending_actions = False
-        for event in application.events:
-            if event.event_type == "action_required":
-                deadline = event.scheduled_at
-                if deadline:
-                    if deadline.tzinfo is None:
-                        deadline = deadline.replace(tzinfo=timezone.utc)
-                    if deadline > now:
-                        has_pending_actions = True
-                        break
-        
-        if has_pending_actions:
-            return {
-                "application_id": str(application_id),
-                "should_follow_up": False,
-                "days_since_last_contact": days_since_last_contact,
-                "decision_reason": "An action is still pending and its deadline has not passed."
-            }
-
-        # 2. LLM Drafting (if follow-up is appropriate)
-        logger.info(f"Generating follow-up draft for {application.company_name}")
-        
-        # Gather context from notes if available
-        context = ""
-        if application.notes:
-            context = f"Recent notes: {application.notes[0].content[:200]}"
-
-        draft = await self.llm.generate_follow_up_draft(
-            company=application.company_name,
-            role=application.role_title,
-            last_interaction_days=days_since_last_contact,
-            context=context,
-            source=application.source
+        result = await self.orchestrator.run(
+            db,
+            user_id=app.user_id,
+            application_id=application_id,
+            trigger="scan",
         )
 
-        return {
-            "application_id": str(application_id),
-            "should_follow_up": True,
-            "days_since_last_contact": days_since_last_contact,
-            "decision_reason": "No response since last interaction and no pending actions.",
-            "email_draft": draft
-        }
+        await self._ensure_queued(db, app, result)
+
+        response = result.to_follow_up_response()
+        if result.error and result.status == "failed":
+            response["error"] = result.error
+        await db.commit()
+        return response
+
+    async def _ensure_queued(
+        self,
+        db: AsyncSession,
+        app: Application,
+        result: AgentRunResult,
+    ) -> None:
+        """Rules fallback and incomplete LLM loops never call schedule_send — queue here."""
+        if result.decision.action not in ("follow_up", "escalate"):
+            return
+        if result.decision.outreach_action_id or result.policy_vetoes:
+            return
+
+        from app.agents.tools.context import ToolContext
+        from app.agents.tools.handlers import ScheduleSendArgs, schedule_send
+
+        draft = result.decision.email_draft or default_follow_up_draft(app)
+        ctx = ToolContext(
+            db=db,
+            user_id=app.user_id,
+            application_id=app.id,
+            run_id=result.run_id,
+            groq=self.orchestrator.groq,
+            policy=self.orchestrator.policy,
+            queue=self.orchestrator.queue,
+        )
+        try:
+            queued = await schedule_send(
+                ctx,
+                ScheduleSendArgs(
+                    app_id=str(app.id),
+                    draft=draft,
+                    risk_tier="high" if result.decision.action == "escalate" else "low",
+                ),
+                requires_approval=True,
+            )
+        except Exception:
+            logger.exception("Failed to queue follow-up for %s", app.id)
+            return
+
+        if queued.get("policy_vetoes"):
+            result.policy_vetoes.extend(queued["policy_vetoes"])
+            return
+        if queued.get("status") == "vetoed":
+            return
+
+        outreach_id = queued.get("outreach_action_id")
+        if not outreach_id:
+            return
+
+        result.decision.outreach_action_id = UUID(str(outreach_id))
+        result.decision.email_draft = draft
+        run = await db.get(AgentRun, result.run_id)
+        if run:
+            run.final_decision = result.decision.model_dump(mode="json")
+            await db.flush()

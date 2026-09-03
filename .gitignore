@@ -27,7 +27,6 @@ wheels/
 venv/
 ENV/
 env/
-docs/
 stitch/
 # Pytest / Coverage
 .pytest_cache/
@@ -91,9 +90,7 @@ backups/
 # =====================
 # Alembic & Config
 # =====================
-# User specifically requested .ini and .mako to be ignored
-# Note: If you need to generate migrations on other machines, you might want to uncomment *.mako
-*.ini
+# Ignore generated mako templates; keep alembic.ini tracked.
 *.mako
 
 # =====================
@@ -103,3 +100,6 @@ backups/
 tmp/
 temp/
 .cache/
+backend/output.json
+# Local scratch docs (tracked docs live at repo root: ARCHITECTURE.md, etc.)
+/docs/

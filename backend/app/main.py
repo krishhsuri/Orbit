@@ -3,6 +3,7 @@ Orbit Backend - FastAPI Application
 Main entry point for the API
 """
 
+import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -11,9 +12,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import init_db, close_db
+from app.llm.client import LLMClient
+from app.llm.errors import LLMUnavailable
 from app.routers import health, applications, tags, analytics, auth, gmail, leads, agents
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -23,6 +27,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     Migrations are run by the start command BEFORE uvicorn starts:
       alembic upgrade head && uvicorn app.main:app ...
     """
+    llm = LLMClient()
+    if settings.groq_api_key:
+        try:
+            availability = await llm.verify_models(strict=settings.llm_strict_startup)
+            app.state.llm_availability = availability
+            app.state.llm_client = llm
+        except LLMUnavailable as exc:
+            if settings.llm_strict_startup:
+                raise
+            logger.warning("LLM startup degraded: %s", exc)
+            app.state.llm_client = llm
+    else:
+        app.state.llm_client = llm
+
     yield
 
     # Shutdown
@@ -61,7 +79,8 @@ from app.middleware.rate_limit import setup_rate_limiting
 setup_rate_limiting(app)
 
 # Error handler registration
-from app.middleware.error_handler import register_exception_handlers
+from app.middleware.error_handler import ErrorHandlerMiddleware, register_exception_handlers
+app.add_middleware(ErrorHandlerMiddleware)
 register_exception_handlers(app)
 
 # Sentry error tracking (production only)
@@ -115,12 +134,13 @@ app.include_router(
     tags=["AI Agents"],
 )
 
-# Dev-only routes (always included for demo purposes)
-app.include_router(
-    auth.dev_router,
-    prefix="/auth",
-    tags=["Dev Auth"],
-)
+# Dev-only routes
+if settings.debug:
+    app.include_router(
+        auth.dev_router,
+        prefix="/auth",
+        tags=["Dev Auth"],
+    )
 
 
 @app.get("/")

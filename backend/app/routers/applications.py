@@ -33,8 +33,46 @@ from app.schemas import (
     SuccessResponse,
 )
 from app.middleware.auth import get_current_user_id
+from app.config import get_settings
+from app.llm.errors import LLMUnavailable, LLMSchemaError
+from app.services.jd_parser import (
+    ParseJobDescriptionRequest,
+    ParseJobDescriptionResponse,
+    parse_job_description,
+)
 
 router = APIRouter()
+
+
+@router.post("/parse-jd", response_model=ParseJobDescriptionResponse)
+async def parse_jd(
+    data: ParseJobDescriptionRequest,
+    user_id: UUID = Depends(get_current_user_id),
+):
+    """
+    Parse a pasted job description into a structured application draft.
+    Does not create an application — caller reviews then POSTs /applications.
+    """
+    settings = get_settings()
+    if not settings.groq_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LLM is not configured",
+        )
+    try:
+        return await parse_job_description(data.text, api_key=settings.groq_api_key)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except LLMUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc) or "LLM unavailable",
+        ) from exc
+    except LLMSchemaError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Could not parse job description into a structured draft",
+        ) from exc
 
 
 @router.get("", response_model=PaginatedResponse[ApplicationListItem])
@@ -160,6 +198,14 @@ async def create_application(
             
             application.tags.append(tag)
     
+    # Persist optional notes from create (e.g. JD paste summary)
+    if data.notes and data.notes.strip():
+        note = Note(
+            application_id=application.id,
+            content=data.notes.strip(),
+        )
+        db.add(note)
+
     # Create initial event
     event = Event(
         application_id=application.id,

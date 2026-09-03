@@ -55,6 +55,7 @@
 
 .quickActions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   padding: 4px 12px 8px;
 }
@@ -63,7 +64,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1;
+  flex: 1 1 100%;
   padding: 6px 10px;
   background: transparent;
   border: 1px solid var(--border-subtle);
@@ -216,6 +217,21 @@
 
 .navItem:hover .navShortcut {
   opacity: 1;
+}
+
+.navBadge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(242, 153, 74, 0.2);
+  color: #f2994a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .badge {

@@ -14,6 +14,7 @@ export {
   useUndoReject,
 } from './use-applications';
 export { useGmail } from './use-gmail';
+export { useApplicationSignals } from './use-application-signals';
 export { useKeyboardShortcuts, useGlobalShortcuts, useListNavigation } from './useKeyboardShortcuts';
 
 

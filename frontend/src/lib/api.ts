@@ -54,6 +54,9 @@ export interface FollowUpEvaluation {
   days_since_last_contact?: number;
   decision_reason: string;
   email_draft?: string;
+  agent_run_id?: string;
+  risk_tier?: 'low' | 'high' | null;
+  needs_approval?: boolean;
   error?: string;
 }
 
@@ -69,6 +72,28 @@ export interface ExtractActionsResult {
     email_id?: string;
   }>;
   message: string;
+}
+
+export interface ParsedJobDescription {
+  company_name: string | null;
+  role_title: string | null;
+  location: string | null;
+  remote_type: 'remote' | 'hybrid' | 'onsite' | null;
+  salary_min: number | null;
+  salary_max: number | null;
+  salary_currency: string | null;
+  salary_period: 'year' | 'month' | 'hour' | null;
+  job_url: string | null;
+  source: string | null;
+  employment_type: string | null;
+  suggested_tags: string[];
+  notes: string | null;
+  confidence: number;
+}
+
+export interface ParseJobDescriptionResponse {
+  draft: ParsedJobDescription;
+  truncated: boolean;
 }
 
 // Transform API response to frontend Application type
@@ -214,6 +239,11 @@ export const applicationsApi = {
   // Extract actions (Agent A)
   async extractActions(id: string): Promise<ExtractActionsResult> {
     return api.post<ExtractActionsResult>(`/api/v1/applications/${id}/extract-actions`, {});
+  },
+
+  // Paste JD → structured draft (does not create)
+  async parseJobDescription(text: string): Promise<ParseJobDescriptionResponse> {
+    return api.post<ParseJobDescriptionResponse>('/api/v1/applications/parse-jd', { text });
   },
 };
 
@@ -417,6 +447,7 @@ export interface AgentAction {
   application_id: string;
   company: string;
   role: string;
+  event_type?: string;
   title: string;
   description: string;
   action_type: string;
@@ -457,6 +488,91 @@ export interface AgentFollowUpsResponse {
   last_scan: string | null;
 }
 
+export interface OutreachActionItem {
+  id: string;
+  application_id: string;
+  company: string;
+  role: string;
+  status: string;
+  risk_tier: string;
+  approval_mode: string;
+  draft_preview: string;
+  agent_run_id: string | null;
+  undo_until: string | null;
+  sent_at: string | null;
+  created_at: string;
+}
+
+export interface OutreachListResponse {
+  actions: OutreachActionItem[];
+  pending_approval: number;
+  pending_undo: number;
+}
+
+export interface AgentRunSummary {
+  run_id: string;
+  application_id: string;
+  company: string;
+  role: string;
+  trigger: string;
+  status: string;
+  iterations: number;
+  tool_call_count: number;
+  final_decision: Record<string, unknown> | null;
+  policy_vetoes: string[];
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface AgentRunTrace {
+  run_id: string;
+  application_id: string;
+  trigger: string;
+  status: string;
+  iterations: number;
+  tool_call_count: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  latency_ms: number;
+  final_decision: Record<string, unknown> | null;
+  policy_vetoes: string[];
+  tool_trace: Array<{
+    iteration: number;
+    tool: string;
+    arguments: Record<string, unknown>;
+    result: Record<string, unknown>;
+    latency_ms: number;
+    error?: string;
+  }>;
+  error_message: string | null;
+  completed_at: string | null;
+}
+
+export interface KillSwitchState {
+  active: boolean;
+  reason: string | null;
+  global: boolean;
+  user: boolean;
+}
+
+export interface OutcomesDashboard {
+  follow_ups_sent: number;
+  replies_received: number;
+  positive_replies: number;
+  reply_rate: number | null;
+  ghost_recovered: number;
+  deadlines_caught: number;
+  failed_sends: number;
+  policy_vetoes: number;
+  policy_veto_rate: number;
+  escalation_rate: number;
+  agent_runs_total: number;
+  agent_runs_degraded: number;
+  degraded_rate: number;
+  estimated_llm_cost_usd: number;
+  cost_per_application_usd: number;
+}
+
 export const agentsApi = {
   async getActions(): Promise<AgentActionsResponse> {
     return api.get<AgentActionsResponse>('/api/v1/agents/actions');
@@ -466,11 +582,43 @@ export const agentsApi = {
     return api.get<AgentFollowUpsResponse>('/api/v1/agents/follow-ups');
   },
 
-  async dismissFollowUp(id: string): Promise<{ message: string }> {
-    return api.post<{ message: string }>(`/api/v1/agents/follow-ups/${id}/dismiss`, {});
+  async dismissFollowUp(id: string): Promise<{ message: string; id: string }> {
+    return api.post<{ message: string; id: string }>(`/api/v1/agents/follow-ups/${id}/dismiss`, {});
   },
 
   async triggerScan(): Promise<{ evaluated: number; follow_ups_needed: number }> {
     return api.post<{ evaluated: number; follow_ups_needed: number }>('/api/v1/agents/scan-now', {});
+  },
+
+  async getOutreach(): Promise<OutreachListResponse> {
+    return api.get<OutreachListResponse>('/api/v1/agents/outreach');
+  },
+
+  async approveOutreach(id: string): Promise<{ id: string; status: string; undo_until?: string | null }> {
+    return api.post(`/api/v1/agents/outreach/${id}/approve`, {});
+  },
+
+  async cancelOutreach(id: string): Promise<{ id: string; status: string }> {
+    return api.post(`/api/v1/agents/outreach/${id}/cancel`, {});
+  },
+
+  async getKillSwitch(): Promise<KillSwitchState> {
+    return api.get<KillSwitchState>('/api/v1/agents/kill-switch');
+  },
+
+  async setKillSwitch(enabled: boolean): Promise<{ user_kill_switch: boolean }> {
+    return api.post(`/api/v1/agents/kill-switch?enabled=${enabled}`, {});
+  },
+
+  async listRuns(limit = 20): Promise<{ runs: AgentRunSummary[]; total: number }> {
+    return api.get('/api/v1/agents/runs', { limit });
+  },
+
+  async getRunTrace(runId: string): Promise<AgentRunTrace> {
+    return api.get<AgentRunTrace>(`/api/v1/agents/runs/${runId}/trace`);
+  },
+
+  async getOutcomesDashboard(): Promise<OutcomesDashboard> {
+    return api.get<OutcomesDashboard>('/api/v1/agents/outcomes/dashboard');
   },
 };

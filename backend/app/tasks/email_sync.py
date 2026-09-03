@@ -19,6 +19,8 @@ async def _async_email_sync(user_id: UUID):
         await _async_process_ai_internal(user_id)
         # Auto-trigger Ghost Detection (Agent B) after AI processing
         await _async_detect_ghosted(user_id)
+        # Observe replies on sent outreach threads
+        await _async_observe_outcomes(user_id)
     finally:
         # CRITICAL: Dispose engine before asyncio.run() closes the loop.
         # Without this, asyncpg connections from this loop stay in the pool
@@ -200,6 +202,22 @@ async def _async_process_ai(user_id: UUID):
     from app.database import engine
     try:
         await _async_process_ai_internal(user_id)
+    finally:
+        await engine.dispose()
+
+
+async def _async_observe_outcomes(user_id: UUID):
+    """Detect replies on sent outreach threads."""
+    from app.database import async_session_maker, engine
+    from app.services.outcome_observer import OutcomeObserver
+
+    try:
+        async with async_session_maker() as db:
+            observer = OutcomeObserver()
+            count = await observer.observe_replies_for_user(db, user_id)
+            await db.commit()
+            if count:
+                logger.info("[OUTCOMES] Recorded %s replies for user %s", count, user_id)
     finally:
         await engine.dispose()
 

@@ -14,7 +14,6 @@ import {
   TrendingDown, 
   TrendingUp,
   Target,
-  Clock,
   Users,
   Lightbulb,
   AlertCircle,
@@ -23,6 +22,7 @@ import {
   CheckCircle2,
   XCircle,
   Zap,
+  Mail,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -40,6 +40,8 @@ import {
   Legend,
 } from 'recharts';
 import styles from './page.module.css';
+import { AgentOutcomesWidget } from '@/components/agents/AgentOutcomesWidget';
+import { useOutcomesDashboard } from '@/hooks/use-agents';
 
 // Chart color palette matching Orbit design system
 const CHART_COLORS = {
@@ -192,6 +194,7 @@ export default function AnalyticsPage() {
   const { data: insightsData, isLoading: isLoadingInsights } = useAnalyticsInsights();
   const { data: mlStats } = useAnalyticsMlStats();
   const { data: ghostingData } = useAnalyticsGhosting();
+  const { data: outcomes } = useOutcomesDashboard();
 
   const isLoading = isLoadingSummary || isLoadingFunnel || isLoadingSources || isLoadingInsights;
 
@@ -214,6 +217,8 @@ export default function AnalyticsPage() {
   const totalResponded = sources.reduce((acc: number, curr: any) => acc + curr.responded, 0);
   const totalTrackedSource = sources.reduce((acc: number, curr: any) => acc + curr.total, 0);
   const responseRate = totalTrackedSource > 0 ? (totalResponded / totalTrackedSource) * 100 : 0;
+  const agentReplyRate =
+    outcomes?.reply_rate != null ? `${Math.round(outcomes.reply_rate * 100)}%` : '—';
 
   // Prepare pie chart data from funnel
   const pieData = funnel
@@ -237,6 +242,7 @@ export default function AnalyticsPage() {
       <Header title="Analytics" subtitle="Track your job search performance" showAddButton={false} />
       
       <div className={styles.content}>
+        <AgentOutcomesWidget />
         {/* Quick Stats */}
         <div className={styles.quickStats}>
           <div className={styles.quickStat}>
@@ -247,10 +253,10 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div className={styles.quickStat}>
-            <Clock size={20} />
+            <Mail size={20} />
             <div>
-              <span className={styles.statValue}>--</span>
-              <span className={styles.statLabel}>Avg. Response Time</span>
+              <span className={styles.statValue}>{agentReplyRate}</span>
+              <span className={styles.statLabel}>Agent Reply Rate</span>
             </div>
           </div>
           <div className={styles.quickStat}>
@@ -457,8 +463,10 @@ export default function AnalyticsPage() {
           {/* Ghost Town */}
           <GhostTownWidget data={ghostingData} />
 
-          {/* Orbit Learning (ML Stats) */}
-          <OrbitLearningWidget data={mlStats} />
+          {/* Orbit Learning (ML Stats) — feature-flagged; model often inactive */}
+          {process.env.NEXT_PUBLIC_ORBIT_LEARNING === 'true' && (
+            <OrbitLearningWidget data={mlStats} />
+          )}
         </div>
       </div>
     </div>

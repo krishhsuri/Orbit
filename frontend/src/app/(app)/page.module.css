@@ -566,9 +566,15 @@
 }
 
 .deadlineTask {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-muted);
   margin: 0;
+}
+
+.deadlineRole {
+  font-size: 11px;
+  color: var(--text-disabled);
+  margin: 4px 0 0;
 }
 
 .deadlineProgress {

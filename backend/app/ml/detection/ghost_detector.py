@@ -64,11 +64,17 @@ class GhostDetector:
         
         for app in ghosted_apps:
             old_status = app.status
-            
+            previous_updated_at = app.status_updated_at
+            days_since_update = (
+                (datetime.utcnow() - previous_updated_at).days
+                if previous_updated_at
+                else self.GHOST_THRESHOLD_DAYS
+            )
+
             # Update status to ghosted
             app.status = 'ghosted'
             app.status_updated_at = datetime.utcnow()
-            
+
             # Create event for audit trail
             event = Event(
                 application_id=app.id,
@@ -77,18 +83,18 @@ class GhostDetector:
                 description=f'No response for {self.GHOST_THRESHOLD_DAYS}+ days',
                 data={
                     'previous_status': old_status,
-                    'days_since_update': (datetime.utcnow() - app.status_updated_at).days if app.status_updated_at else self.GHOST_THRESHOLD_DAYS,
+                    'days_since_update': days_since_update,
                     'detected_by': 'ghost_detector'
                 }
             )
             self.db.add(event)
-            
+
             marked_apps.append({
                 'id': str(app.id),
                 'company_name': app.company_name,
                 'role_title': app.role_title,
                 'previous_status': old_status,
-                'days_since_update': (datetime.utcnow() - app.status_updated_at).days if app.status_updated_at else self.GHOST_THRESHOLD_DAYS
+                'days_since_update': days_since_update,
             })
             
             logger.info(f"Marked as ghosted: {app.company_name} - {app.role_title}")

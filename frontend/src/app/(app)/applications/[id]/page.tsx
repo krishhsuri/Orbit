@@ -35,6 +35,8 @@ import {
   CheckCircle2,
   XCircle,
   ClipboardCheck,
+  Shield,
+  Workflow,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -625,11 +627,33 @@ export default function ApplicationDetailPage() {
                     </div>
                   )}
 
+                  {(followUpResult.risk_tier || followUpResult.needs_approval) && (
+                    <div className={styles.agentMetaRow}>
+                      {followUpResult.risk_tier && (
+                        <span className={`${styles.riskPill} ${followUpResult.risk_tier === 'high' ? styles.riskHigh : styles.riskLow}`}>
+                          <Shield size={11} /> {followUpResult.risk_tier} risk
+                        </span>
+                      )}
+                      {followUpResult.needs_approval && (
+                        <span className={styles.approvalPill}>Needs approval</span>
+                      )}
+                    </div>
+                  )}
+
                   {/* Reason */}
                   <div className={styles.agentReason}>
                     <AlertTriangle size={12} />
                     <span>{followUpResult.decision_reason}</span>
                   </div>
+
+                  {followUpResult.agent_run_id && (
+                    <Link
+                      href={`/agents?run=${followUpResult.agent_run_id}`}
+                      className={styles.traceLink}
+                    >
+                      <Workflow size={12} /> View agent trace
+                    </Link>
+                  )}
 
                   {/* Draft */}
                   {followUpResult.email_draft && (

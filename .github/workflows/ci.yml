@@ -1,0 +1,142 @@
+name: CI
+
+
+
+on:
+
+  push:
+
+    branches: [main, development]
+
+  pull_request:
+
+    branches: [main, development]
+
+
+
+jobs:
+
+  backend:
+
+    runs-on: ubuntu-latest
+
+    defaults:
+
+      run:
+
+        working-directory: backend
+
+
+
+    services:
+
+      postgres:
+
+        image: postgres:15-alpine
+
+        env:
+
+          POSTGRES_USER: orbit
+
+          POSTGRES_PASSWORD: orbit
+
+          POSTGRES_DB: orbit_eval
+
+        ports:
+
+          - 5432:5432
+
+        options: >-
+
+          --health-cmd "pg_isready -U orbit -d orbit_eval"
+
+          --health-interval 10s
+
+          --health-timeout 5s
+
+          --health-retries 5
+
+
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+
+
+      - uses: actions/setup-python@v5
+
+        with:
+
+          python-version: "3.12"
+
+          cache: pip
+
+          cache-dependency-path: backend/requirements.txt
+
+
+
+      - name: Install dependencies
+
+        run: |
+
+          pip install -r requirements.txt
+
+          pip install ruff
+
+
+
+      - name: Ruff (Phase 1 + agent modules)
+
+        run: ruff check app/llm app/agents app/services/agent_metrics.py app/services/reply_classifier.py tests/test_llm_client.py tests/test_llm_audit.py tests/test_evals.py tests/test_ghost_detector_audit.py tests/test_agent_policy.py tests/test_rules_baseline.py tests/test_agent_tools.py tests/test_outreach_phase3.py tests/test_agent_metrics.py tests/test_eval_harness.py tests/test_orchestrator.py tests/test_follow_up_agent.py --select E,F,I --ignore E501,E402
+
+
+
+      - name: Pytest
+
+        env:
+
+          JWT_SECRET_KEY: ci-test-secret-key-not-for-production
+
+          DEBUG: "true"
+
+          LLM_AUDIT_ENABLED: "false"
+
+          AGENT_SEND_ENABLED: "false"
+
+          EVAL_DATABASE_URL: postgresql+asyncpg://orbit:orbit@localhost:5432/orbit_eval
+
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/orbit
+
+        run: pytest tests/ -q
+
+
+
+      - name: Eval harness
+
+        working-directory: .
+
+        env:
+
+          JWT_SECRET_KEY: ci-test-secret-key-not-for-production
+
+          DEBUG: "true"
+
+          LLM_AUDIT_ENABLED: "false"
+
+          AGENT_SEND_ENABLED: "false"
+
+          EVAL_DATABASE_URL: postgresql+asyncpg://orbit:orbit@localhost:5432/orbit_eval
+
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/orbit
+
+        run: |
+
+          python evals/eval_extraction.py --corpus evals/data/corpus.json --offline
+
+          python evals/eval_decision.py --mode validate-only
+
+          python evals/eval_decision.py --mode baseline --output evals/results/decision_ablation.json
+
+          python evals/adversarial/run.py
+

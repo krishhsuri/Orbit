@@ -281,3 +281,73 @@ class GmailService:
         except Exception as e:
             logger.error(f"Gmail sent fetch failed: {e}")
             return []
+
+    def send_message(
+        self,
+        to_address: str,
+        subject: str,
+        body: str,
+        *,
+        thread_id: str | None = None,
+        in_reply_to: str | None = None,
+        references: str | None = None,
+    ) -> Dict[str, Any]:
+        """
+        Send an email via Gmail API (RFC 2822, optionally threaded).
+        Returns the Gmail API send response dict.
+        """
+        if not self.service:
+            raise RuntimeError("Gmail service not configured for this user")
+
+        from email.mime.text import MIMEText
+
+        message = MIMEText(body, "plain", "utf-8")
+        message["to"] = to_address
+        message["from"] = self.user.email
+        message["subject"] = subject
+        if in_reply_to:
+            message["In-Reply-To"] = in_reply_to
+            message["References"] = references or in_reply_to
+
+        raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        send_body: Dict[str, Any] = {"raw": raw}
+        if thread_id:
+            send_body["threadId"] = thread_id
+
+        return (
+            self.service.users()
+            .messages()
+            .send(userId="me", body=send_body)
+            .execute()
+        )
+
+    def fetch_thread_messages(self, thread_id: str) -> List[Dict[str, Any]]:
+        """Fetch all messages in a thread for reply detection."""
+        if not self.service:
+            return []
+        try:
+            thread = (
+                self.service.users()
+                .threads()
+                .get(userId="me", id=thread_id, format="full")
+                .execute()
+            )
+            messages = []
+            for msg in thread.get("messages", []):
+                payload = msg.get("payload", {})
+                headers = {h["name"]: h["value"] for h in payload.get("headers", [])}
+                body_text = _extract_body_from_payload(payload)
+                messages.append(
+                    {
+                        "id": msg["id"],
+                        "thread_id": thread_id,
+                        "from_address": parse_bare_email(headers.get("From", "")),
+                        "subject": headers.get("Subject", ""),
+                        "date": headers.get("Date", ""),
+                        "body_preview": (body_text or msg.get("snippet", ""))[:2000],
+                    }
+                )
+            return messages
+        except Exception as e:
+            logger.error(f"Gmail thread fetch failed: {e}")
+            return []

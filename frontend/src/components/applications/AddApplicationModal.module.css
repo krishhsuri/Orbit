@@ -221,6 +221,143 @@
   transform: translateY(0);
 }
 
+.submitButton:disabled,
+.cancelButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.modalWide {
+  max-width: 640px;
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.backButton:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.pasteCta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px dashed rgba(94, 106, 210, 0.45);
+  background: rgba(94, 106, 210, 0.08);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.pasteCta:hover {
+  border-color: rgba(94, 106, 210, 0.7);
+  background: rgba(94, 106, 210, 0.12);
+  color: var(--text-primary);
+}
+
+.pasteCta span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pasteCta strong {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pasteCta em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.parseHint {
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(93, 206, 135, 0.1);
+  border: 1px solid rgba(93, 206, 135, 0.25);
+  color: #5dce87;
+}
+
+.pastePanel {
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  overflow-y: auto;
+}
+
+.pasteHelp {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.pasteArea {
+  width: 100%;
+  padding: var(--space-3);
+  background-color: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 260px;
+}
+
+.pasteArea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.pasteArea.error {
+  border-color: var(--error);
+}
+
+.submitButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .modal {

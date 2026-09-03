@@ -147,12 +147,8 @@ class ApplicationRepository(BaseRepository[Application]):
         status: Optional[List[str]] = None,
     ) -> tuple[List[Application], int]:
         """
-        Full-text search on applications using PostgreSQL tsvector.
-        
-        Uses weighted search: company_name (A), role_title (B), location (C).
+        Search applications by company name or role title (case-insensitive).
         """
-        from sqlalchemy import text
-        
         base_query = (
             select(Application)
             .options(selectinload(Application.tags))
@@ -160,17 +156,15 @@ class ApplicationRepository(BaseRepository[Application]):
             .where(Application.deleted_at.is_(None))
         )
         
-        # Add full-text search filter
+        # Add text search filter (company / role)
         if query:
-            # Use plainto_tsquery for simple search terms
+            pattern = f"%{query}%"
             base_query = base_query.where(
-                text("search_vector @@ plainto_tsquery('english', :search_query)")
-            ).params(search_query=query)
-            
-            # Order by relevance (ts_rank)
-            base_query = base_query.order_by(
-                text("ts_rank(search_vector, plainto_tsquery('english', :search_query)) DESC")
-            ).params(search_query=query)
+                or_(
+                    Application.company_name.ilike(pattern),
+                    Application.role_title.ilike(pattern),
+                )
+            )
         
         # Status filter
         if status:

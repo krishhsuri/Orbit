@@ -1,0 +1,847 @@
+{
+  "generated_at": "2026-09-03T04:42:12.316910+00:00",
+  "source": "backend/app/data/mock_inbox.json",
+  "preserve_original_dates": true,
+  "email_count": 61,
+  "emails": [
+    {
+      "id": "ghost_001",
+      "threadId": "thread_ghost_001",
+      "subject": "Re: Application for Software Engineer at Stripe",
+      "from_name": "Stripe Recruiting",
+      "from_address": "recruiting@stripe.com",
+      "date": "Thu, 16 Apr 2026 09:12:00 +0000",
+      "snippet": "Thank you for applying to Stripe. We have received your application for the Software Engineer role.",
+      "body_preview": "Hi,\n\nThank you for your interest in Stripe and for applying to the Software Engineer position. We have received your application and our team will review it shortly.\n\nWe receive a high volume of applications and will reach out if your profile matches our requirements.\n\nBest,\nStripe Recruiting Team",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "ghost_002",
+      "threadId": "thread_ghost_002",
+      "subject": "Application Received – Backend Engineer, Notion",
+      "from_name": "Notion Careers",
+      "from_address": "careers@notion.so",
+      "date": "Fri, 17 Apr 2026 14:33:00 +0000",
+      "snippet": "We've received your application for Backend Engineer. Our team will be in touch.",
+      "body_preview": "Hi there,\n\nThank you for applying to Notion for the Backend Engineer role. We've received your application and will review it carefully.\n\nOur team will reach out if we'd like to move forward.\n\nThanks,\nNotion Hiring Team",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "ghost_003",
+      "threadId": "thread_ghost_003",
+      "subject": "Your application to Figma – Product Engineer",
+      "from_name": "Figma Jobs",
+      "from_address": "jobs@figma.com",
+      "date": "Tue, 14 Apr 2026 10:00:00 +0000",
+      "snippet": "Thanks for applying! We'll review your application and be in touch soon.",
+      "body_preview": "Hey,\n\nWe got your application for the Product Engineer role at Figma. Our recruiting team is reviewing applications and we'll let you know if we'd like to set up a call.\n\nThanks for your interest!\nFigma Recruiting",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "ghost_004",
+      "threadId": "thread_ghost_004",
+      "subject": "Application Confirmation – SDE II, Amazon",
+      "from_name": "Amazon Jobs",
+      "from_address": "no-reply@amazon.jobs",
+      "date": "Wed, 15 Apr 2026 08:20:00 +0000",
+      "snippet": "Your application for SDE II at Amazon has been submitted successfully.",
+      "body_preview": "Hello,\n\nYour application for the position of SDE II at Amazon has been successfully submitted. Application ID: AMZ-2026-884721.\n\nOur team will review your application and contact you if we decide to move forward.\n\nAmazon Recruiting Team",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "ghost_005",
+      "threadId": "thread_ghost_005",
+      "subject": "We received your application – Coinbase",
+      "from_name": "Coinbase Recruiting",
+      "from_address": "recruiting@coinbase.com",
+      "date": "Tue, 14 Apr 2026 16:45:00 +0000",
+      "snippet": "Application received for the Full Stack Engineer role at Coinbase.",
+      "body_preview": "Hi,\n\nThank you for applying to Coinbase! We have received your application for the Full Stack Engineer position.\n\nWe'll be in touch if your background is a match.\n\nCheers,\nCoinbase Talent Team",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "ghost_006",
+      "threadId": "thread_ghost_006",
+      "subject": "Thanks for applying to Databricks",
+      "from_name": "Databricks Talent",
+      "from_address": "talent@databricks.com",
+      "date": "Thu, 09 Apr 2026 11:30:00 +0000",
+      "snippet": "Your application for ML Engineer at Databricks is under review.",
+      "body_preview": "Hi,\n\nThank you for your interest in Databricks. We've received your application for the ML Engineer role and it is currently under review by our recruiting team.\n\nExpect to hear from us within 2-3 weeks.\n\nBest,\nDatabricks Recruiting",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "ghost_007",
+      "threadId": "thread_ghost_007",
+      "subject": "Application for DevOps Engineer – HashiCorp",
+      "from_name": "HashiCorp HR",
+      "from_address": "hr@hashicorp.com",
+      "date": "Mon, 06 Apr 2026 09:00:00 +0000",
+      "snippet": "We have received your application for DevOps Engineer at HashiCorp.",
+      "body_preview": "Hello,\n\nThank you for applying to HashiCorp for the DevOps Engineer position. We appreciate your interest in joining our team.\n\nOur hiring team is reviewing applications and will be in touch.\n\nWarm regards,\nHashiCorp HR",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "ghost_008",
+      "threadId": "thread_ghost_008",
+      "subject": "Your Cloudflare Application – Application Confirmed",
+      "from_name": "Cloudflare Careers",
+      "from_address": "careers@cloudflare.com",
+      "date": "Sat, 11 Apr 2026 13:20:00 +0000",
+      "snippet": "Application confirmed for Systems Engineer at Cloudflare.",
+      "body_preview": "Hi,\n\nThis email confirms we received your application for the Systems Engineer role at Cloudflare. We review all applications carefully and will reach out if we'd like to connect.\n\nThank you,\nCloudflare Recruiting",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "oa_001",
+      "threadId": "thread_oa_001",
+      "subject": "Online Assessment Invitation – Google SWE Internship",
+      "from_name": "Google Recruiting",
+      "from_address": "recruiting@google.com",
+      "date": "Thu, 30 Apr 2026 10:00:00 +0000",
+      "snippet": "Please complete the HackerRank coding assessment within 72 hours.",
+      "body_preview": "Hi,\n\nCongratulations on moving forward in the interview process for the Software Engineer Internship at Google!\n\nAs the next step, we'd like you to complete an online coding assessment hosted on HackerRank. Please complete it within 72 hours of receiving this email.\n\nAssessment Link: https://hr.gs/google-swe-2026\nDeadline: May 3, 2026 at 11:59 PM PST\n\nThe assessment will take approximately 90 minutes. You may use any programming language.\n\nGood luck!\nGoogle University Recruiting",
+      "expected_actions": [
+        "online_assessment"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "oa_002",
+      "threadId": "thread_oa_002",
+      "subject": "HackerRank Test – Meta Software Engineer",
+      "from_name": "Meta Recruiting",
+      "from_address": "no-reply@hackerrank.com",
+      "date": "Fri, 01 May 2026 15:30:00 +0000",
+      "snippet": "Meta has invited you to take a HackerRank test. Deadline: May 4, 2026.",
+      "body_preview": "Hello,\n\nMeta has invited you to complete a coding assessment as part of the interview process for the Software Engineer role.\n\nTest Link: https://www.hackerrank.com/test/meta-swe-2026\nDeadline: May 4, 2026 11:59 PM\nDuration: 2 hours\nTopics: Data Structures, Algorithms, System Design\n\nPlease do not share the test questions.\n\nHackerRank Team on behalf of Meta Recruiting",
+      "expected_actions": [
+        "online_assessment"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "oa_003",
+      "threadId": "thread_oa_003",
+      "subject": "Technical Assessment – Airbnb Engineering",
+      "from_name": "Airbnb Recruiting",
+      "from_address": "recruiting@airbnb.com",
+      "date": "Fri, 01 May 2026 09:00:00 +0000",
+      "snippet": "Please complete the CodeSignal assessment by May 5, 2026.",
+      "body_preview": "Hi,\n\nThank you for your interest in the Senior Software Engineer role at Airbnb. We'd like you to complete a technical assessment using CodeSignal.\n\nYou will receive a separate email from CodeSignal with the link. The assessment must be completed by May 5, 2026.\n\nIt covers:\n- Algorithms & Data Structures (60 min)\n- Frontend problem (30 min)\n\nPlease reach out if you have any issues.\n\nBest,\nAirbnb Recruiting",
+      "expected_actions": [
+        "online_assessment"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "oa_004",
+      "threadId": "thread_oa_004",
+      "subject": "Action Required: Complete Your Uber Assessment",
+      "from_name": "Uber Careers",
+      "from_address": "careers@uber.com",
+      "date": "Thu, 30 Apr 2026 18:00:00 +0000",
+      "snippet": "Your Uber technical assessment link expires in 48 hours. Please complete it now.",
+      "body_preview": "Hi,\n\nThis is a reminder that your technical assessment for the Backend Engineer role at Uber expires in 48 hours.\n\nAssessment link: https://uber.codility.com/assess/xyz123\nExpires: May 2, 2026 at 6:00 PM UTC\n\nThe assessment consists of 3 algorithmic problems and should take about 90 minutes.\n\nPlease complete it as soon as possible.\n\nUber Recruiting Team",
+      "expected_actions": [
+        "online_assessment"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "interview_001",
+      "threadId": "thread_interview_001",
+      "subject": "Interview Invitation – Microsoft SWE",
+      "from_name": "Microsoft Recruiting",
+      "from_address": "recruiting@microsoft.com",
+      "date": "Wed, 29 Apr 2026 14:00:00 +0000",
+      "snippet": "We'd like to schedule a technical interview. Please book a slot via Calendly.",
+      "body_preview": "Hi,\n\nCongratulations! We'd like to invite you to a technical interview for the Software Engineer role at Microsoft.\n\nPlease schedule a 60-minute slot at your convenience using the link below:\nhttps://calendly.com/microsoft-recruiting/swe-interview\n\nAvailable slots: May 5–9, 2026\n\nThe interview will cover system design and coding problems.\n\nLooking forward to speaking with you!\nMicrosoft University Recruiting",
+      "expected_actions": [
+        "interview_scheduling"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "interview_002",
+      "threadId": "thread_interview_002",
+      "subject": "Next Steps – Spotify Engineering Interview",
+      "from_name": "Spotify HR",
+      "from_address": "hr@spotify.com",
+      "date": "Tue, 28 Apr 2026 11:00:00 +0000",
+      "snippet": "We'd like to schedule your technical phone screen. Please share your availability.",
+      "body_preview": "Hello,\n\nThank you for your application to Spotify for the Backend Engineer role. We'd like to move forward with a technical phone screen.\n\nPlease reply to this email with your availability for a 45-minute call next week (May 4–8, 2026). We're in the CET timezone.\n\nThe call will cover:\n- Your background and experience\n- One or two coding problems\n\nLooking forward to chatting!\nSpotify Talent Acquisition",
+      "expected_actions": [
+        "interview_scheduling"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "interview_003",
+      "threadId": "thread_interview_003",
+      "subject": "Zoom Interview Scheduled – Shopify",
+      "from_name": "Shopify Recruiting",
+      "from_address": "recruiting@shopify.com",
+      "date": "Mon, 27 Apr 2026 16:45:00 +0000",
+      "snippet": "Your interview has been scheduled for May 6, 2026 at 2:00 PM EST. Join via Zoom.",
+      "body_preview": "Hi,\n\nYour interview for the Full Stack Developer role at Shopify has been confirmed.\n\nDate: May 6, 2026\nTime: 2:00 PM – 3:30 PM EST\nZoom link: https://shopify.zoom.us/j/8834721993\n\nYou will meet with two engineers and an engineering manager. Please have your development environment ready.\n\nPlease confirm receipt of this email.\n\nShopify Recruiting",
+      "expected_actions": [
+        "interview_scheduling"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "doc_upload_001",
+      "threadId": "thread_doc_001",
+      "subject": "Document Request – Snowflake Offer Process",
+      "from_name": "Snowflake HR",
+      "from_address": "hr@snowflake.com",
+      "date": "Tue, 28 Apr 2026 09:30:00 +0000",
+      "snippet": "Please upload your government ID and education certificates by May 5, 2026.",
+      "body_preview": "Hi,\n\nCongratulations on receiving an offer from Snowflake! As part of our onboarding process, we need you to upload the following documents by May 5, 2026:\n\n1. Government-issued photo ID (passport or national ID)\n2. University degree certificate or transcript\n3. Previous employment letter (if applicable)\n\nPlease upload them here: https://snowflake.workday.com/docs/upload/xyz\n\nIf you have any questions, please don't hesitate to reach out.\n\nSnowflake HR Team",
+      "expected_actions": [
+        "document_upload"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "doc_upload_002",
+      "threadId": "thread_doc_002",
+      "subject": "Background Check & Document Submission – Palantir",
+      "from_name": "Palantir Onboarding",
+      "from_address": "onboarding@palantir.com",
+      "date": "Wed, 29 Apr 2026 13:00:00 +0000",
+      "snippet": "Please complete your background check via Checkr and upload your resume and references.",
+      "body_preview": "Dear Candidate,\n\nWelcome to Palantir! To proceed with your offer, please complete the following:\n\n1. Background Check: You will receive a separate email from Checkr. Please complete it within 3 business days.\n\n2. Upload the following to our portal (https://palantir.com/onboarding):\n   - Updated CV/Resume\n   - Two professional references with contact details\n   - Signed offer letter\n\nDeadline: May 6, 2026\n\nHR Team, Palantir",
+      "expected_actions": [
+        "document_upload"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "coding_test_001",
+      "threadId": "thread_coding_001",
+      "subject": "Take-Home Assignment – Jane Street Quantitative Developer",
+      "from_name": "Jane Street Recruiting",
+      "from_address": "recruiting@janestreet.com",
+      "date": "Fri, 01 May 2026 10:00:00 +0000",
+      "snippet": "Please complete the attached take-home coding assignment and return it within 5 days.",
+      "body_preview": "Hi,\n\nThank you for progressing in our interview process for the Quantitative Developer role.\n\nAttached is a take-home coding assignment. Please complete it using OCaml, Python, or Java and return your solution via email within 5 days (by May 6, 2026).\n\nThe problem involves:\n- Parsing a large dataset\n- Implementing a custom algorithm\n- Writing tests for your solution\n\nPlease treat this as a production-grade submission.\n\nGood luck!\nJane Street Recruiting",
+      "expected_actions": [
+        "coding_test"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "general_response_001",
+      "threadId": "thread_general_001",
+      "subject": "Quick Question Before We Proceed – Vercel",
+      "from_name": "Vercel Talent",
+      "from_address": "talent@vercel.com",
+      "date": "Thu, 30 Apr 2026 11:00:00 +0000",
+      "snippet": "Before we schedule your interview, could you confirm your preferred start date and remote/hybrid preference?",
+      "body_preview": "Hi,\n\nThank you for your application to Vercel for the Developer Advocate role! We'd love to move forward.\n\nBefore scheduling your first interview, could you please reply confirming:\n1. Your preferred start date (earliest available)\n2. Your preference: fully remote or hybrid (we have offices in SF and NYC)\n3. Are you currently interviewing elsewhere?\n\nWe typically move quickly so we'd appreciate a response within 48 hours.\n\nThanks!\nVercel Talent Team",
+      "expected_actions": [
+        "general_response_required"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "reject_001",
+      "threadId": "thread_reject_001",
+      "subject": "Update on your Apple application",
+      "from_name": "Apple Jobs",
+      "from_address": "no-reply@apple.com",
+      "date": "Fri, 01 May 2026 14:00:00 +0000",
+      "snippet": "After careful review, we have decided not to move forward with your application at this time.",
+      "body_preview": "Dear Applicant,\n\nThank you for your interest in Apple and for taking the time to apply for the Software Engineer position.\n\nAfter careful consideration, we have decided to pursue other candidates whose experience more closely matches our current needs. This was a difficult decision, as we received many strong applications.\n\nWe appreciate your interest in Apple and encourage you to apply again in the future.\n\nBest regards,\nApple Recruiting Team",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "reject_002",
+      "threadId": "thread_reject_002",
+      "subject": "Your application to Netflix – An Update",
+      "from_name": "Netflix Recruiting",
+      "from_address": "recruiting@netflix.com",
+      "date": "Fri, 01 May 2026 10:30:00 +0000",
+      "snippet": "Unfortunately, we will not be moving forward with your application.",
+      "body_preview": "Hi,\n\nThank you for your interest in the Senior Software Engineer role at Netflix and for going through our interview process.\n\nAfter thoughtful consideration, we've decided not to move forward with your candidacy at this time. We know this isn't the news you were hoping for.\n\nWe appreciated the time you invested and wish you all the best.\n\nNetflix Recruiting",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "reject_003",
+      "threadId": "thread_reject_003",
+      "subject": "Re: Data Engineer Application – Uber",
+      "from_name": "Uber Talent",
+      "from_address": "talent@uber.com",
+      "date": "Fri, 01 May 2026 09:00:00 +0000",
+      "snippet": "We regret to inform you that we will not be proceeding with your application.",
+      "body_preview": "Dear Candidate,\n\nThank you for taking the time to interview for the Data Engineer position at Uber. We were impressed with your background.\n\nHowever, after careful deliberation, we have decided to move forward with another candidate who more closely fits the role's requirements at this time.\n\nWe encourage you to apply to other openings at Uber in the future.\n\nBest,\nUber Talent Acquisition",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "reject_004",
+      "threadId": "thread_reject_004",
+      "subject": "Your Application Status – Robinhood",
+      "from_name": "Robinhood HR",
+      "from_address": "hr@robinhood.com",
+      "date": "Thu, 30 Apr 2026 18:00:00 +0000",
+      "snippet": "We have decided to pursue other candidates for this position.",
+      "body_preview": "Hi,\n\nThank you for applying to Robinhood for the iOS Engineer role.\n\nAfter reviewing your application, we have decided to pursue candidates whose experience more closely aligns with our current needs. We appreciate your time and interest.\n\nFeel free to check our careers page for other opportunities.\n\nRobinhood HR Team",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "wait_001",
+      "threadId": "thread_wait_001",
+      "subject": "Application Received – Anthropic Research Engineer",
+      "from_name": "Anthropic Recruiting",
+      "from_address": "recruiting@anthropic.com",
+      "date": "Wed, 29 Apr 2026 12:00:00 +0000",
+      "snippet": "We've received your application for the Research Engineer role at Anthropic.",
+      "body_preview": "Hi,\n\nThank you for applying to Anthropic for the Research Engineer position. We've received your application.\n\nOur team reviews applications on a rolling basis and we'll reach out if we'd like to learn more.\n\nBest,\nAnthropic Recruiting",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "wait_002",
+      "threadId": "thread_wait_002",
+      "subject": "Thanks for applying – OpenAI",
+      "from_name": "OpenAI Jobs",
+      "from_address": "jobs@openai.com",
+      "date": "Tue, 28 Apr 2026 10:00:00 +0000",
+      "snippet": "Your application for the Software Engineer role at OpenAI has been received.",
+      "body_preview": "Hello,\n\nThank you for applying to OpenAI. We have received your application for the Software Engineer role.\n\nWe receive a high volume of applications and will only reach out to candidates we'd like to interview. Response time is typically 2–4 weeks.\n\nOpenAI Recruiting",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "wait_003",
+      "threadId": "thread_wait_003",
+      "subject": "Application Submitted – Plaid",
+      "from_name": "Plaid Careers",
+      "from_address": "careers@plaid.com",
+      "date": "Mon, 27 Apr 2026 14:00:00 +0000",
+      "snippet": "Application received for the Full Stack Engineer role at Plaid.",
+      "body_preview": "Hi,\n\nWe've received your application for the Full Stack Engineer role at Plaid. Our team will review it and reach out within 2 weeks if we'd like to connect.\n\nThanks for your interest!\nPlaid Careers",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "wait_004",
+      "threadId": "thread_wait_004",
+      "subject": "Your Datadog Application",
+      "from_name": "Datadog Talent",
+      "from_address": "talent@datadoghq.com",
+      "date": "Sun, 26 Apr 2026 09:30:00 +0000",
+      "snippet": "We received your application for the Software Engineer position at Datadog.",
+      "body_preview": "Hi,\n\nThank you for applying to Datadog! We received your application for the Software Engineer role.\n\nOur recruiters are reviewing applications and we will be in touch within 2–3 weeks.\n\nDatadog Talent Team",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "wait_005",
+      "threadId": "thread_wait_005",
+      "subject": "Application Confirmation – Stripe",
+      "from_name": "Stripe Jobs",
+      "from_address": "jobs@stripe.com",
+      "date": "Sat, 25 Apr 2026 15:00:00 +0000",
+      "snippet": "Your application for the Infrastructure Engineer role at Stripe has been received.",
+      "body_preview": "Hey,\n\nThanks for applying to Stripe for the Infrastructure Engineer role. We have it on file and will be in touch.\n\nStripe Recruiting",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "prefix"
+    },
+    {
+      "id": "thread1_inbox_001",
+      "threadId": "thread_multistep_001",
+      "subject": "Re: Interest in SDE Role at Atlassian",
+      "from_name": "Atlassian Recruiting",
+      "from_address": "recruiting@atlassian.com",
+      "date": "Mon, 20 Apr 2026 11:00:00 +0000",
+      "snippet": "Thanks for reaching out! We'd love to learn more. Could you send us your latest resume?",
+      "body_preview": "Hi,\n\nThank you for expressing your interest in the Software Development Engineer role at Atlassian.\n\nWe'd love to learn more about you. Could you send us your latest resume and a brief note about what draws you to Atlassian?\n\nLooking forward to hearing from you.\n\nBest,\nSarah, Atlassian Recruiting",
+      "expected_actions": [
+        "document_upload"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "explicit"
+    },
+    {
+      "id": "thread1_inbox_002",
+      "threadId": "thread_multistep_001",
+      "subject": "Re: Resume Sent – Atlassian SDE Role",
+      "from_name": "Atlassian Recruiting",
+      "from_address": "recruiting@atlassian.com",
+      "date": "Wed, 22 Apr 2026 14:00:00 +0000",
+      "snippet": "Thank you for sending your resume! We'd like to schedule a technical interview. Please book a slot via the Calendly link.",
+      "body_preview": "Hi,\n\nThank you for sending your resume – we were impressed with your background!\n\nWe'd like to invite you for a technical interview. Please schedule a 1-hour slot at your earliest convenience:\nhttps://calendly.com/atlassian-recruiting/sde-interview\n\nAvailable slots: April 28 – May 2, 2026\n\nThe interview will involve:\n- 2 coding problems\n- System design discussion\n\nExcited to speak with you!\nSarah, Atlassian Recruiting",
+      "expected_actions": [
+        "interview_scheduling"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "explicit"
+    },
+    {
+      "id": "thread2_inbox_001",
+      "threadId": "thread_multistep_002",
+      "subject": "Re: Application for PM Intern – Figma",
+      "from_name": "Figma PM Team",
+      "from_address": "pm-recruiting@figma.com",
+      "date": "Tue, 21 Apr 2026 09:00:00 +0000",
+      "snippet": "We'd love to connect! Are you available for a 30-minute intro call this week?",
+      "body_preview": "Hi,\n\nThanks for reaching out about the PM Internship at Figma. Your background looks really interesting.\n\nWe'd love to have a quick 30-minute intro call to learn more about you. Are you available any of the following slots?\n\n- April 23, 2:00 PM PST\n- April 24, 10:00 AM PST\n- April 25, 4:00 PM PST\n\nJust reply with your preferred time!\n\nBest,\nMike, Figma PM Recruiting",
+      "expected_actions": [
+        "interview_scheduling"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "explicit"
+    },
+    {
+      "id": "thread2_inbox_002",
+      "threadId": "thread_multistep_002",
+      "subject": "Figma PM Internship – Next Steps",
+      "from_name": "Figma PM Team",
+      "from_address": "pm-recruiting@figma.com",
+      "date": "Fri, 24 Apr 2026 16:00:00 +0000",
+      "snippet": "Great call! For the next round, we'd like you to complete a product case study. Please find the prompt attached.",
+      "body_preview": "Hi,\n\nIt was great speaking with you today! We enjoyed learning about your background.\n\nFor the next round, we'd like you to complete a product case study. Please find the prompt attached.\n\nInstructions:\n- Max 5 slides\n- Present as if pitching to a PM team\n- Due by May 3, 2026\n\nFeel free to reach out with any questions.\n\nLooking forward to your submission!\nMike, Figma PM Recruiting",
+      "expected_actions": [
+        "coding_test"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "explicit"
+    },
+    {
+      "id": "thread3_inbox_001",
+      "threadId": "thread_multistep_003",
+      "subject": "Re: Interest in Backend Role – Linear",
+      "from_name": "Linear Hiring",
+      "from_address": "hiring@linear.app",
+      "date": "Thu, 16 Apr 2026 10:00:00 +0000",
+      "snippet": "Hey! We saw your email. Could you tell us more about your experience with distributed systems?",
+      "body_preview": "Hey,\n\nThanks for reaching out about the Backend Engineer role at Linear.\n\nWe're a small team and very selective about who we bring on. Could you share a bit more about:\n1. Your experience with distributed systems or event-driven architecture\n2. Any open source contributions or side projects\n\nLooking forward to your reply.\nKarim, Linear Hiring",
+      "expected_actions": [
+        "general_response_required"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "explicit"
+    },
+    {
+      "id": "thread3_inbox_002",
+      "threadId": "thread_multistep_003",
+      "subject": "Let's Set Up a Technical Screen – Linear",
+      "from_name": "Linear Hiring",
+      "from_address": "hiring@linear.app",
+      "date": "Mon, 20 Apr 2026 11:30:00 +0000",
+      "snippet": "Your answers were great. Let's schedule a 90-minute technical interview over Zoom.",
+      "body_preview": "Hey,\n\nThanks for the detailed reply – really impressive background with distributed systems.\n\nWe'd love to schedule a 90-minute technical interview. The format is:\n- 30 min: pair programming (you share your screen)\n- 30 min: systems design\n- 30 min: culture + values chat\n\nWe use Zoom. Please reply with your availability for the week of April 28 – May 2.\n\nExcited!\nKarim, Linear Hiring",
+      "expected_actions": [
+        "interview_scheduling"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "explicit"
+    },
+    {
+      "id": "noise_001",
+      "threadId": "thread_noise_001",
+      "subject": "47 new jobs match your profile on LinkedIn",
+      "from_name": "LinkedIn Jobs",
+      "from_address": "jobalerts-noreply@linkedin.com",
+      "date": "Fri, 01 May 2026 07:00:00 +0000",
+      "snippet": "Software Engineer at Google, Data Scientist at Amazon, and 45 more new jobs.",
+      "body_preview": "Based on your profile, we found 47 new jobs that match your skills.\n\nTop picks:\n- Software Engineer at Google – $180k\n- Data Scientist at Amazon – $165k\n- Frontend Developer at Meta – $170k\n\nPlus 44 more matches.\n\nView all jobs: linkedin.com/jobs\n\nUnsubscribe from job alerts",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_002",
+      "threadId": "thread_noise_002",
+      "subject": "Companies are looking for someone like you!",
+      "from_name": "LinkedIn",
+      "from_address": "jobs-noreply@linkedin.com",
+      "date": "Wed, 29 Apr 2026 08:00:00 +0000",
+      "snippet": "Your profile was viewed by 12 recruiters this week. Upgrade to Premium to see who.",
+      "body_preview": "Your profile was viewed by 12 recruiters in the past 7 days!\n\nUpgrade to LinkedIn Premium to:\n- See exactly who viewed your profile\n- Message any recruiter directly\n- Get InMail credits\n\nTry Premium free for 1 month.\n\nLinkedIn",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_003",
+      "threadId": "thread_noise_003",
+      "subject": "This Week in Tech: AI is eating the world",
+      "from_name": "The Pragmatic Engineer",
+      "from_address": "newsletter@pragmaticengineer.com",
+      "date": "Sun, 26 Apr 2026 09:00:00 +0000",
+      "snippet": "This week: OpenAI's latest release, a deep-dive on distributed systems, and more.",
+      "body_preview": "The Pragmatic Engineer Newsletter\n\nThis week's issue:\n1. OpenAI's new model and what it means for developers\n2. Deep dive: How Uber built its distributed tracing system\n3. Job market update: Which companies are hiring?\n4. Career advice: How to negotiate your offer\n\nRead online: pragmaticengineer.com/newsletter/2026-04-26\n\nUnsubscribe | Manage preferences",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_004",
+      "threadId": "thread_noise_004",
+      "subject": "Your Spotify Wrapped is here! 🎵",
+      "from_name": "Spotify",
+      "from_address": "no-reply@spotify.com",
+      "date": "Mon, 27 Apr 2026 14:00:00 +0000",
+      "snippet": "You listened to 32,847 minutes of music this year. Your top artist is The Weeknd.",
+      "body_preview": "Your Spotify Wrapped is ready!\n\nYour 2026 stats:\n🎵 32,847 minutes listened\n🎤 Top artist: The Weeknd\n💿 Top album: Chromakopia – Tyler the Creator\n🎧 Top genre: Alternative Hip-Hop\n\nSee your full Wrapped: open.spotify.com/wrapped/2026\n\nSpotify",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_005",
+      "threadId": "thread_noise_005",
+      "subject": "FLASH SALE: 60% off all courses today only!",
+      "from_name": "Udemy",
+      "from_address": "noreply@udemy.com",
+      "date": "Fri, 24 Apr 2026 12:00:00 +0000",
+      "snippet": "Limited time offer: Top courses starting at ₹499. Offer ends midnight.",
+      "body_preview": "FLASH SALE – Today Only!\n\nGet top-rated courses starting at just ₹499:\n🔥 Python for Data Science – 95% off\n🔥 The Complete Web Dev Bootcamp – 92% off\n🔥 AWS Certified Solutions Architect – 88% off\n\nOffer expires: May 1, 2026 at 11:59 PM\n\nShop now: udemy.com/deals\n\nUnsubscribe",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_006",
+      "threadId": "thread_noise_006",
+      "subject": "Introducing Substack Notes – share shorter posts",
+      "from_name": "Substack",
+      "from_address": "no-reply@substack.com",
+      "date": "Thu, 23 Apr 2026 10:00:00 +0000",
+      "snippet": "Notes lets you share quick thoughts, links, and quotes with your subscribers.",
+      "body_preview": "Introducing Substack Notes!\n\nNow you can share shorter posts, quick thoughts, and links directly with your subscribers. It's like Twitter but only for the writers you love.\n\nLearn more: substack.com/notes\n\nUnsubscribe from Substack product updates",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_007",
+      "threadId": "thread_noise_007",
+      "subject": "GitHub Copilot: Your April usage summary",
+      "from_name": "GitHub",
+      "from_address": "noreply@github.com",
+      "date": "Fri, 01 May 2026 08:00:00 +0000",
+      "snippet": "You used GitHub Copilot for 47 hours in April. Here's what you built.",
+      "body_preview": "Your GitHub Copilot Summary – April 2026\n\nYou used Copilot for 47 hours this month.\n\nTop languages:\n1. TypeScript – 18 hours\n2. Python – 14 hours\n3. Go – 8 hours\n\nCode suggestions accepted: 1,847\n\nManage your subscription: github.com/settings/copilot\n\nGitHub Team",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_008",
+      "threadId": "thread_noise_008",
+      "subject": "Unstop Weekly: 250+ new competitions & jobs",
+      "from_name": "Unstop",
+      "from_address": "digest@unstop.news",
+      "date": "Mon, 27 Apr 2026 07:00:00 +0000",
+      "snippet": "This week on Unstop: 250+ new opportunities for students and freshers.",
+      "body_preview": "Unstop Weekly Digest\n\nTop opportunities this week:\n\n💼 Internships:\n- Google STEP Intern – Apply by May 10\n- Microsoft Explore – Apply by May 15\n- Goldman Sachs Summer Analyst – Apply by May 5\n\n🏆 Competitions:\n- HackWithInfy 2026 – ₹50,000 prize\n- Smart India Hackathon – Registrations open\n\nView all: unstop.com/browse\n\nUnsubscribe",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_009",
+      "threadId": "thread_noise_009",
+      "subject": "Fidelity International – Shortlisted Candidates for Summer Internship 2026",
+      "from_name": "Fidelity International Campus",
+      "from_address": "campus@fidelity.com",
+      "date": "Tue, 28 Apr 2026 11:00:00 +0000",
+      "snippet": "Please find below the list of shortlisted students for the Fidelity Summer Internship 2026.",
+      "body_preview": "Kind attention to all aspirants of Fidelity International – Hiring for Summer Internship Batch 2026.\n\nPlease find below the names of shortlisted volunteer students:\n\nS.No | Enrollment | Name | Email\n1 | 23102001 | Rahul Sharma | rahul.s@college.edu\n2 | 23102002 | Priya Singh | priya.s@college.edu\n3 | 23102003 | Ankit Gupta | ankit.g@college.edu\n4 | 23102004 | Riya Patel | riya.p@college.edu\n5 | 23102005 | Mohit Jain | mohit.j@college.edu\n\nThe registration link has been shared with the selected students. It is mandatory to complete this registration.\n\n[Message clipped] View entire message",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_010",
+      "threadId": "thread_noise_010",
+      "subject": "Amazon Prime: Your order has shipped",
+      "from_name": "Amazon",
+      "from_address": "shipment-tracking@amazon.com",
+      "date": "Thu, 30 Apr 2026 09:00:00 +0000",
+      "snippet": "Your order #402-8847291-1234567 has been shipped and arrives tomorrow.",
+      "body_preview": "Hello,\n\nYour Amazon order has been shipped!\n\nOrder #402-8847291-1234567\nEstimated Delivery: May 1, 2026\nCarrier: Amazon Logistics\n\nTrack your package: amazon.com/track\n\nAmazon Customer Service",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_011",
+      "threadId": "thread_noise_011",
+      "subject": "30 new jobs near you this week – Indeed",
+      "from_name": "Indeed Job Alerts",
+      "from_address": "alert@indeed.com",
+      "date": "Fri, 01 May 2026 06:30:00 +0000",
+      "snippet": "Software Engineer, Full Stack Developer, React Developer and 27 more jobs near Delhi.",
+      "body_preview": "30 new jobs near Delhi, India\n\nBased on: \"Software Engineer\"\n\n1. Software Engineer – Infosys | ₹12–18 LPA\n2. Full Stack Developer – TCS | ₹10–15 LPA\n3. React Developer – Wipro | ₹8–12 LPA\n...and 27 more\n\nView all: indeed.com/jobs?q=software+engineer\n\nUnsubscribe from job alerts | Manage alerts",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_012",
+      "threadId": "thread_noise_012",
+      "subject": "Medium Daily Digest: Top stories in Technology",
+      "from_name": "Medium",
+      "from_address": "noreply@medium.com",
+      "date": "Wed, 29 Apr 2026 07:00:00 +0000",
+      "snippet": "Top stories today: The state of AI in 2026, Building with Rust, How I got a job at Google.",
+      "body_preview": "Medium Daily Digest\n\nTop stories for you:\n\n📖 The State of AI in 2026 – A comprehensive overview\n📖 Building with Rust: My first 6 months\n📖 How I Got a Job at Google With No CS Degree\n📖 10 System Design Concepts Every Engineer Must Know\n\nRead more on Medium: medium.com\n\nUnsubscribe | Manage digest",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_013",
+      "threadId": "thread_noise_013",
+      "subject": "Your Notion workspace storage is 80% full",
+      "from_name": "Notion",
+      "from_address": "team@notify.notion.so",
+      "date": "Mon, 27 Apr 2026 13:00:00 +0000",
+      "snippet": "You're running low on storage. Upgrade to Notion Plus to get unlimited blocks.",
+      "body_preview": "Hi there,\n\nYour Notion workspace storage is 80% full.\n\nUpgrade to Notion Plus to get:\n- Unlimited blocks\n- 10 GB file uploads\n- 30-day version history\n\nUpgrade now: notion.so/pricing\n\nNotion Team",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_014",
+      "threadId": "thread_noise_014",
+      "subject": "Wellfound Weekly: Hot startups hiring now",
+      "from_name": "Wellfound",
+      "from_address": "jobs-digest@wellfound.com",
+      "date": "Sun, 26 Apr 2026 08:00:00 +0000",
+      "snippet": "This week's hottest startup jobs: AI Engineer, Founding Engineer, Growth PM and more.",
+      "body_preview": "Wellfound Weekly Job Digest\n\nHot roles this week:\n\n🔥 AI Engineer – YC S25 Startup – $160–200k + equity\n🔥 Founding Engineer – Series A – $150–180k + 0.5% equity\n🔥 Growth PM – Fintech unicorn – $130–160k\n\nPlus 40 more roles from top startups.\n\nView all: wellfound.com/jobs\n\nUnsubscribe",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_015",
+      "threadId": "thread_noise_015",
+      "subject": "Daily.dev digest: Top developer news today",
+      "from_name": "daily.dev",
+      "from_address": "digest@daily.dev",
+      "date": "Fri, 01 May 2026 07:30:00 +0000",
+      "snippet": "Today's top posts: Next.js 15 is here, Claude 4 benchmarks, PostgreSQL tips.",
+      "body_preview": "Your daily.dev digest\n\nTop posts today:\n🔗 Next.js 15 officially released – What's new\n🔗 Claude 4 benchmark results shocked the AI community\n🔗 10 PostgreSQL performance tips for 2026\n🔗 How we cut our infra costs by 60% using Cloudflare Workers\n\nRead on daily.dev\n\nManage digest settings | Unsubscribe",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_016",
+      "threadId": "thread_noise_016",
+      "subject": "Selected candidates for Morgan Stanley campus drive",
+      "from_name": "Placement Cell",
+      "from_address": "placement@collegename.edu",
+      "date": "Wed, 29 Apr 2026 10:00:00 +0000",
+      "snippet": "Please find the list of students shortlisted for the Morgan Stanley campus placement drive.",
+      "body_preview": "Dear Students,\n\nThis is to inform you that the following students have been shortlisted for the Morgan Stanley campus placement drive scheduled on May 10, 2026.\n\nShortlisted candidates:\n1. Arjun Mehta – 2021CS001\n2. Sneha Rao – 2021CS022\n3. Vikram Nair – 2021CS045\n4. Pooja Desai – 2021CS067\n5. Rohit Kumar – 2021CS089\n\nSelected students must report to the placement cell by May 5 for document verification.\n\nPlacement Cell",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_017",
+      "threadId": "thread_noise_017",
+      "subject": "New feature: ChatGPT voice mode now in India",
+      "from_name": "OpenAI",
+      "from_address": "noreply@openai.com",
+      "date": "Tue, 28 Apr 2026 10:00:00 +0000",
+      "snippet": "ChatGPT voice mode is now available in India. Tap the headphone icon to get started.",
+      "body_preview": "Hi,\n\nExciting news! ChatGPT voice mode is now available in India.\n\nHow to get started:\n1. Open ChatGPT on your mobile device\n2. Tap the headphone icon in the top right\n3. Start talking!\n\nVoice mode supports Hindi, Tamil, and English.\n\nLearn more: openai.com/chatgpt/voice\n\nOpenAI Team",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_018",
+      "threadId": "thread_noise_018",
+      "subject": "Internshala: 500+ new internships posted today",
+      "from_name": "Internshala",
+      "from_address": "alert@mail.internshala.com",
+      "date": "Fri, 01 May 2026 06:00:00 +0000",
+      "snippet": "New internships: Web Developer at Razorpay, Data Science at Swiggy, Marketing at Zomato.",
+      "body_preview": "500+ new internships posted today!\n\nTop picks for you:\n\n💼 Web Developer Intern – Razorpay | ₹20,000/month\n💼 Data Science Intern – Swiggy | ₹25,000/month\n💼 Marketing Intern – Zomato | ₹15,000/month\n💼 Product Intern – Meesho | ₹18,000/month\n\nView all: internshala.com/internships\n\nUnsubscribe from internship alerts",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_019",
+      "threadId": "thread_noise_019",
+      "subject": "Hirist.tech: Top tech jobs this week",
+      "from_name": "Hirist",
+      "from_address": "weekly@hirist.tech",
+      "date": "Mon, 27 Apr 2026 08:00:00 +0000",
+      "snippet": "This week's top tech jobs: React Native Developer, ML Engineer, DevOps Lead and more.",
+      "body_preview": "Hirist Weekly Tech Jobs\n\nTop openings this week:\n\n🔧 React Native Developer – Paytm | ₹15–25 LPA\n🔧 ML Engineer – PhonePe | ₹20–30 LPA\n🔧 DevOps Lead – CRED | ₹25–35 LPA\n🔧 Product Designer – Razorpay | ₹12–20 LPA\n\nView all tech jobs: hirist.tech\n\nUnsubscribe",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "noise_020",
+      "threadId": "thread_noise_020",
+      "subject": "Your Google account password was changed",
+      "from_name": "Google",
+      "from_address": "no-reply@accounts.google.com",
+      "date": "Thu, 30 Apr 2026 20:00:00 +0000",
+      "snippet": "Your Google account password was recently changed. If this was you, no action is needed.",
+      "body_preview": "Your Google Account password was changed.\n\nIf you changed your password, you can ignore this email.\n\nIf you didn't change your password, your account may have been compromised.\n\nReview your account: myaccount.google.com/security\n\nGoogle Security Team",
+      "expected_actions": [],
+      "expected_is_job_related": false,
+      "label_source": "prefix"
+    },
+    {
+      "id": "offer_001",
+      "threadId": "thread_offer_001",
+      "subject": "Offer Letter – Twitch Software Engineer",
+      "from_name": "Twitch HR",
+      "from_address": "hr@twitch.tv",
+      "date": "Thu, 23 Apr 2026 15:00:00 +0000",
+      "snippet": "Congratulations! We are pleased to extend an offer for the Software Engineer role at Twitch.",
+      "body_preview": "Dear Candidate,\n\nCongratulations! We are thrilled to extend an offer of employment for the Software Engineer role at Twitch.\n\nPlease find the offer letter attached. Key details:\n- Role: Software Engineer\n- Start Date: June 2, 2026\n- Compensation: $155,000 base + RSUs + bonus\n\nPlease review the offer and sign it by April 30, 2026.\n\nWelcome to Twitch!\nHR Team",
+      "expected_actions": [
+        "document_upload"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "explicit"
+    },
+    {
+      "id": "offer_002",
+      "threadId": "thread_offer_002",
+      "subject": "Your Offer from Discord",
+      "from_name": "Discord People Team",
+      "from_address": "people@discord.com",
+      "date": "Mon, 20 Apr 2026 10:00:00 +0000",
+      "snippet": "We're excited to offer you the position of Backend Engineer at Discord.",
+      "body_preview": "Hi,\n\nWe're so excited to offer you the position of Backend Engineer at Discord!\n\nHere's a summary of your offer:\n- Base salary: $145,000\n- Equity: 0.05% RSUs vesting over 4 years\n- Start date: June 1, 2026\n\nThe full offer letter is attached. Please sign and return it by April 27, 2026.\n\nWelcome to the team!\nDiscord People Team",
+      "expected_actions": [
+        "document_upload"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "explicit"
+    },
+    {
+      "id": "edge_001",
+      "threadId": "thread_edge_001",
+      "subject": "Following up on your application – Rippling",
+      "from_name": "Rippling Recruiting",
+      "from_address": "recruiting@rippling.com",
+      "date": "Fri, 24 Apr 2026 13:00:00 +0000",
+      "snippet": "We're still reviewing your application. We'll be in touch by May 10.",
+      "body_preview": "Hi,\n\nWe wanted to reach out to let you know we're still reviewing your application for the Software Engineer role at Rippling.\n\nWe appreciate your patience. You can expect to hear back from us by May 10, 2026.\n\nBest,\nRippling Recruiting",
+      "expected_actions": [],
+      "expected_is_job_related": true,
+      "label_source": "explicit"
+    },
+    {
+      "id": "edge_002",
+      "threadId": "thread_edge_002",
+      "subject": "We'd love to refer you – Brex",
+      "from_name": "John Smith",
+      "from_address": "john.smith@brex.com",
+      "date": "Thu, 23 Apr 2026 11:00:00 +0000",
+      "snippet": "Hey! I work at Brex and saw your profile. I'd love to refer you for an engineering role.",
+      "body_preview": "Hey,\n\nHope you're doing well! I came across your profile on LinkedIn and was really impressed.\n\nI work as an engineer at Brex and we're currently hiring for several engineering roles. I'd love to refer you – internal referrals get priority review.\n\nWould you be open to having a quick 15-minute call this week?\n\nBest,\nJohn",
+      "expected_actions": [
+        "general_response_required"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "explicit"
+    },
+    {
+      "id": "edge_003",
+      "threadId": "thread_edge_003",
+      "subject": "Onsite Interview Logistics – Ramp",
+      "from_name": "Ramp Recruiting",
+      "from_address": "recruiting@ramp.com",
+      "date": "Tue, 28 Apr 2026 14:00:00 +0000",
+      "snippet": "Your onsite interview is confirmed for May 7, 2026. Please find travel logistics and agenda.",
+      "body_preview": "Hi,\n\nExcited to have you in for an onsite interview at Ramp on May 7, 2026!\n\nSchedule:\n- 10:00 AM: Check-in and meet your recruiter\n- 10:30 AM – 12:00 PM: Technical interviews (x2)\n- 12:00 PM: Lunch with the team\n- 1:30 PM – 3:00 PM: System design + culture interviews\n\nLocation: 71 5th Ave, New York, NY 10003\n\nPlease confirm attendance by replying to this email.\n\nCan't wait to meet you!\nRamp Recruiting",
+      "expected_actions": [
+        "general_response_required"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "explicit"
+    },
+    {
+      "id": "edge_004",
+      "threadId": "thread_edge_004",
+      "subject": "Internship decision update – Sequoia Capital",
+      "from_name": "Sequoia Recruiting",
+      "from_address": "recruiting@sequoiacap.com",
+      "date": "Wed, 29 Apr 2026 16:00:00 +0000",
+      "snippet": "We have decided to move forward with your application for the Investment Analyst intern role.",
+      "body_preview": "Hi,\n\nThank you for your patience during our review process.\n\nWe are pleased to share that we'd like to move forward with your application for the Investment Analyst Internship at Sequoia Capital.\n\nAs a next step, we'd like to schedule a 30-minute call with a partner. Could you share your availability for the week of May 5–9?\n\nBest,\nSequoia Recruiting",
+      "expected_actions": [
+        "interview_scheduling"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "explicit"
+    },
+    {
+      "id": "edge_005",
+      "threadId": "thread_edge_005",
+      "subject": "YC Application – Interview Invitation",
+      "from_name": "Y Combinator",
+      "from_address": "admissions@ycombinator.com",
+      "date": "Mon, 27 Apr 2026 17:00:00 +0000",
+      "snippet": "Congratulations! You've been invited to interview at Y Combinator for the W27 batch.",
+      "body_preview": "Hi,\n\nCongratulations! We'd like to invite your startup to interview for the Y Combinator W27 batch.\n\nInterviews are scheduled for May 12–16, 2026 in San Francisco.\n\nPlease confirm your attendance by May 3, 2026 using this link: ycombinator.com/interview-confirm\n\nMore details about what to expect will follow.\n\nExcited to meet you!\nYC Admissions",
+      "expected_actions": [
+        "general_response_required"
+      ],
+      "expected_is_job_related": true,
+      "label_source": "explicit"
+    }
+  ]
+}

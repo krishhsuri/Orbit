@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
+import { NewApplicationActions } from '@/components/applications';
+import { useApplicationSignals } from '@/hooks/use-application-signals';
 import styles from './page.module.css';
 
 // ── Helper ──────────────────────────────────────────
@@ -121,6 +123,7 @@ function MiniCalendar() {
 // ── Main Dashboard ──────────────────────────────────
 export default function DashboardPage() {
   const { data, isLoading, error } = useApplications();
+  const { upcomingDeadlines } = useApplicationSignals();
   const applications = data?.applications || [];
 
   const stats = useMemo(() => {
@@ -151,22 +154,6 @@ export default function DashboardPage() {
       }));
   }, [applications]);
 
-  const upcomingDeadlines = useMemo(() => {
-    return applications
-      .filter((a) => ['interview', 'screening', 'oa'].includes(a.status))
-      .slice(0, 3)
-      .map((app, i) => ({
-        id: app.id,
-        company: app.company,
-        task: app.status === 'interview' ? 'Interview' : app.status === 'oa' ? 'Online Assessment' : 'Screening',
-        role: app.role,
-        urgency: i === 0 ? 'high' : i === 1 ? 'medium' : 'low',
-        daysLabel: i === 0 ? '2 days left' : i === 1 ? '4 days left' : 'Next week',
-        progress: i === 0 ? 75 : i === 1 ? 50 : 25,
-      }));
-  }, [applications]);
-
-  // Weekly mock bars (sourced from real data day-of-week distribution)
   const weeklyBars = useMemo(() => {
     const bars = [0, 0, 0, 0, 0, 0, 0];
     applications.forEach((a) => {
@@ -218,10 +205,7 @@ export default function DashboardPage() {
               type="text"
             />
           </div>
-          <Link href="/applications" className={styles.newButton}>
-            <Plus size={14} />
-            New Application
-          </Link>
+          <NewApplicationActions />
         </div>
       </div>
 
@@ -385,66 +369,62 @@ export default function DashboardPage() {
                 </div>
 
                 <div className={styles.deadlineList}>
-                  {upcomingDeadlines.map((item) => (
-                    <Link
-                      href={`/applications/${item.id}`}
-                      key={item.id}
-                      className={styles.deadlineCard}
-                    >
-                      <div
-                        className={styles.deadlineAccent}
-                        style={{
-                          backgroundColor:
-                            item.urgency === 'high' ? 'rgba(239,68,68,0.8)' :
-                            item.urgency === 'medium' ? 'rgba(249,115,22,0.8)' :
-                            'rgba(107,114,128,0.8)',
-                        }}
-                      />
-                      <div className={styles.deadlineTop}>
-                        <span
-                          className={styles.deadlineTag}
-                          style={{
-                            color:
-                              item.urgency === 'high' ? '#f87171' :
-                              item.urgency === 'medium' ? '#fb923c' : '#9ca3af',
-                            backgroundColor:
-                              item.urgency === 'high' ? 'rgba(248,113,113,0.1)' :
-                              item.urgency === 'medium' ? 'rgba(251,146,60,0.1)' :
-                              'rgba(156,163,175,0.1)',
-                            borderColor:
-                              item.urgency === 'high' ? 'rgba(248,113,113,0.2)' :
-                              item.urgency === 'medium' ? 'rgba(251,146,60,0.2)' :
-                              'rgba(156,163,175,0.2)',
-                          }}
+                  {upcomingDeadlines.length === 0 ? (
+                    <div className={styles.emptyState}>
+                      <p>No action deadlines yet. Agent A will surface OA and interview dates from email.</p>
+                      <Link href="/agents" className={styles.panelAction}>Open Agents</Link>
+                    </div>
+                  ) : (
+                    upcomingDeadlines.slice(0, 4).map((item) => {
+                      const daysLeft = Math.ceil((item.deadline.getTime() - Date.now()) / 86400000);
+                      const urgency =
+                        daysLeft <= 1 ? 'high' : daysLeft <= 4 ? 'medium' : 'low';
+                      const daysLabel =
+                        daysLeft < 0 ? 'Overdue' :
+                        daysLeft === 0 ? 'Due today' :
+                        daysLeft === 1 ? '1 day left' :
+                        `${daysLeft} days left`;
+                      return (
+                        <Link
+                          href={`/applications/${item.id}`}
+                          key={item.actionId}
+                          className={styles.deadlineCard}
                         >
-                          {item.daysLabel}
-                        </span>
-                        <button className={styles.deadlineMore}>
-                          <MoreHorizontal size={14} />
-                        </button>
-                      </div>
-                      <h4 className={styles.deadlineName}>{item.company}</h4>
-                      <p className={styles.deadlineTask}>{item.task}</p>
-                      <div className={styles.deadlineProgress}>
-                        <div className={styles.deadlineProgressBar}>
                           <div
-                            className={styles.deadlineProgressFill}
+                            className={styles.deadlineAccent}
                             style={{
-                              width: `${item.progress}%`,
                               backgroundColor:
-                                item.urgency === 'high' ? 'rgba(239,68,68,0.5)' :
-                                item.urgency === 'medium' ? 'rgba(249,115,22,0.5)' :
-                                'rgba(107,114,128,0.5)',
+                                urgency === 'high' ? 'rgba(239,68,68,0.8)' :
+                                urgency === 'medium' ? 'rgba(249,115,22,0.8)' :
+                                'rgba(107,114,128,0.8)',
                             }}
                           />
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                  {upcomingDeadlines.length === 0 && (
-                    <div className={styles.emptyState}>
-                      <p>No upcoming deadlines</p>
-                    </div>
+                          <div className={styles.deadlineTop}>
+                            <span
+                              className={styles.deadlineTag}
+                              style={{
+                                color:
+                                  urgency === 'high' ? '#f87171' :
+                                  urgency === 'medium' ? '#fb923c' : '#9ca3af',
+                                backgroundColor:
+                                  urgency === 'high' ? 'rgba(248,113,113,0.1)' :
+                                  urgency === 'medium' ? 'rgba(251,146,60,0.1)' :
+                                  'rgba(156,163,175,0.1)',
+                                borderColor:
+                                  urgency === 'high' ? 'rgba(248,113,113,0.2)' :
+                                  urgency === 'medium' ? 'rgba(251,146,60,0.2)' :
+                                  'rgba(156,163,175,0.2)',
+                              }}
+                            >
+                              {daysLabel}
+                            </span>
+                          </div>
+                          <h4 className={styles.deadlineName}>{item.company}</h4>
+                          <p className={styles.deadlineTask}>{item.actionType}</p>
+                          <p className={styles.deadlineRole}>{item.role}</p>
+                        </Link>
+                      );
+                    })
                   )}
                 </div>
 

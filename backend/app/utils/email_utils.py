@@ -1,5 +1,22 @@
 import re
 
+
+def smart_truncate(text: str, max_chars: int) -> str:
+    """Truncate near a sentence boundary when possible."""
+    if not text or len(text) <= max_chars:
+        return text or ""
+    truncated = text[:max_chars]
+    last_break = max(
+        truncated.rfind(". "),
+        truncated.rfind(".\n"),
+        truncated.rfind("!\n"),
+        truncated.rfind("?\n"),
+    )
+    if last_break > max_chars * 0.6:
+        return truncated[: last_break + 1]
+    return truncated.rstrip() + "..."
+
+
 def strip_email_thread(body: str) -> str:
     """
     Remove quoted history from an email body.

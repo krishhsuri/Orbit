@@ -7,6 +7,7 @@ from sqlalchemy import select
 
 from app.ml.llm.groq_client import GroqClient
 from app.config import get_settings
+from app.llm.errors import LLMUnavailable, LLMSchemaError
 from app.models.event import Event
 
 logger = logging.getLogger(__name__)
@@ -63,15 +64,19 @@ class ActionExtractor:
         """
         logger.info(f"Extracting actions for application {application_id}")
         
-        result = await self.llm.extract_actions_from_email(
-            subject=email_subject,
-            body=email_body,
-            company=company,
-            role=role,
-            email_timestamp=email_timestamp,
-        )
+        try:
+            result = await self.llm.extract_actions_from_email(
+                subject=email_subject,
+                body=email_body,
+                company=company,
+                role=role,
+                email_timestamp=email_timestamp,
+            )
+        except (LLMUnavailable, LLMSchemaError) as exc:
+            logger.error("Action extraction failed for application %s: %s", application_id, exc)
+            return []
         
-        if not result or not result.get("is_job_related"):
+        if not result.get("is_job_related"):
             logger.info("Email not job-related or no actions extracted.")
             return []
 

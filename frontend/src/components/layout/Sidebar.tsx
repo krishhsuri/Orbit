@@ -19,6 +19,8 @@ import {
   Command,
   Plus,
 } from 'lucide-react';
+import { NewApplicationActions } from '@/components/applications';
+import { useApplicationSignals } from '@/hooks/use-application-signals';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore, useUIStore } from '@/stores';
@@ -92,7 +94,8 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { user, isAuthenticated, logout } = useAuthStore();
-  const { openCommandPalette, openAddModal } = useUIStore();
+  const { openCommandPalette } = useUIStore();
+  const { pendingApprovalCount } = useApplicationSignals();
 
   useEffect(() => {
     setMounted(true);
@@ -155,12 +158,7 @@ export function Sidebar() {
             <span>Search...</span>
             <kbd>⌘K</kbd>
           </button>
-          <button 
-            className={styles.newButton}
-            onClick={openAddModal}
-          >
-            <Plus size={16} />
-          </button>
+          <NewApplicationActions variant="sidebar" />
         </div>
       )}
 
@@ -170,6 +168,10 @@ export function Sidebar() {
           {navItems.map((item) => {
             const isActive = pathname === item.href || 
               (item.href !== '/' && pathname.startsWith(item.href));
+            const badge =
+              item.href === '/agents' && pendingApprovalCount > 0
+                ? pendingApprovalCount
+                : item.badge;
             
             return (
               <li key={item.href}>
@@ -189,9 +191,11 @@ export function Sidebar() {
                         transition={{ duration: 0.1 }}
                       >
                         <span className={styles.navLabel}>{item.label}</span>
-                        {item.shortcut && (
+                        {badge ? (
+                          <span className={styles.navBadge}>{badge}</span>
+                        ) : item.shortcut ? (
                           <span className={styles.navShortcut}>{item.shortcut}</span>
-                        )}
+                        ) : null}
                       </motion.div>
                     )}
                   </AnimatePresence>

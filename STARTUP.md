@@ -1,4 +1,4 @@
-# 🚀 Orbit — Startup Guide
+# Orbit — Startup Guide
 
 All commands to get the full stack running. Open **4 separate terminals**.
 
@@ -8,7 +8,7 @@ All commands to get the full stack running. Open **4 separate terminals**.
 
 - **Docker Desktop** must be running
 - **Node.js** installed (v18+ recommended)
-- **Python 3.10+** with a virtual environment set up for the backend
+- **Python 3.12+** with a virtual environment set up for the backend
 - **Backend dependencies** installed:
   ```bash
   cd d:\Orbit\backend
@@ -16,6 +16,7 @@ All commands to get the full stack running. Open **4 separate terminals**.
   pip install -r requirements.txt
   python -m spacy download en_core_web_sm
   ```
+- Copy `backend/.env.example` → `backend/.env` and set `GROQ_API_KEY` (+ Google OAuth if needed)
 
 ---
 
@@ -23,16 +24,11 @@ All commands to get the full stack running. Open **4 separate terminals**.
 
 ```bash
 cd d:\Orbit
-docker-compose up
+docker compose up postgres redis -d
 ```
 
 > Wait until you see both `orbit_postgres` and `orbit_redis` are healthy before starting the backend.
-
-To run in detached (background) mode instead:
-
-```bash
-docker-compose up -d
-```
+> Host ports are **5433** (Postgres) and **6380** (Redis) to avoid clashes with other local stacks.
 
 ---
 
@@ -48,15 +44,20 @@ uvicorn app.main:app --reload --port 8000
 
 ---
 
-## Terminal 3 — Celery Worker (Background Tasks)
+## Terminal 3 — ARQ Worker (sends + cron)
 
 ```bash
 cd d:\Orbit\backend
 .\venv\Scripts\activate
-celery -A app.celery_app:celery_app worker --loglevel=info --pool=solo
+arq app.worker.settings.WorkerSettings
 ```
 
-> `--pool=solo` is required on Windows. On Linux/Mac you can omit it.
+> Runs `execute_outreach_send` and ARQ `cron_jobs`:
+> - follow-up scan (all users, 6h skip) every 6 hours
+> - purge old rejected pending apps / enforce pending cap (nightly)
+> - reap stranded `pending_undo` rows every 5 minutes
+>
+> Manual "Scan now" in the UI stays inline (current user, no 6h skip) for demos.
 
 ---
 
@@ -64,6 +65,8 @@ celery -A app.celery_app:celery_app worker --loglevel=info --pool=solo
 
 ```bash
 cd d:\Orbit\frontend
+cp .env.local.example .env.local   # once
+npm install
 npm run dev
 ```
 
@@ -71,15 +74,14 @@ npm run dev
 
 ---
 
-## Terminal 5 — Celery Beat (Periodic Tasks)
+## One-command alternative
+
+From the repo root (uses Docker for Postgres/Redis only; Python + Next run locally):
 
 ```bash
-cd d:\Orbit\backend
-.\venv\Scripts\activate
-celery -A app.celery_app:celery_app beat --loglevel=info
+npm install
+npm run all
 ```
-
-> Runs scheduled cleanup tasks (purge old rejected emails, enforce 200 pending cap). Optional for development.
 
 ---
 
@@ -89,8 +91,8 @@ celery -A app.celery_app:celery_app beat --loglevel=info
 |------------|---------------------------|-----------------------------|
 | Frontend   | http://localhost:3000      | Open in browser             |
 | Backend    | http://localhost:8000      | http://localhost:8000/docs   |
-| PostgreSQL | localhost:5432             | `docker ps`                 |
-| Redis      | localhost:6379             | `docker ps`                 |
+| PostgreSQL | localhost:5433             | `docker ps`                 |
+| Redis      | localhost:6380             | `docker ps`                 |
 
 ---
 
@@ -99,15 +101,15 @@ celery -A app.celery_app:celery_app beat --loglevel=info
 ```bash
 # Stop Docker services
 cd d:\Orbit
-docker-compose down
+docker compose down
 
-# Stop backend/celery/frontend — just Ctrl+C in each terminal
+# Stop backend / ARQ worker / frontend — Ctrl+C in each terminal
 ```
 
 To also wipe the database volumes:
 
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 ---

@@ -1,0 +1,210 @@
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 20px;
+  min-height: 400px;
+}
+
+.empty, .loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 300px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 16px;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.statusBadge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.statusOk {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.statusDegraded {
+  background: rgba(242, 153, 74, 0.15);
+  color: #f2994a;
+}
+
+.statusFailed {
+  background: rgba(230, 106, 106, 0.15);
+  color: #e66a6a;
+}
+
+.trigger {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.decisionAction {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.decisionReason {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.tokenDetail {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.errorBanner, .vetoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+.errorBanner {
+  background: rgba(230, 106, 106, 0.1);
+  border: 1px solid rgba(230, 106, 106, 0.3);
+  color: #e66a6a;
+}
+
+.vetoes {
+  background: rgba(242, 153, 74, 0.1);
+  border: 1px solid rgba(242, 153, 74, 0.3);
+  color: #f2994a;
+}
+
+.sectionLabel {
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.traceList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.traceStep {
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.traceHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  font-size: 12px;
+}
+
+.toolName {
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.iteration {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.toolLatency {
+  color: var(--text-muted);
+}
+
+.okIcon { color: #22c55e; }
+.errorIcon { color: #e66a6a; }
+
+.argsToggle {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 12px;
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-base);
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.argsToggle:hover {
+  color: var(--text-secondary);
+}
+
+.stepError {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #e66a6a;
+  background: rgba(230, 106, 106, 0.08);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.traceBody {
+  margin: 0;
+  padding: 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-x: auto;
+  max-height: 200px;
+  color: var(--text-secondary);
+  background: var(--bg-base);
+}
+
+.muted {
+  font-size: 13px;
+  color: var(--text-muted);
+}

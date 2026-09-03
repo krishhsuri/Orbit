@@ -16,6 +16,9 @@
   --bg-elevated: #1C1C1E;
   --bg-hover: rgba(255, 255, 255, 0.04);
   --bg-active: rgba(255, 255, 255, 0.08);
+  --bg-primary: var(--bg-base);
+  --bg-secondary: var(--bg-surface);
+  --bg-tertiary: var(--bg-elevated);
 
   /* Text - Linear uses off-white, not pure white */
   --text-primary: #EEEFF1;

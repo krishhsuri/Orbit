@@ -148,8 +148,8 @@ export function useEvaluateFollowUp() {
   return useMutation({
     mutationFn: (id: string) => applicationsApi.evaluateFollowUp(id),
     onSuccess: (_, id) => {
-      // Refresh events in case new action_required events were created
       queryClient.invalidateQueries({ queryKey: applicationKeys.events(id) });
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
     },
   });
 }
@@ -161,9 +161,16 @@ export function useExtractActions() {
   return useMutation({
     mutationFn: (id: string) => applicationsApi.extractActions(id),
     onSuccess: (_, id) => {
-      // Refresh events to show newly extracted action_required events
       queryClient.invalidateQueries({ queryKey: applicationKeys.events(id) });
+      queryClient.invalidateQueries({ queryKey: ['agents', 'actions'] });
     },
+  });
+}
+
+// Parse pasted JD → structured draft (does not create)
+export function useParseJobDescription() {
+  return useMutation({
+    mutationFn: (text: string) => applicationsApi.parseJobDescription(text),
   });
 }
 

@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef, Suspense, type MutableRefObject } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useApplications, useUpdateApplicationStatus } from '@/hooks/use-applications';
+import { useApplicationSignals, type ApplicationSignal } from '@/hooks/use-application-signals';
+import { NewApplicationActions } from '@/components/applications';
 import { KanbanSkeleton } from '@/components/ui';
 import type { ApplicationStatus } from '@/stores';
 import {
@@ -61,7 +64,16 @@ function formatTimeAgo(dateString: string): string {
 }
 
 // ── Draggable Card ──────────────────────────────────
-function DraggableCard({ app }: { app: any }) {
+function DraggableCard({
+  app,
+  signals,
+  highlighted,
+}: {
+  app: any;
+  signals?: ApplicationSignal;
+  highlighted?: boolean;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
   const {
     attributes,
     listeners,
@@ -77,6 +89,17 @@ function DraggableCard({ app }: { app: any }) {
     },
   });
 
+  const setRefs = (node: HTMLDivElement | null) => {
+    setNodeRef(node);
+    (cardRef as MutableRefObject<HTMLDivElement | null>).current = node;
+  };
+
+  useEffect(() => {
+    if (highlighted && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlighted]);
+
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -84,14 +107,22 @@ function DraggableCard({ app }: { app: any }) {
     zIndex: isDragging ? 10 : undefined,
   };
 
-  const needsFollowUp = !['rejected', 'offer', 'accepted', 'withdrawn'].includes(app.status) &&
-    Math.floor((new Date().getTime() - new Date(app.updatedAt || app.appliedDate).getTime()) / 86400000) >= 7;
+  const signalTags: { key: string; label: string; className: string }[] = [];
+  if (signals?.actionRequired) {
+    signalTags.push({ key: 'action', label: signals.actionLabel || 'Action due', className: styles.signalAction });
+  }
+  if (signals?.pendingSend) {
+    signalTags.push({ key: 'send', label: 'Send queue', className: styles.signalSend });
+  }
+  if (signals?.followUp) {
+    signalTags.push({ key: 'follow', label: 'Follow-up', className: styles.signalFollow });
+  }
 
   return (
     <div
-      ref={setNodeRef}
+      ref={setRefs}
       style={style}
-      className={`${styles.kanbanCard} ${isDragging ? styles.dragging : ''}`}
+      className={`${styles.kanbanCard} ${isDragging ? styles.dragging : ''} ${highlighted ? styles.cardHighlighted : ''}`}
       {...attributes}
       {...listeners}
     >
@@ -104,16 +135,14 @@ function DraggableCard({ app }: { app: any }) {
       <Link href={`/applications/${app.id}`} className={styles.cardTitle} onClick={(e) => { if (isDragging) e.preventDefault(); }}>
         {app.role}
       </Link>
-      {(app.tags?.length > 0 || needsFollowUp) && (
+      {(app.tags?.length > 0 || signalTags.length > 0) && (
         <div className={styles.cardTags}>
+          {signalTags.map((s) => (
+            <span key={s.key} className={`${styles.tag} ${s.className}`}>{s.label}</span>
+          ))}
           {app.tags?.slice(0, 2).map((tag: string) => (
             <span key={tag} className={styles.tag}>{tag}</span>
           ))}
-          {needsFollowUp && (
-            <span className={styles.tag} style={{ background: 'rgba(255, 153, 0, 0.1)', color: '#ff9900', border: '1px solid rgba(255, 153, 0, 0.2)' }}>
-              Follow-up
-            </span>
-          )}
         </div>
       )}
     </div>
@@ -143,10 +172,14 @@ function DroppableColumn({
   column,
   apps,
   isOver,
+  signalsByApp,
+  highlightId,
 }: {
   column: typeof columns[0];
   apps: any[];
   isOver: boolean;
+  signalsByApp: Map<string, ApplicationSignal>;
+  highlightId: string | null;
 }) {
   const { setNodeRef } = useDroppable({ id: column.status });
 
@@ -169,7 +202,12 @@ function DroppableColumn({
           strategy={verticalListSortingStrategy}
         >
           {apps.map((app) => (
-            <DraggableCard key={app.id} app={app} />
+            <DraggableCard
+              key={app.id}
+              app={app}
+              signals={signalsByApp.get(app.id)}
+              highlighted={highlightId === app.id}
+            />
           ))}
         </SortableContext>
 
@@ -227,12 +265,25 @@ function CalendarWidget() {
 }
 
 // ── Main Kanban Page ────────────────────────────────
-export default function KanbanPage() {
+function KanbanPageInner() {
+  const searchParams = useSearchParams();
+  const highlightParam = searchParams.get('highlight');
+  const [highlightId, setHighlightId] = useState<string | null>(highlightParam);
+
   const { data, isLoading, error } = useApplications();
   const { mutate: updateStatus } = useUpdateApplicationStatus();
+  const { signalsByApp, upcomingDeadlines } = useApplicationSignals();
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overColumn, setOverColumn] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (highlightParam) {
+      setHighlightId(highlightParam);
+      const t = setTimeout(() => setHighlightId(null), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [highlightParam]);
 
   const applications = data?.applications || [];
 
@@ -258,18 +309,8 @@ export default function KanbanPage() {
     return { total, interviews, rate };
   }, [applications]);
 
-  // Upcoming deadlines (take first 3 most recent)
-  const deadlines = useMemo(() => {
-    return applications
-      .filter((a) => ['interview', 'screening', 'oa'].includes(a.status))
-      .slice(0, 3)
-      .map((a) => ({
-        id: a.id,
-        company: a.company,
-        role: a.role,
-        date: new Date(a.updatedAt || a.appliedDate),
-      }));
-  }, [applications]);
+  // Upcoming deadlines from agent actions (real dates)
+  const deadlines = upcomingDeadlines;
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -345,9 +386,9 @@ export default function KanbanPage() {
       {/* Header Bar */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.pageTitle}>Dashboard</h1>
+          <h1 className={styles.pageTitle}>Kanban</h1>
           <span className={styles.headerSep}>/</span>
-          <span className={styles.headerMeta}>KANBAN</span>
+          <span className={styles.headerMeta}>TRACK & MOVE</span>
         </div>
         <div className={styles.headerRight}>
           <div className={styles.searchWrapper}>
@@ -358,10 +399,7 @@ export default function KanbanPage() {
               className={styles.searchInput}
             />
           </div>
-          <button className={styles.newButton}>
-            <Plus size={14} />
-            New
-          </button>
+          <NewApplicationActions variant="compact" />
         </div>
       </header>
 
@@ -412,6 +450,8 @@ export default function KanbanPage() {
                     column={column}
                     apps={columnApps}
                     isOver={overColumn === column.status}
+                    signalsByApp={signalsByApp}
+                    highlightId={highlightId}
                   />
                 );
               })}
@@ -452,33 +492,30 @@ export default function KanbanPage() {
             </div>
             <div className={styles.deadlineList}>
               {deadlines.length === 0 ? (
-                <p className={styles.noDeadlines}>No upcoming deadlines</p>
+                <p className={styles.noDeadlines}>No action deadlines yet</p>
               ) : (
-                deadlines.map((d) => {
-                  const diffDays = Math.max(0, Math.ceil((d.date.getTime() - Date.now()) / 86400000));
+                deadlines.slice(0, 4).map((d) => {
+                  const diffDays = Math.ceil((d.deadline.getTime() - Date.now()) / 86400000);
+                  const label =
+                    diffDays < 0 ? 'OVERDUE' :
+                    diffDays === 0 ? 'TODAY' :
+                    `${diffDays} DAYS`;
                   return (
                     <Link
-                      key={d.id}
+                      key={d.actionId}
                       href={`/applications/${d.id}`}
                       className={styles.deadlineItem}
                     >
                       <div className={styles.deadlineDateBox}>
                         <span className={styles.deadlineMonth}>
-                          {d.date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
+                          {d.deadline.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
                         </span>
-                        <span className={styles.deadlineDay}>{d.date.getDate()}</span>
+                        <span className={styles.deadlineDay}>{d.deadline.getDate()}</span>
                       </div>
                       <div className={styles.deadlineInfo}>
                         <span className={styles.deadlineName}>{d.company}</span>
-                        <div className={styles.deadlineBar}>
-                          <div
-                            className={styles.deadlineBarFill}
-                            style={{ width: `${Math.max(10, 100 - diffDays * 10)}%` }}
-                          />
-                        </div>
-                        <span className={styles.deadlineDays}>
-                          {diffDays === 0 ? 'TODAY' : `${diffDays} DAYS`}
-                        </span>
+                        <span className={styles.deadlineActionType}>{d.actionType}</span>
+                        <span className={styles.deadlineDays}>{label}</span>
                       </div>
                     </Link>
                   );
@@ -506,5 +543,20 @@ export default function KanbanPage() {
         </aside>
       </div>
     </div>
+  );
+}
+
+export default function KanbanPage() {
+  return (
+    <Suspense fallback={
+      <div className={styles.page}>
+        <div className={styles.loadingState}>
+          <Loader2 size={24} className={styles.spin} />
+          <span>Loading board...</span>
+        </div>
+      </div>
+    }>
+      <KanbanPageInner />
+    </Suspense>
   );
 }
