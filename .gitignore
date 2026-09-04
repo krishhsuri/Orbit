@@ -73,6 +73,7 @@ pnpm-debug.log*
 # =====================
 .idea/
 .vscode/
+.cursor/plans/
 *.swp
 *.swo
 *~
