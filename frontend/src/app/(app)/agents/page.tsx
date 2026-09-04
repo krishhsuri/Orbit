@@ -100,6 +100,15 @@ function AgentsPageInner() {
   const [selectedRunId, setSelectedRunId] = useState<string | null>(runFromQuery);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  const { data: actionsData, isLoading: actionsLoading } = useAgentActions();
+  const { data: followUpsData, isLoading: followUpsLoading } = useAgentFollowUps();
+  const { data: outreachData } = useOutreachInbox();
+  const { data: runsData } = useAgentRuns();
+  const { data: killSwitch } = useKillSwitch();
+  const { mutate: dismissFollowUp } = useDismissFollowUp();
+  const { mutate: triggerScan, isPending: isScanning } = useTriggerScan();
+  const { mutate: setKillSwitch, isPending: togglingKill } = useSetKillSwitch();
+
   useEffect(() => {
     if (runFromQuery) {
       setSelectedRunId(runFromQuery);
@@ -112,15 +121,6 @@ function AgentsPageInner() {
       setSelectedRunId(runsData!.runs[0].run_id);
     }
   }, [runsData, selectedRunId]);
-
-  const { data: actionsData, isLoading: actionsLoading } = useAgentActions();
-  const { data: followUpsData, isLoading: followUpsLoading } = useAgentFollowUps();
-  const { data: outreachData } = useOutreachInbox();
-  const { data: runsData } = useAgentRuns();
-  const { data: killSwitch } = useKillSwitch();
-  const { mutate: dismissFollowUp } = useDismissFollowUp();
-  const { mutate: triggerScan, isPending: isScanning } = useTriggerScan();
-  const { mutate: setKillSwitch, isPending: togglingKill } = useSetKillSwitch();
 
   const actions = actionsData?.actions || [];
   const followUps = followUpsData?.follow_ups || [];
