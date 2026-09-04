@@ -10,17 +10,17 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
+from app.agents.safety import detect_prompt_injection
 from app.agents.tools.context import ToolContext
 from app.agents.tools.registry import RegisteredTool
 from app.models.application import Application
 from app.models.email import Email, application_emails
 from app.models.event import Event
-from app.models.outreach_action import OutreachAction
 from app.models.outcome import Outcome
+from app.models.outreach_action import OutreachAction
 from app.models.user import User
 from app.services.outreach_queue import OutreachQueueService
 from app.utils.email_utils import smart_truncate, strip_email_thread
-from app.agents.safety import detect_prompt_injection
 
 # ── Parameter schemas ──────────────────────────────────────────────────────
 

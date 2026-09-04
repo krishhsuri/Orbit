@@ -134,9 +134,7 @@ async def test_schedule_send_handler_uses_injected_queue():
 @needs_eval_db
 @pytest.mark.asyncio
 async def test_baseline_on_seeded_labels():
-    from sqlalchemy.orm import selectinload
-
-    from app.models.application import Application
+    from evals.eval_decision import run_baseline
     from evals.harness.db import (
         EvalDatabase,
         EvalDatabaseError,
@@ -144,7 +142,9 @@ async def test_baseline_on_seeded_labels():
         resolve_eval_database_url,
     )
     from evals.harness.labels import load_and_validate_labels
-    from evals.eval_decision import run_baseline
+    from sqlalchemy.orm import selectinload
+
+    from app.models.application import Application
 
     try:
         eval_url = resolve_eval_database_url(force=False)

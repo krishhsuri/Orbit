@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -37,8 +37,6 @@ def _settings(**overrides) -> Settings:
 
 
 def _app(*, user_id, app_id, days_ago: int = 30):
-    from datetime import timedelta
-
     now = datetime.now(timezone.utc)
     return SimpleNamespace(
         id=app_id,

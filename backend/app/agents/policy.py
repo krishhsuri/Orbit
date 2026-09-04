@@ -10,9 +10,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import func, select
-from zoneinfo import ZoneInfo
 
 from app.config import Settings, get_settings
 from app.models.application import Application
