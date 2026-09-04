@@ -104,3 +104,8 @@ temp/
 backend/output.json
 # Local scratch docs (tracked docs live at repo root: ARCHITECTURE.md, etc.)
 /docs/
+
+# Local Dev Scripts
+backend/scripts/seed_*.py
+backend/scripts/demo_agents.py
+backend/app/seed.py
